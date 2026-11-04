@@ -54,7 +54,7 @@ About Aurea Home includes a permanent changelog, once-per-update highlights, sou
 
 ## Compatibility
 
-The physical reference device is a Xiaomi MiTV-MOOQ0 running Android 10. HDMI routing and the picture-settings shortcut are device-specific; other TVs may use their system input picker. Existing apps and TV services are preserved. This repository contains no debloat script.
+The physical reference device runs Android 10 on ARMv7. HDMI routing and the picture-settings shortcut are device-specific; other TVs may use their system input picker. Existing apps and TV services are preserved. This repository contains no debloat script.
 
 Android 8/API 26 or newer is required. CI compiles native libraries for ARMv7, ARM64, x86, and x86_64. Other TVs and Google TV devices need their own hardware validation.
 

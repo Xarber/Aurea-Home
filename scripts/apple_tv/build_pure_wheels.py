@@ -27,7 +27,7 @@ def portable_zeroconf(wheel):
             raise RuntimeError("Native binary found in purported pure zeroconf build")
     metadata = next(name for name in files if name.endswith(".dist-info/WHEEL"))
     record = next(name for name in files if name.endswith(".dist-info/RECORD"))
-    files[metadata] = b"Wheel-Version: 1.0\nGenerator: MiTV-verified-pure\nRoot-Is-Purelib: true\nTag: py3-none-any\n"
+    files[metadata] = b"Wheel-Version: 1.0\nGenerator: Aurea-verified-pure\nRoot-Is-Purelib: true\nTag: py3-none-any\n"
     files.pop(record)
     rows = []
     for name, data in files.items():

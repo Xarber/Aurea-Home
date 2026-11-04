@@ -16,10 +16,10 @@ export function Wallpaper({id,motion=false,mini=false}:{id:string;motion?:boolea
  const {layers,fade}=usePaletteTransition(palette,mini);
  const style=useAnimatedStyle(()=>({transform:[{translateX:drift.get()*28},{translateY:drift.get()*-16},{scale:1.3}]}));
  return <View testID={mini?undefined:'wallpaper-background'} style={[StyleSheet.absoluteFill,{overflow:'hidden',backgroundColor:palette[0]}]} pointerEvents="none">
- <WallpaperScene colors={(mini?palette:layers.from) as [string,string,string]} style={style} motionId={mini?undefined:'wallpaper-motion'}/>
+ <View testID={!mini&&id==='classic'?'classic-wallpaper':undefined} style={[StyleSheet.absoluteFill,{opacity:1}]}><WallpaperScene colors={(mini?palette:layers.from) as [string,string,string]} style={style} motionId={mini?undefined:'wallpaper-motion'}/>
  {!mini&&<Animated.View testID="wallpaper-fade" style={[StyleSheet.absoluteFill,fade]}><WallpaperScene colors={layers.to as [string,string,string]} style={style}/></Animated.View>}
 
- </View>;
+ </View></View>;
 }
 function WallpaperScene({colors,style,motionId}:{colors:[string,string,string];style:object;motionId?:string}){
  const gradientId='wallpaper-'+useId().replace(/[^a-zA-Z0-9_-]/g,'');

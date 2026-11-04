@@ -41,7 +41,7 @@ export class RemoteClient {
    const result=await this.rpc('pair',{pin});if(generation!==this.generation)return;
    if(typeof result.token!=='string'||! /^[A-Za-z0-9_-]{32}$/.test(result.token))throw new RemoteError('invalid_response');
    if(!this.fixture&&result.id!==this.session?.id)throw new RemoteError('device_changed');
-   this.session={...this.session!,token:result.token};await this.trust.save(this.session);
+   this.session={...this.session!,token:result.token};await this.trust.save(this.session);if(!this.fixture)await this.direct?.target(this.session.address);
    if(generation!==this.generation)return;this.update({status:'connecting',error:undefined,pairingSuccess:'launcher'});void this.poll();
   }catch(error){if(generation===this.generation)this.update({status:'pairing',error:this.code(error)});}
  }
