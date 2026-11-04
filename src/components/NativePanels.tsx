@@ -13,6 +13,7 @@ import { NativeReleaseHistory, ReadableDetails } from './NativeReleaseHistory';
 import { NativePairing } from './NativePairing';
 import type { Launcher } from '../launcher/types';
 import { useDeveloperAccess } from '../hooks/useDeveloperAccess';
+import {tv} from '../platform/native/tv';
 import { nativeFocus } from '../platform/native/focus';
 export function NativePanels({
   demo,
@@ -77,6 +78,7 @@ export function NativePanels({
       active = false;
     };
   }, [demo.panel]);
+  useEffect(()=>{if(demo.panel!=='remote')return;return tv.subscribe(event=>{if(event.type==='pair-request'&&typeof event.payload.pin==='string'&&/^\d{6}$/.test(event.payload.pin))setRemote(previous=>({...previous,pin:event.payload.pin}));});},[demo.panel]);
   if (!panel || !snapshot) return null;
   const action = (operation: string, payload: Record<string, unknown> = {}) => {
     void demo.execute(operation, payload).catch(() => {});
@@ -291,8 +293,7 @@ export function NativePanels({
         )}
         {panel === 'remote' && (
           <>
-            {row('Connect from aurea.xcenter.it','remote',()=>{void demo.execute('hostedRemote').then(value=>setRemote(previous=>({...previous,hostedUrl:value.url,hostedReady:value.ready})));})}
-            {typeof remote.hostedUrl==='string'&&text(remote.hostedUrl)}
+            {row('Connect from aurea.xcenter.it','remote',()=>{void demo.execute('hostedRemote').then(value=>setRemote(previous=>({...previous,url:value.url,qr:value.qr,hostedUrl:value.url,hostedReady:value.ready})));})}
             {typeof remote.hostedUrl==='string'&&text('Open this link on your phone or computer. Enter the TV pairing code when requested. Both devices must allow a direct WebRTC connection.')}
 
             {row('Background Home & AirPlay', 'apps',()=>action('backgroundAccess'))}

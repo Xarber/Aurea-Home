@@ -47,3 +47,11 @@ passed RSA/Polo proof, delayed certificate retrieval with early Configure frames
 SetActive/Start readiness, ping response, direct power key, local RSA-OAEP/AES-GCM
 voice unwrap and zero-padded 8 KiB PCM. This is real protocol/crypto testing on the
 host, with mocked Expo storage/randomness/socket adapters, not a physical phone.
+
+Final local results: 46 shared tests and all 32 browser cases passed. The public
+site served 2.1.0 / source 0d6c70f; two real browser peers paired through XCenter,
+issued a demo music launch and showed zero page errors. Signaling returned a real
+peer ID over public HTTPS. The dedicated aurea-peer unit was active; existing
+Velunivo services were preserved. Source-stamped release.json was verified. The
+TV website link also has its own QR, and pairing events refresh the visible PIN
+inside an already-open TV pairing panel when origin binding rotates the code.
