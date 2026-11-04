@@ -72,3 +72,9 @@ Android peer UID. It adds no public relay, debug permission, accessibility grant
 ADB client or key rotation. The self-signed service-certificate exchange follows
 the existing upstream protocol trust model. See
 [system transport](features/SYSTEM_REMOTE_TRANSPORT.md) for limits and cancellation.
+
+Optional local ADB, direct native mutual TLS and hosted data-channel trust are
+separate capabilities. See LOCAL_ADB_REMOTE.md, DIRECT_NATIVE_REMOTE.md and
+HOSTED_REMOTE.md under docs/features for boundaries and limitations. No arbitrary
+shell endpoint, credentials in signaling, raw audio logging or command replay is
+permitted. Public hosting and repository rename were explicitly requested.

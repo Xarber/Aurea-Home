@@ -9,6 +9,11 @@ public class AureaMicrophoneModule: Module {
   public func definition() -> ModuleDefinition {
     Name("AureaMicrophone")
     Events("chunk", "stopped")
+    AsyncFunction("randomSeed") { () -> String in
+      var bytes = [UInt8](repeating: 0, count: 64)
+      guard SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes) == errSecSuccess else { throw CaptureError.encryption }
+      return Data(bytes).base64EncodedString()
+    }
     AsyncFunction("requestPermission") { (promise: Promise) in
       if #available(iOS 17.0, *) {
         AVAudioApplication.requestRecordPermission { promise.resolve($0) }

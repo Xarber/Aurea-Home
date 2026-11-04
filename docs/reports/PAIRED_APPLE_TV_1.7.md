@@ -24,7 +24,7 @@
 ## Initial full-build result
 
 Full APK/AAB workflow for application commit `f2bb5a8`:
-https://github.com/Xarber/MiTV-Home/actions/runs/40578289224
+https://github.com/Xarber/Aurea-Home/actions/runs/40578289224
 
 Its portable dependency job and all four native dependency jobs passed. APK and AAB
 failed during Gradle configuration: Chaquopy could not see the architecture filters
@@ -62,7 +62,7 @@ Reference: https://chaquo.com/chaquopy/doc/current/android.html#android-abis
 ## Physical installation and smoke checks — 28 October 2026
 
 The corrected workflow completed successfully for APK, AAB, source and all
-required checks: https://github.com/Xarber/MiTV-Home/actions/runs/40586385230
+required checks: https://github.com/Xarber/Aurea-Home/actions/runs/40586385230
 
 Installed the actual universal release-mode APK for commit `29d9c17`, version
 1.7.0 / code 18, on the physical Android 10 ARMv7 MiTV using an in-place update.

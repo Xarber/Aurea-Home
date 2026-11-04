@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import {useHostedDemoRemote} from './useHostedDemoRemote';
 import {useEffect,useRef,useState} from 'react';
 import {Platform} from 'react-native';
 import type {Launcher} from '../launcher/types';
@@ -6,6 +7,7 @@ import {tracks} from '../model/catalog';
 export interface DemoServerInfo{url:string;connected:boolean;}
 /** Browser-owner channel exists only in the explicitly launched local demo server. */
 export function useDemoRemoteServer(demo:Launcher,launch:(id:string)=>void){
+ const hosted=useHostedDemoRemote(demo,launch);
  const latest=useRef({demo,launch});latest.current={demo,launch};const [server,setServer]=useState<DemoServerInfo>();
  useEffect(()=>{
   if(Platform.OS!=='web'||demo.native)return;const key=document.querySelector<HTMLMetaElement>('meta[name="aurea-demo-owner"]')?.content;if(!key)return;
@@ -31,5 +33,5 @@ export function useDemoRemoteServer(demo:Launcher,launch:(id:string)=>void){
   const events=async()=>{try{const response=await post('events',{}),reader=response.body?.getReader();if(!reader)return;const decoder=new TextDecoder();let pending='';while(!controller.signal.aborted){const result=await reader.read();if(result.done)break;pending+=decoder.decode(result.value,{stream:true});let end;while((end=pending.indexOf('\n'))>=0){const line=pending.slice(0,end);pending=pending.slice(end+1);try{receive(JSON.parse(line));}catch{}}if(pending.length>20000)break;}}catch{}finally{if(!controller.signal.aborted){const token=++sequence;setTimeout(()=>{if(!controller.signal.aborted&&token===sequence)void events();},1500);}}};
   void events();void state();return()=>{controller.abort();clearTimeout(timer);sequence++;};
  },[demo.native]);
- return server;
+ return server??hosted;
 }

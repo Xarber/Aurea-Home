@@ -1,14 +1,14 @@
 <p align="center"><img src="docs/assets/banner.svg" alt="Aurea Home — a quieter home for your TV" width="100%"></p>
 <p align="center">
-<a href="https://github.com/Xarber/MiTV-Home/actions/workflows/build.yml"><img src="https://github.com/Xarber/MiTV-Home/actions/workflows/build.yml/badge.svg?branch=main" alt="Build"></a>
-<a href="https://github.com/Xarber/MiTV-Home/releases"><img src="https://img.shields.io/github/v/release/Xarber/MiTV-Home?color=858bea" alt="Release"></a>
+<a href="https://github.com/Xarber/Aurea-Home/actions/workflows/build.yml"><img src="https://github.com/Xarber/Aurea-Home/actions/workflows/build.yml/badge.svg?branch=main" alt="Build"></a>
+<a href="https://github.com/Xarber/Aurea-Home/releases"><img src="https://img.shields.io/github/v/release/Xarber/Aurea-Home?color=858bea" alt="Release"></a>
 <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-abb5fa" alt="AGPL 3"></a>
 <img src="https://img.shields.io/badge/Android-8%2B-9acda9" alt="Android 8 or newer">
 </p>
 
-**Aurea Home** (formerly MiTV Home) is a remote-first Android TV launcher with a six-item dock, fullscreen artwork, fast input shortcuts, and an integrated AirPlay receiver. Built for the living room, with Italian and English throughout.
+**Aurea Home** (formerly Aurea Home) is a remote-first Android TV launcher with a six-item dock, fullscreen artwork, fast input shortcuts, and an integrated AirPlay receiver. Built for the living room, with Italian and English throughout.
 
-<p align="center"><a href="https://github.com/Xarber/MiTV-Home/releases/latest"><strong>Download APK</strong></a> · <a href="docs/INSTALL.md">Install & restore</a> · <a href="docs/BUILDING.md">Build it yourself</a> · <a href="https://github.com/Xarber/MiTV-Home/issues">Report an issue</a></p>
+<p align="center"><a href="https://github.com/Xarber/Aurea-Home/releases/latest"><strong>Download APK</strong></a> · <a href="docs/INSTALL.md">Install & restore</a> · <a href="docs/BUILDING.md">Build it yourself</a> · <a href="https://github.com/Xarber/Aurea-Home/issues">Report an issue</a></p>
 
 ![Stable Android launcher screenshot](docs/assets/home.png)
 
@@ -50,7 +50,7 @@ Release status is reported by GitHub Actions. APK/AAB publication requires succe
 
 ## Settings and diagnostics
 
-About MiTV Home includes a permanent changelog, once-per-update highlights, source/license information and portable Home preferences. Triple-press its version to unlock developer diagnostics temporarily; navigation, backgrounding or 30 seconds without input locks access. Reports exclude credentials, network identity and media titles.
+About Aurea Home includes a permanent changelog, once-per-update highlights, source/license information and portable Home preferences. Triple-press its version to unlock developer diagnostics temporarily; navigation, backgrounding or 30 seconds without input locks access. Reports exclude credentials, network identity and media titles.
 
 ## Compatibility
 
@@ -64,7 +64,7 @@ The phone remote service remains available while Home is in the background, subj
 
 ## Install
 
-Get the APK from [Releases](https://github.com/Xarber/MiTV-Home/releases/latest), install it, and select MiTV Home as your Home app. See [Install & restore](docs/INSTALL.md) for ADB and rollback steps. Keep the original launcher installed.
+Get the APK from [Releases](https://github.com/Xarber/Aurea-Home/releases/latest), install it, and select Aurea Home as your Home app. See [Install & restore](docs/INSTALL.md) for ADB and rollback steps. Keep the original launcher installed.
 
 For the macOS Music compatibility error and its system-audio workaround, see [Apple Music on macOS](docs/APPLE_MUSIC.md). Artwork colors are available when the sender supplies a cover.
 
@@ -80,7 +80,7 @@ Stable APKs use the project's signing key, stored in Actions secrets. Local debu
 
 ## Credits & license
 
-MiTV Home is a modified distribution of [jqssun/android-airplay-server](https://github.com/jqssun/android-airplay-server), extended with the launcher, input customization, phone remote, and integrated audio controls by Xarber, October 2026. Upstream history and notices are retained.
+Aurea Home is a modified distribution of [jqssun/android-airplay-server](https://github.com/jqssun/android-airplay-server), extended with the launcher, input customization, phone remote, and integrated audio controls by Xarber, October 2026. Upstream history and notices are retained.
 
 The receiver includes [UxPlay](https://github.com/FDH2/UxPlay), [FFmpeg](https://ffmpeg.org/), [libplist](https://github.com/libimobiledevice/libplist), [OpenSSL](https://www.openssl.org/), and [Oboe](https://github.com/google/oboe). QR codes use [ZXing](https://github.com/zxing/zxing). See [third-party notices](docs/THIRD_PARTY.md) and the [licensing decision](docs/decisions/0001-licensing-and-platform-scope.md). Original launcher modules use [AGPL-3.0](LICENSE); upstream [GPL-3.0](LICENSES/GPL-3.0.txt) and component notices remain.
 
@@ -88,4 +88,4 @@ Apple, AirPlay, Apple TV, Xbox, PlayStation, Nintendo Switch, Wii U, and other n
 
 ## Run a complete build
 
-Open [Build Aurea — all platforms](https://github.com/Xarber/MiTV-Home/actions/workflows/build.yml), select `testing`, and click **Run workflow**. No extra inputs are needed. The run builds TV and phone APK/AAB packages, iOS unsigned IPA, iOS simulator, web/PWA and source, with a final results summary. See [build and release details](docs/RELEASES.md).
+Open [Build Aurea — all platforms](https://github.com/Xarber/Aurea-Home/actions/workflows/build.yml), select `testing`, and click **Run workflow**. No extra inputs are needed. The run builds TV and phone APK/AAB packages, iOS unsigned IPA, iOS simulator, web/PWA and source, with a final results summary. See [build and release details](docs/RELEASES.md).

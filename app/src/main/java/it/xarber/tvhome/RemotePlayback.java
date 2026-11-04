@@ -65,7 +65,7 @@ final class RemotePlayback {
                 if(bytes.size()<=120000){art="data:image/jpeg;base64,"+Base64.encodeToString(bytes.toByteArray(),Base64.NO_WRAP);artId=session+"-"+(++artVersion);}
             }}
             if(!artId.isEmpty())value.put("artworkId",artId);
-            value.put("colors",palette);
+            value.put("colors",palette).put("dominance",WavePalette.dominance(image));
             float[] measured=waveform();if(measured!=null&&measured.length==6&&value.optString("source").equals("airplay")){org.json.JSONArray bands=new org.json.JSONArray();for(float band:measured)bands.put(Float.isFinite(band)?Math.max(0,Math.min(1,band)):0);value.put("bands",bands);}
             value.put("observedAt",System.currentTimeMillis());return value;
         }catch(Exception ignored){return SystemRemoteController.error("playback_unavailable");}

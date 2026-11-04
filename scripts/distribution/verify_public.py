@@ -4,7 +4,7 @@
 import json
 from pathlib import Path
 from urllib.request import urlopen
-base='https://github.com/Xarber/MiTV-Home/releases/download/sources-v1.0/'
+base='https://github.com/Xarber/Aurea-Home/releases/download/sources-v1.0/'
 for name in ['altsource.json','altsource-beta.json']:
     with urlopen(base+name,timeout=30) as response:data=json.load(response)
     expected=json.loads(Path('distribution-generated',name).read_text());assert data==expected,'Published metadata differs from the generated source'

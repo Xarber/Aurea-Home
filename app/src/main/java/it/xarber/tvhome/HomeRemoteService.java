@@ -29,6 +29,8 @@ public final class HomeRemoteService extends Service {
     private final Handler main=new Handler(Looper.getMainLooper());
     private HomeRemoteServer server;
     private SystemRemoteController system;
+    private LocalAdbController localAdb;
+    private HostedRemote hosted;
     private RemoteCatalog catalog;
     private volatile RemotePlayback playback;
     private volatile String pendingLaunch;
@@ -41,6 +43,7 @@ public final class HomeRemoteService extends Service {
     private static synchronized LegacyHomeActivity home(){LegacyHomeActivity activity=visibleHome.get();return activity!=null&&activity.resumed?activity:null;}
     static RemotePlayback sharedPlayback(){HomeRemoteService service=instance;return service==null?null:service.playback;}
     static HomeRemoteServer server(){HomeRemoteService value=instance;return value==null?null:value.server;}
+    static JSONObject hostedInfo(boolean enable)throws Exception{HomeRemoteService service=instance;if(service==null||service.hosted==null)return SystemRemoteController.error("remote_unavailable");if(enable){service.getSharedPreferences("hosted-remote",0).edit().putBoolean("enabled",true).apply();service.hosted.start();}return new JSONObject().put("url",service.hosted.url()).put("ready",service.hosted.ready());}
     static boolean enabled(Context context){return context.getSharedPreferences("phone_remote",MODE_PRIVATE).getBoolean("enabled",true);}
     static void ensure(Context context){if(!enabled(context))return;try{context.startForegroundService(new Intent(context,HomeRemoteService.class));}catch(Exception failure){android.util.Log.w("MiTVPairing","remote_service_start_failed "+failure.getClass().getSimpleName());}}
     static void enable(Context context){context.getSharedPreferences("phone_remote",MODE_PRIVATE).edit().putBoolean("enabled",true).apply();ensure(context);}
@@ -53,12 +56,12 @@ public final class HomeRemoteService extends Service {
         PendingIntent stop=PendingIntent.getService(this,72,new Intent(this,HomeRemoteService.class).setAction(STOP),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
         Notification notification=new Notification.Builder(this,CHANNEL).setSmallIcon(io.github.jqssun.airplay.R.drawable.ic_launcher_monochrome).setContentTitle("Aurea Home").setContentText("Phone remote available").setContentIntent(content).setOngoing(true).addAction(new Notification.Action.Builder(null,"Stop remote",stop).build()).build();
         if(Build.VERSION.SDK_INT>=29)startForeground(1843,notification,ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE);else startForeground(1843,notification);
-        catalog=new RemoteCatalog(this);system=new SystemRemoteController(this);playback=new RemotePlayback(this);playback.start();
+        catalog=new RemoteCatalog(this);system=new SystemRemoteController(this);localAdb=new LocalAdbController(this);playback=new RemotePlayback(this);playback.start();
         try{
             server=new HomeRemoteServer(this,new HomeRemoteServer.Commands(){
                 @Override public void run(String event){main.post(()->{if(event.equals("voice-cancel")){if(system!=null)system.cancelVoice();return;}if(event.equals("paired"))playback.clients(true);if(TVPlatform.foreground()){TVPlatform.remoteEvent(event,server);return;}LegacyHomeActivity activity=home();if(activity==null)return;if(event.equals("pair-request"))activity.showRemoteCode();else if(event.equals("paired"))activity.remotePaired();});}
                 @Override public JSONObject request(String operation,JSONObject payload)throws Exception{return handle(operation,payload);}
-            });server.start();main.post(monitor);
+            });server.start();hosted=new HostedRemote(this,server);if(getSharedPreferences("hosted-remote",0).getBoolean("enabled",false))hosted.start();main.post(monitor);
         }catch(Exception failure){android.util.Log.w("MiTVPairing","remote_service_unavailable "+failure.getClass().getSimpleName());server=null;stopSelf();}
     }
     @Override public int onStartCommand(Intent intent,int flags,int startId){
@@ -66,13 +69,14 @@ public final class HomeRemoteService extends Service {
         return START_STICKY;
     }
     @Override public IBinder onBind(Intent intent){return null;}
-    @Override public void onDestroy(){main.removeCallbacks(monitor);if(server!=null)server.stop();if(playback!=null)playback.close();if(system!=null){SystemRemoteController closing=system;new Thread(closing::close,"AureaRemoteClose").start();}server=null;if(instance==this)instance=null;super.onDestroy();}
+    @Override public void onDestroy(){main.removeCallbacks(monitor);if(server!=null)server.stop();if(localAdb!=null)new Thread(localAdb::close,"AureaAdbClose").start();if(hosted!=null)hosted.close();if(playback!=null)playback.close();if(system!=null){SystemRemoteController closing=system;new Thread(closing::close,"AureaRemoteClose").start();}server=null;if(instance==this)instance=null;super.onDestroy();}
     private JSONObject handle(String operation,JSONObject payload)throws Exception{
         main.post(()->{if(playback!=null)playback.clients(server!=null&&server.hasActiveRemote());});
-        if(operation.equals("state"))return new JSONObject().put("schema",1).put("name",DeviceName.read(this)).put("observedAt",System.currentTimeMillis()).put("homeActive",home()!=null||TVPlatform.foreground()).put("systemRemote",system.state()).put("music",playback.state()).put("wallpaper",wallpaper());
+        if(operation.equals("state"))return new JSONObject().put("schema",1).put("name",DeviceName.read(this)).put("observedAt",System.currentTimeMillis()).put("homeActive",home()!=null||TVPlatform.foreground()).put("systemRemote",systemState()).put("localAdb",localAdb.state()).put("music",playback.state()).put("wallpaper",wallpaper());
         if(operation.equals("catalog"))return catalog.read();
         if(operation.equals("icon"))return catalog.icon(payload.optString("id"));
         if(operation.equals("artwork")){playback.state();JSONObject art=playback.artwork();return payload.optString("id").equals(art.optString("id"))?art:SystemRemoteController.error("source_changed");}
+        if(operation.equals("local_adb"))return payload.optBoolean("enabled")?localAdb.configure(true):localAdb.configure(false);
         if(operation.equals("system_connect"))return system.request("connect",new JSONObject());
         if(operation.equals("system_pair_begin"))return system.request("pair_begin",new JSONObject());
         if(operation.equals("system_pair_finish"))return system.request("pair_finish",new JSONObject().put("pin",payload.optString("pin")));
@@ -89,10 +93,12 @@ public final class HomeRemoteService extends Service {
         if(operation.equals("key"))return key(payload.optString("command"));
         return SystemRemoteController.error("unsupported");
     }
+    private JSONObject systemState()throws Exception{JSONObject value=system.state();value.put("voiceReady",value.optBoolean("ready"));if(localAdb.enabled()){JSONObject adb=localAdb.state();value.put("ready",adb.optBoolean("ready")).put("backend","local-adb").put("status",adb.optString("status"));}return value;}
     private JSONObject wallpaper()throws Exception{android.content.SharedPreferences preferences=getSharedPreferences("it.xarber.tvhome.MainActivity",0);return new JSONObject().put("id",preferences.getString("wallpaper","classic")).put("motion",preferences.getBoolean("wallpaper-motion",false)).put("musicTint",preferences.getBoolean("music-wallpaper-tint",false));}
     private JSONObject key(String command)throws Exception{
         if(!RemoteKeys.supported(command))return SystemRemoteController.error("unsupported");
         if(command.equals("mute")){AudioManager audio=getSystemService(AudioManager.class);audio.adjustStreamVolume(AudioManager.STREAM_MUSIC,AudioManager.ADJUST_TOGGLE_MUTE,0);return accepted();}
+        if(localAdb.enabled()&&LocalAdbController.keyCode(command)!=null&&(RemoteKeys.systemOnly(command)||!TVPlatform.foreground()&&home()==null))return localAdb.key(command);
         if(RemoteKeys.systemOnly(command))return system.state().optBoolean("paired")?system.request("key",new JSONObject().put("command",command)):SystemRemoteController.error("system_pairing_required");
         if(TVPlatform.foreground())return TVPlatform.remoteKey(command);
         if(home()!=null)return onMain(()->{LegacyHomeActivity activity=home();if(activity==null)return SystemRemoteController.error("home_changed");activity.remoteCommand(command);return accepted();});

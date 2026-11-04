@@ -100,3 +100,13 @@ state `systemRemote.backend` is `android-tls` in the TV host or `python-tls` in 
 protocol tests. Neither backend selection nor saved pairing alone means ready.
 `system_tls_failed` denotes native transport failure; authentication rejection
 remains separate. See [system transport](features/SYSTEM_REMOTE_TRANSPORT.md).
+
+### 2.1 remote additions
+
+Authenticated `POST /api/system/local-adb` accepts only `{enabled:boolean}` and
+returns local bridge status. `state.localAdb` reports enabled/ready/status;
+`systemRemote.voiceReady` is separate from button readiness, and backend can be
+`local-adb` or client-side `native-client`. `key` adds `power` (Android KEYCODE_POWER).
+Music includes `dominance` (0.5–0.92), calculated from sampled cover area and shared
+by all wallpaper clients. Native phone system pairing/control/voice use their
+direct Remote Service connection instead of these TV relay routes.

@@ -41,3 +41,7 @@ See [phone remote](features/PHONE_REMOTE.md), [PWA](features/PWA.md), and [brand
 - [System remote TLS and adaptive handset](features/SYSTEM_REMOTE_TRANSPORT.md)
 - [Remote transport, handset and Classic restoration report](reports/2026-10-29-system-remote-handset.md)
 - [Compact remote, microphone lifecycle and CI recovery](reports/2026-10-29-compact-remote.md)
+
+- [Direct native remote](features/DIRECT_NATIVE_REMOTE.md)
+- [Optional local debugging buttons](features/LOCAL_ADB_REMOTE.md)
+- [Hosted WebRTC remote and demo](features/HOSTED_REMOTE.md)

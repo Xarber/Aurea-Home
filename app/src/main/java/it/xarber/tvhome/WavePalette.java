@@ -2,4 +2,20 @@
 package it.xarber.tvhome;
 import android.graphics.Bitmap;
 import android.graphics.Color;
-final class WavePalette {static int[] from(Bitmap artwork){int[] wavePalette=new int[]{0xffe6eaf0,0xff929aa8};if(artwork==null||artwork.isRecycled())return wavePalette;long[] red=new long[64],green=new long[64],blue=new long[64];int[] votes=new int[64];for(int y=0;y<12;y++)for(int x=0;x<12;x++){int color=artwork.getPixel(Math.min(artwork.getWidth()-1,(2*x+1)*artwork.getWidth()/24),Math.min(artwork.getHeight()-1,(2*y+1)*artwork.getHeight()/24));if(Color.alpha(color)<128)continue;int r=Color.red(color),g=Color.green(color),b=Color.blue(color),bin=((r>>6)<<4)|((g>>6)<<2)|(b>>6);votes[bin]++;red[bin]+=r;green[bin]+=g;blue[bin]+=b;}int first=-1,second=-1;for(int i=0;i<64;i++)if(votes[i]>0&&(first<0||votes[i]>votes[first]))first=i;if(first<0)return wavePalette;int r1=(int)(red[first]/votes[first]),g1=(int)(green[first]/votes[first]),b1=(int)(blue[first]/votes[first]);double best=0;for(int i=0;i<64;i++)if(i!=first&&votes[i]>0){double r=red[i]/(double)votes[i]-r1,g=green[i]/(double)votes[i]-g1,b=blue[i]/(double)votes[i]-b1,distance=r*r+g*g+b*b,score=votes[i]*Math.sqrt(distance);if(distance>3500&&score>best){best=score;second=i;}}if(second<0)second=first;float[] hsv=new float[3];int[] bins={first,second};for(int i=0;i<2;i++){int bin=bins[i],color=Color.rgb((int)(red[bin]/votes[bin]),(int)(green[bin]/votes[bin]),(int)(blue[bin]/votes[bin]));Color.colorToHSV(color,hsv);if(hsv[1]>.1f)hsv[1]=Math.min(.95f,Math.max(.6f,hsv[1]));hsv[2]=Math.max(i==0?.95f:.75f,hsv[2]);if(first==second&&i==1)hsv[2]*=.7f;wavePalette[i]=Color.HSVToColor(hsv);}return wavePalette;}}
+/** One palette for Home, activities and remote; dominance reflects sampled cover area. */
+final class WavePalette {
+    private static Bitmap previous;private static int[] colors={0xffe6eaf0,0xff929aa8};private static double weight=.72;
+    static synchronized int[] from(Bitmap artwork){update(artwork);return colors.clone();}
+    static synchronized double dominance(Bitmap artwork){update(artwork);return weight;}
+    private static int distance(int a,int b){int r=Color.red(a)-Color.red(b),g=Color.green(a)-Color.green(b),bl=Color.blue(a)-Color.blue(b);return r*r+g*g+bl*bl;}
+    private static void update(Bitmap artwork){if(artwork==previous)return;previous=artwork;colors=new int[]{0xffe6eaf0,0xff929aa8};weight=.72;if(artwork==null||artwork.isRecycled())return;
+        long[] red=new long[64],green=new long[64],blue=new long[64];int[] votes=new int[64],samples=new int[576];int count=0;
+        for(int y=0;y<24;y++)for(int x=0;x<24;x++){int c=artwork.getPixel(Math.min(artwork.getWidth()-1,(2*x+1)*artwork.getWidth()/48),Math.min(artwork.getHeight()-1,(2*y+1)*artwork.getHeight()/48));if(Color.alpha(c)<128)continue;int r=Color.red(c),g=Color.green(c),b=Color.blue(c),bin=((r>>6)<<4)|((g>>6)<<2)|(b>>6);votes[bin]++;red[bin]+=r;green[bin]+=g;blue[bin]+=b;samples[count++]=c;}
+        int first=-1;for(int i=0;i<64;i++)if(votes[i]>0&&(first<0||votes[i]>votes[first]))first=i;if(first<0)return;
+        int[] average=new int[64];for(int i=0;i<64;i++)if(votes[i]>0)average[i]=Color.rgb((int)(red[i]/votes[i]),(int)(green[i]/votes[i]),(int)(blue[i]/votes[i]));
+        int second=first;double best=0;for(int i=0;i<64;i++)if(votes[i]>0){int d=distance(average[first],average[i]);double score=votes[i]*Math.sqrt(d);if(d>3500&&score>best){best=score;second=i;}}
+        int primary=0;for(int i=0;i<count;i++)if(distance(samples[i],average[first])<=distance(samples[i],average[second]))primary++;
+        weight=first==second?.92:Math.max(.5,Math.min(.92,primary/(double)Math.max(1,count)));
+        colors[0]=average[first];colors[1]=average[second];
+    }
+}

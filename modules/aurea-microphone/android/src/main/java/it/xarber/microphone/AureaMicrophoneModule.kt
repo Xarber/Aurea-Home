@@ -29,6 +29,7 @@ class AureaMicrophoneModule : Module() {
   override fun definition() = ModuleDefinition {
     Name("AureaMicrophone")
     Events("chunk", "stopped")
+    AsyncFunction("randomSeed") { android.util.Base64.encodeToString(ByteArray(64).also(java.security.SecureRandom()::nextBytes), android.util.Base64.NO_WRAP) }
     AsyncFunction("start") { id: String, publicKey: String, _: String ->
       synchronized(this@AureaMicrophoneModule) {
         check(worker == null) { "microphone_busy" }

@@ -2,6 +2,14 @@
 
 Generated from `app/src/main/assets/release-history.json`. Legacy versions reflect repository history; dates describe implementation, not a verified public release.
 
+## 2.1.0 — 2026-11-04
+
+Direct native system remote, optional browser ADB controls and hosted WebRTC remote.
+
+### Fixes & Improvements
+
+Add power, larger remote layout, desktop key passthrough, touch page swipes, shared dominant artwork colors and a seamless rendered Classic wallpaper. Preserve the legacy recovery launcher.
+
 ## 2.0.8 — 2026-10-29
 
 Cleaner remote controls with layout and touchpad preferences in Settings.

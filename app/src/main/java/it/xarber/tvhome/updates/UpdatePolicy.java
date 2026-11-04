@@ -7,7 +7,7 @@ import java.util.Locale;
 
 /** Platform-independent trust/channel/version rules, shared with adversarial host checks. */
 public final class UpdatePolicy {
-    public static final String REPOSITORY = "Xarber/MiTV-Home";
+    public static final String REPOSITORY = "Xarber/Aurea-Home";
     public static boolean accepts(long installed, long offered, String channel, String releaseChannel,
             String variant, String releaseVariant, int sdk, int minimumSdk, String signer, String expectedSigner) {
         return offered > installed && offered <= 2_100_000_000L && minimumSdk >= 26 && minimumSdk <= sdk

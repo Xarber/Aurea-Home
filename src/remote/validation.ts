@@ -2,6 +2,7 @@
 import type {RemoteCatalog,RemoteMusic,RemoteState,RemoteTarget} from './types';
 export class RemoteError extends Error {readonly code:string;constructor(code:string){super(code);this.code=code;}}
 export function localAddress(raw:string):string{
+ const peer=/^aurea:\/\/([a-f0-9-]{36})$/i.exec(raw.trim())??/^https:\/\/aurea\.xcenter\.it\/#tv=([a-f0-9-]{36})$/i.exec(raw.trim());if(peer)return 'aurea://'+peer[1]!.toLowerCase();
  let url:URL;try{url=new URL(raw.includes('://')?raw:`http://${raw}`);}catch{throw new RemoteError('invalid_address');}
  if(url.username||url.password||!['http:','https:'].includes(url.protocol))throw new RemoteError('invalid_address');
  const pieces=url.hostname.split('.');const values=pieces.map(Number);
@@ -18,7 +19,9 @@ export function parseState(raw:Record<string,unknown>):RemoteState{
  const wallpaper=raw.wallpaper as Record<string,unknown>|undefined;if(wallpaper&&text(wallpaper.id,64))raw.wallpaper={id:wallpaper.id,motion:wallpaper.motion===true,musicTint:wallpaper.musicTint===true};else delete raw.wallpaper;
  const system=raw.systemRemote as Record<string,unknown>|undefined,music=raw.music as Record<string,unknown>|undefined;
  if(!system||typeof system.paired!=='boolean'||!text(system.status,64)||!music||typeof music.active!=='boolean')throw new RemoteError('invalid_response');
- if(system.backend!==undefined&&!['android-tls','python-tls'].includes(String(system.backend)))delete system.backend;
+ if(system.backend!==undefined&&!['android-tls','python-tls','local-adb','native-client'].includes(String(system.backend)))delete system.backend;
+ if(system.voiceReady!==undefined&&typeof system.voiceReady!=='boolean')delete system.voiceReady;
+ if(typeof music.dominance!=='number'||!Number.isFinite(music.dominance)||music.dominance<.5||music.dominance>1)delete music.dominance;
  if(music.activityVisible!==undefined&&typeof music.activityVisible!=='boolean')delete music.activityVisible;
  if(music.colors!==undefined&&(!Array.isArray(music.colors)||music.colors.length!==2||!music.colors.every(value=>typeof value==='string'&&/^#[0-9a-f]{6}$/i.test(value))))delete music.colors;
  if(music.bands!==undefined&&(!Array.isArray(music.bands)||music.bands.length!==6||!music.bands.every(value=>finite(value)&&Number(value)<=1)))delete music.bands;

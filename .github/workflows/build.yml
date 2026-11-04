@@ -226,7 +226,7 @@ jobs:
           CODE="$(python3 -c 'import json; print(json.load(open("app/src/main/assets/build-metadata.json"))["code"])')"
           SHORT_SHA="${GITHUB_SHA:0:7}"
           if [ "$PACKAGE_FORMAT" = apk ]; then
-            FILE="dist/MiTV-Home-v${VERSION}-android-universal-${MITV_BUILD_CHANNEL}-github-extended-${SHORT_SHA}.apk"
+            FILE="dist/Aurea-Home-v${VERSION}-android-universal-${MITV_BUILD_CHANNEL}-github-extended-${SHORT_SHA}.apk"
             cp app/build/outputs/apk/release/app-release.apk "$FILE"
             "$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --verbose "$FILE"
             "$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --print-certs "$FILE" > "$RUNNER_TEMP/apk-signers.txt"
@@ -237,7 +237,7 @@ jobs:
             grep -F "versionName='$VERSION'" "$RUNNER_TEMP/badging.txt"
             ! grep -q 'application-debuggable' "$RUNNER_TEMP/badging.txt"
           else
-            FILE="dist/MiTV-Home-v${VERSION}-android-${MITV_BUILD_CHANNEL}-github-extended-${SHORT_SHA}.aab"
+            FILE="dist/Aurea-Home-v${VERSION}-android-${MITV_BUILD_CHANNEL}-github-extended-${SHORT_SHA}.aab"
             cp app/build/outputs/bundle/release/app-release.aab "$FILE"
             jarsigner -verify "$FILE" | tee "$RUNNER_TEMP/aab-signature.txt"
             grep -q 'jar verified' "$RUNNER_TEMP/aab-signature.txt"
@@ -250,7 +250,7 @@ jobs:
           python3 scripts/release.py validate --file "$FILE" --kind "$PACKAGE_FORMAT"
       - uses: actions/upload-artifact@v5
         with:
-          name: ${{ matrix.target == 'remote' && 'Aurea-Remote' || 'MiTV-Home' }}-${{ github.ref_name }}-android-${{ matrix.format }}-${{ github.sha }}
+          name: ${{ matrix.target == 'remote' && 'Aurea-Remote' || 'Aurea-Home' }}-${{ github.ref_name }}-android-${{ matrix.format }}-${{ github.sha }}
           path: ${{ matrix.target == 'remote' && 'phone-dist/' || 'dist/' }}
           if-no-files-found: error
           retention-days: 30
@@ -282,12 +282,12 @@ jobs:
           submodules: recursive
       - run: |
           mkdir -p dist
-          python3 scripts/source_archive.py "dist/MiTV-Home-source-${GITHUB_SHA:0:7}.tar.gz"
+          python3 scripts/source_archive.py "dist/Aurea-Home-source-${GITHUB_SHA:0:7}.tar.gz"
           cd dist
           sha256sum *.tar.gz > SOURCE-SHA256SUMS.txt
       - uses: actions/upload-artifact@v5
         with:
-          name: MiTV-Home-${{ github.ref_name }}-source-${{ github.sha }}
+          name: Aurea-Home-${{ github.ref_name }}-source-${{ github.sha }}
           path: dist/
           if-no-files-found: error
           retention-days: 30
@@ -305,7 +305,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/download-artifact@v6
         with:
-          pattern: MiTV-Home-${{ github.ref_name }}-*-${{ github.sha }}
+          pattern: Aurea-Home-${{ github.ref_name }}-*-${{ github.sha }}
           path: dist
           merge-multiple: true
       - uses: actions/download-artifact@v6

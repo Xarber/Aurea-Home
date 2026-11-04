@@ -29,7 +29,7 @@ The promotion sequence stays `testing → beta → main`. Testing publishes no r
 
 Beta tags are `vVERSION-beta.CODE.SHORTSHA`; stable tags are `vVERSION`. Publication creates a draft, attaches the complete validated collection, checks asset presence, then publishes. Existing release tags cannot be silently overwritten. Packages retain established identifiers and signing continuity; no new store or hosting destination is configured.
 
-The TV updater manifest references only the TV APK. TV filenames retain their compatible `MiTV-Home-...-android-universal` prefix. Phone APK names use `android-phone-universal`, preventing existing Obtainium TV filters from selecting the companion APK. Companion/web assets remain separate during validation and are included in the release checksums.
+The TV updater manifest references only the TV APK. TV filenames retain their compatible `Aurea-Home-...-android-universal` prefix. Phone APK names use `android-phone-universal`, preventing existing Obtainium TV filters from selecting the companion APK. Companion/web assets remain separate during validation and are included in the release checksums.
 
 Original launcher sources remain AGPL-3.0-only, with upstream licenses preserved. Corresponding-source archives include pinned native submodule source and exclude Git internals, build output and secrets. No Play/App Store submission or new AltSource endpoint is created.
 

@@ -63,7 +63,7 @@ public final class TVPlatform {
         main.post(this::notifyUpdate);JSONObject result=new JSONObject().put("schema",1).put("catalog",catalog.read(refresh));
         JSONObject preferences=new JSONObject().put("dock",catalog.dock()).put("wallpaper",prefs.getString("wallpaper","classic")).put("motion",prefs.getBoolean("wallpaper-motion",false)).put("glass",prefs.getBoolean("activity-background",true)).put("blur",prefs.getBoolean("blur-enabled",true)).put("musicTint",prefs.getBoolean("music-wallpaper-tint",false)).put("language",AppLanguage.code(context));
         AudioManager audio=context.getSystemService(AudioManager.class);int maximum=audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC);int volume=Math.round(100f*audio.getStreamVolume(AudioManager.STREAM_MUSIC)/Math.max(1,maximum));
-        JSONObject music=receiverPlayback().state();Bitmap cover=receiverPlayback().cover();if(cover!=paletteArtwork){paletteArtwork=cover;palette=new JSONArray();for(int color:WavePalette.from(cover))palette.put(String.format(java.util.Locale.US,"#%06x",color&0xffffff));}music.put("colors",palette);HomeRemoteServer remote=HomeRemoteService.server();
+        JSONObject music=receiverPlayback().state();Bitmap cover=receiverPlayback().cover();if(cover!=paletteArtwork){paletteArtwork=cover;palette=new JSONArray();for(int color:WavePalette.from(cover))palette.put(String.format(java.util.Locale.US,"#%06x",color&0xffffff));}music.put("colors",palette).put("dominance",WavePalette.dominance(cover));HomeRemoteServer remote=HomeRemoteService.server();
         result.put("preferences",preferences).put("music",music).put("network",network()).put("volume",volume).put("remoteConnected",remote!=null&&remote.hasActiveRemote()).put("paired",pairedState()).put("updates",updateState())
           .put("releasePending",ReleaseHistory.previousVersion(context)<BuildConfig.VERSION_CODE).put("build",new JSONObject().put("version",BuildConfig.VERSION_NAME).put("code",BuildConfig.VERSION_CODE).put("commit",BuildConfig.SOURCE_COMMIT).put("channel",BuildConfig.BUILD_CHANNEL));
         return result;
@@ -95,6 +95,7 @@ public final class TVPlatform {
         case "startReceiver":main.post(this::ensureReceiver);return safe("accepted",true);
         case "backgroundAccess":main.post(()->HomeForeground.settings(context));return safe("accepted",true);
         case "remote":HomeRemoteService.enable(context);return remoteInfo();
+        case "hostedRemote":return HomeRemoteService.hostedInfo(true);
         case "revokeRemotes":HomeRemoteServer remote=HomeRemoteService.server();if(remote!=null)remote.revokeAll();return safe("accepted",true);
         case "exportPreferences":return safe("text",HomePreferences.export(context,prefs));
         case "restorePreferences":HomePreferences.restore(context,prefs,data.getString("text"));return snapshot(true);

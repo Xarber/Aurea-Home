@@ -18,7 +18,7 @@ import time
 from playback_diagnostics import Recorder
 from system_remote_tls import NativeTlsError
 
-KEYS={'up':'DPAD_UP','down':'DPAD_DOWN','left':'DPAD_LEFT','right':'DPAD_RIGHT',
+KEYS={'power':'POWER','up':'DPAD_UP','down':'DPAD_DOWN','left':'DPAD_LEFT','right':'DPAD_RIGHT',
       'ok':'DPAD_CENTER','back':'BACK','home':'HOME','volumeup':'VOLUME_UP',
       'volumedown':'VOLUME_DOWN','playpause':'MEDIA_PLAY_PAUSE','next':'MEDIA_NEXT','previous':'MEDIA_PREVIOUS','menu':'MENU','mute':'VOLUME_MUTE',
       'channelup':'CHANNEL_UP','channeldown':'CHANNEL_DOWN','rewind':'MEDIA_REWIND','fastforward':'MEDIA_FAST_FORWARD',

@@ -1,0 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {bytes,fields,integer,join,keyCodes,nested,readVarint,string,varint} from '../../src/remote/system/wire.ts';
+test('Remote v2 handles multibyte envelope tags and binary PCM without text coercion',()=>{const pcm=new Uint8Array([0,255,128,0]);const frame=bytes(31,join(integer(1,7),bytes(2,pcm)));assert.deepEqual(nested(fields(frame),31).get(2),pcm);const packet=join(varint(frame.length),frame),head=readVarint(packet)!;assert.equal(head[0],frame.length);assert.deepEqual(fields(packet.slice(head[1])),fields(frame));});
+test('Polo request and remote key injection use the official field numbers',()=>{const request=fields(join(integer(1,2),integer(2,200),bytes(10,join(string(1,'atvremote'),string(2,'Aurea Remote')))));assert.equal(request.get(1),2);assert.equal(request.get(2),200);assert.equal(new TextDecoder().decode(nested(request,10).get(1) as Uint8Array),'atvremote');const key=nested(fields(bytes(10,join(integer(1,keyCodes.power!),integer(2,3)))),10);assert.equal(key.get(1),26);assert.equal(key.get(2),3);});
+test('malformed protobuf lengths and unsupported wire types are rejected',()=>{for(const data of [[10,255,255,255,255,255],[10,3,0],[15],[128,128,128,128,128]])assert.throws(()=>fields(Uint8Array.from(data)));assert.equal(readVarint(Uint8Array.from([128])),undefined);});

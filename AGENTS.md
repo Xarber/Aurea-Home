@@ -1,4 +1,4 @@
-# MiTV Home development
+# Aurea Home development
 
 Start with [docs/INDEX.md](docs/INDEX.md). Follow the user's Universal Application Development Standards; this file adds project-specific context.
 

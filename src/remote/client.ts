@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import type {Transport,RemoteSnapshot,Session,RemoteKey,MediaAction} from './types';
 import {parseState,parseCatalog,safeImage,retryDelay,RemoteError} from './validation.ts';
+export interface DirectSystem {target(address:string):Promise<void>;state():{paired:boolean;ready:boolean;voiceReady:boolean;status:string;backend:'native-client'};subscribe(listener:()=>void):()=>void;connect():Promise<void>;pairBegin():Promise<Record<string,unknown>>;pairFinish(pin:string):Promise<Record<string,unknown>>;key(command:RemoteKey):Promise<Record<string,unknown>>;voice(operation:string,payload:Record<string,unknown>):Promise<Record<string,unknown>>;suspend():void;close():void;}
 export interface TrustStore {save(session:Session):Promise<void>;forget(address?:string):Promise<void>;}
 /** Read-only polls reconnect; user commands are never automatically replayed. */
 export class RemoteClient {
@@ -16,13 +17,15 @@ export class RemoteClient {
  private timer?:ReturnType<typeof setTimeout>;
  private requests=new Set<AbortController>();
  private readonly trust:TrustStore;
- constructor(trust:TrustStore){this.trust=trust;}
+ private direct?:DirectSystem;
+ constructor(trust:TrustStore,direct?:DirectSystem){this.trust=trust;this.direct=direct;direct?.subscribe(()=>{if(!this.fixture&&this.snapshot.device)this.update({device:{...this.snapshot.device,systemRemote:direct.state()}});});}
  subscribe=(listener:()=>void)=>{this.listeners.add(listener);return()=>{this.listeners.delete(listener);};};
  private update(value:Partial<RemoteSnapshot>){this.snapshot={...this.snapshot,...value};for(const listener of this.listeners)listener();}
  private cancel(){clearTimeout(this.timer);for(const controller of this.requests)controller.abort();this.requests.clear();this.polling=false;this.generation++;this.iconQueue=[];this.iconsLoading.clear();this.lastArt=undefined;}
  connect(transport:Transport,session:Session,fixture=false){
   this.cancel();this.transport?.close?.();this.transport=transport;this.session=session;this.fixture=fixture;this.active=true;this.attempts=0;
   this.update({status:'connecting',device:undefined,catalog:undefined,artwork:undefined,icons:{},error:undefined,systemPairing:false,systemBusy:false,pairingSuccess:undefined,lastReceived:undefined});
+  if(!fixture)void this.direct?.target(session.address).catch(()=>{});else this.direct?.close();
   void this.poll();
  }
  async beginPair(transport:Transport,address:string){
@@ -53,6 +56,7 @@ export class RemoteClient {
   if(this.fixture||this.snapshot.device?.provenance==='simulated')throw new RemoteError('voice_unavailable_in_preview');
   if(this.snapshot.status!=='connected'||!this.transport||!this.session?.token)throw new RemoteError('not_connected');
   const transport=this.transport,token=this.session.token,generation=this.generation;
+  if(this.direct){const direct=this.direct;return async(operation:'voice_start'|'voice_chunk'|'voice_end',payload:Record<string,unknown>)=>{if(generation!==this.generation||!this.active)throw new RemoteError('disconnected');try{return await direct.voice(operation,payload);}catch(error){throw new RemoteError(error instanceof Error?error.message:'voice_unavailable');}};}
   return async(operation:'voice_start'|'voice_chunk'|'voice_end',payload:Record<string,unknown>)=>{
    if(operation!=='voice_end'&&(generation!==this.generation||!this.active))throw new RemoteError('disconnected');
    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),operation==='voice_start'?25000:5000);
@@ -75,6 +79,7 @@ export class RemoteClient {
   try{
    await this.verifyIdentity();if(generation!==this.generation)return;
    const device=parseState(await this.rpc('state',{}));if(this.session?.id&&device.id!==this.session.id)throw new RemoteError('device_changed');if(generation!==this.generation)return;
+   if(!this.fixture&&this.direct){device.systemRemote=this.direct.state();if(device.systemRemote.paired&&!device.systemRemote.ready)void this.direct.connect().catch(()=>{});}
    this.attempts=0;this.update({status:'connected',device,lastReceived:Date.now(),error:undefined});if(!this.fixture&&this.session&&this.session.name!==device.name){this.session={...this.session,name:device.name};await this.trust.save(this.session);}
    if(!this.snapshot.catalog){const catalog=parseCatalog(await this.rpc('catalog',{}));if(generation!==this.generation)return;this.update({catalog});}
    const artworkId=device.music.artworkId;
@@ -96,18 +101,27 @@ export class RemoteClient {
   try{await this.rpc(operation,payload,18000);if(generation===this.generation)this.refresh();}
   catch(error){if(generation!==this.generation)return;const code=this.code(error);this.update({error:code});if(code==='auth_required')this.update({status:'auth_required'});else if(['connection_failed','AbortError','timeout'].includes(code)){this.update({status:'reconnecting'});this.schedule(retryDelay(this.attempts++));}else this.refresh();}
  }
- key(command:RemoteKey){return this.action('key',{command});}
+ async key(command:RemoteKey){
+  const global=['power','channelup','channeldown','rewind','fastforward','stop','voice','red','green','yellow','blue'];
+  if(this.direct&&!this.fixture&&this.snapshot.status==='connected'&&command!=='control'&&(!this.snapshot.device?.homeActive||global.includes(command))){try{await this.direct.key(command);}catch(error){this.update({error:error instanceof Error?error.message:'system_connection_failed'});}return;}
+  return this.action('key',{command});
+ }
  launch(id:string){return this.action('launch',{id});}
  media(action:MediaAction,value?:number){return this.action('media',{source:this.snapshot.device?.music.source,action,...(value===undefined?{}:{value})});}
+ async localAdb(enabled:boolean){
+  if(this.fixture||this.snapshot.device?.provenance==='simulated'){this.update({error:'not_supported_demo'});return;}
+  if(this.snapshot.systemBusy)return;const generation=this.generation;this.update({systemBusy:true});
+  try{await this.rpc('local_adb',{enabled},16000);if(generation===this.generation){this.update({error:undefined});this.refresh();}}catch(error){if(generation===this.generation)this.update({error:this.code(error)});}finally{if(generation===this.generation)this.update({systemBusy:false});}
+ }
  async systemConnect(){
   const generation=this.generation;
-  try{await this.rpc('system_connect',{},25000);if(generation===this.generation){this.update({error:undefined});this.refresh();}}
+  try{if(this.direct&&!this.fixture)await this.direct.connect();else await this.rpc('system_connect',{},25000);if(generation===this.generation){this.update({error:undefined});this.refresh();}}
   catch(error){if(generation===this.generation)this.update({error:this.code(error)});}
  }
  async systemPair(pin?:string){
   if(this.snapshot.systemBusy)return;
   const generation=this.generation;this.update({systemBusy:true});
-  try{if(pin!==undefined&&!/^[A-Fa-f0-9]{6}$/.test(pin))throw new RemoteError('invalid_pin');const result=await this.rpc(pin===undefined?'system_pair_begin':'system_pair_finish',pin===undefined?{}:{pin},35000);if(pin!==undefined&&result.ready!==true&&result.paired!==true)throw new RemoteError('system_pairing_required');if(generation===this.generation){this.update({systemPairing:pin===undefined,error:undefined,pairingSuccess:pin===undefined?undefined:'system'});this.refresh();}}
+  try{if(pin!==undefined&&!/^[A-Fa-f0-9]{6}$/.test(pin))throw new RemoteError('invalid_pin');const result=this.direct&&!this.fixture?(pin===undefined?await this.direct.pairBegin():await this.direct.pairFinish(pin)):await this.rpc(pin===undefined?'system_pair_begin':'system_pair_finish',pin===undefined?{}:{pin},35000);if(pin!==undefined&&result.ready!==true&&result.paired!==true)throw new RemoteError('system_pairing_required');if(generation===this.generation){this.update({systemPairing:pin===undefined,error:undefined,pairingSuccess:pin===undefined?undefined:'system'});this.refresh();}}
   catch(error){if(generation===this.generation)this.update({error:this.code(error)});}
   finally{if(generation===this.generation)this.update({systemBusy:false});}
  }
@@ -117,7 +131,7 @@ export class RemoteClient {
  private iconWorkers=0;
  icon(id:string){if(this.snapshot.icons[id]||this.iconsLoading.has(id)||this.snapshot.status!=='connected')return;this.iconsLoading.add(id);this.iconQueue.push(id);this.pumpIcons();}
  private pumpIcons(){while(this.active&&this.transport&&this.snapshot.status==='connected'&&this.iconWorkers<2&&this.iconQueue.length){const id=this.iconQueue.shift()!,generation=this.generation;this.iconWorkers++;void this.rpc('icon',{id}).then(result=>{const image=safeImage(result.image);if(image&&generation===this.generation)this.update({icons:{...this.snapshot.icons,[id]:image}});}).catch(()=>{}).finally(()=>{this.iconWorkers--;this.iconsLoading.delete(id);this.pumpIcons();});}}
- setActive(active:boolean){if(this.active===active)return;this.active=active;if(!active){clearTimeout(this.timer);for(const controller of this.requests)controller.abort();this.requests.clear();this.polling=false;this.generation++;if(this.session?.token)void this.rpc('presence',{disconnect:true},1500).catch(()=>{});}else if(this.session?.token){this.update({status:'connecting'});this.refresh();}}
+ setActive(active:boolean){if(this.active===active)return;this.active=active;if(!active){this.direct?.suspend();clearTimeout(this.timer);for(const controller of this.requests)controller.abort();this.requests.clear();this.polling=false;this.generation++;if(this.session?.token)void this.rpc('presence',{disconnect:true},1500).catch(()=>{});}else if(this.session?.token){this.update({status:'connecting'});this.refresh();}}
  async disconnect(forget=false){
   const session=this.session,transport=this.transport;this.cancel();const generation=this.generation;this.active=false;this.transport=undefined;this.session=undefined;
   this.update({status:'disconnected',device:undefined,catalog:undefined,artwork:undefined,icons:{},error:undefined,systemPairing:false,systemBusy:false,pairingSuccess:undefined});
@@ -126,7 +140,7 @@ export class RemoteClient {
    try{await transport?.rpc('revoke',{},session.token,controller.signal);}catch{/* Local forgetting remains possible while a TV is offline. */}finally{clearTimeout(timer);}
    try{await this.trust.forget(session.address);}catch{if(generation===this.generation)this.update({error:'storage_failed'});}
   }
-  transport?.close?.();
+  this.direct?.close();transport?.close?.();
  }
- private code(error:unknown){return error instanceof RemoteError?error.code:error instanceof Error&&error.name==='AbortError'?'timeout':'connection_failed';}
+ private code(error:unknown){return error instanceof RemoteError?error.code:error instanceof Error&&error.name==='AbortError'?'timeout':error instanceof Error&&['system_connection_failed','system_pairing_required','invalid_pin','disconnected','voice_unsupported','native_system_requires_updated_app'].includes(error.message)?error.message:'connection_failed';}
 }

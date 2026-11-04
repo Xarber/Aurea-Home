@@ -6,8 +6,8 @@ Pod::Spec.new do |s|
   s.description = s.summary
   s.license = { :type => 'AGPL-3.0-only' }
   s.author = 'Aurea contributors'
-  s.homepage = 'https://github.com/Xarber/MiTV-Home'
-  s.source = { :git => 'https://github.com/Xarber/MiTV-Home.git' }
+  s.homepage = 'https://github.com/Xarber/Aurea-Home'
+  s.source = { :git => 'https://github.com/Xarber/Aurea-Home.git' }
   s.platforms = { :ios => '16.4' }
   s.swift_version = '5.9'
   s.static_framework = true

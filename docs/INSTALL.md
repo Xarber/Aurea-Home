@@ -3,8 +3,8 @@
 Keep the original Home app and TV services installed. No factory reset or system package removal is needed.
 
 1. Download the APK from Releases.
-2. Install with a trusted TV file manager or `adb install -r MiTV-Home.apk`.
-3. Press Home and select MiTV Home, or use your TV's default Home app setting.
+2. Install with a trusted TV file manager or `adb install -r Aurea-Home.apk`.
+3. Press Home and select Aurea Home, or use your TV's default Home app setting.
 4. Open Control Center for network, display, sound, language, AirPlay, and the phone remote.
 
 ADB debugging varies by firmware. A USB debugging toggle on Android 10 does not guarantee a network ADB listener. Check the actual device and approve the computer on the TV.

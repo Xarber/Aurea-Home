@@ -128,7 +128,7 @@ final class HomeRemoteServer implements Runnable {
 
         if (method.equals("GET") && (path.equals("/") || path.equals("/index.html"))) {
             String asset="remote.html";try(InputStream probe=context.getAssets().open("remoteapp/index.html")){asset="remoteapp/index.html";}catch(java.io.IOException ignored){}
-            try (InputStream page = context.getAssets().open(asset)) { respond(client, 200, "text/html; charset=utf-8", new String(readAll(page), StandardCharsets.UTF_8).replace("<head>","<head><meta name=\"aurea-remote\" content=\"1\">").replace("https://github.com/Xarber/MiTV-Home\"", "https://github.com/Xarber/MiTV-Home/tree/" + io.github.jqssun.airplay.BuildConfig.SOURCE_COMMIT + "\"")); }
+            try (InputStream page = context.getAssets().open(asset)) { respond(client, 200, "text/html; charset=utf-8", new String(readAll(page), StandardCharsets.UTF_8).replace("<head>","<head><meta name=\"aurea-remote\" content=\"1\">").replace("https://github.com/Xarber/Aurea-Home\"", "https://github.com/Xarber/Aurea-Home/tree/" + io.github.jqssun.airplay.BuildConfig.SOURCE_COMMIT + "\"")); }
             return;
         }
         if(method.equals("GET")&&(path.startsWith("/_expo/")||path.startsWith("/assets/")||path.equals("/favicon.ico")||path.startsWith("/branding/")||path.startsWith("/screenshots/")||path.equals("/manifest.webmanifest")||path.equals("/remote.webmanifest")||path.equals("/voice-capture.js")||path.equals("/sw.js")||path.equals("/release.json"))){
@@ -196,7 +196,7 @@ final class HomeRemoteServer implements Runnable {
             if (path.equals("/api/presence")) { respond(client,200,"application/json","{\"ok\":true}"); return; }
             if(path.equals("/api/key")&&!RemoteKeys.supported(payload.optString("command"))){respond(client,400,"application/json","{\"error\":\"unsupported\"}");return;}
             java.util.Map<String,String> routes=new java.util.HashMap<>();
-            routes.put("/api/system/connect","system_connect");routes.put("/api/voice/start","voice_start");routes.put("/api/voice/chunk","voice_chunk");routes.put("/api/voice/end","voice_end");routes.put("/api/key","key");routes.put("/api/state","state");routes.put("/api/catalog","catalog");routes.put("/api/icon","icon");routes.put("/api/artwork","artwork");routes.put("/api/launch","launch");routes.put("/api/media","media");routes.put("/api/system/pair/start","system_pair_begin");routes.put("/api/system/pair/finish","system_pair_finish");
+            routes.put("/api/system/local-adb","local_adb");routes.put("/api/system/connect","system_connect");routes.put("/api/voice/start","voice_start");routes.put("/api/voice/chunk","voice_chunk");routes.put("/api/voice/end","voice_end");routes.put("/api/key","key");routes.put("/api/state","state");routes.put("/api/catalog","catalog");routes.put("/api/icon","icon");routes.put("/api/artwork","artwork");routes.put("/api/launch","launch");routes.put("/api/media","media");routes.put("/api/system/pair/start","system_pair_begin");routes.put("/api/system/pair/finish","system_pair_finish");
             String operation=routes.get(path);if(operation==null){respond(client,404,"application/json","{\"error\":\"not_found\"}");return;}
             JSONObject result;
             try{result=commands.request(operation,payload);if(operation.equals("state"))result.put("id",deviceId);}catch(Exception unavailable){result=SystemRemoteController.error("unavailable");}
@@ -223,7 +223,7 @@ final class HomeRemoteServer implements Runnable {
     private void respondBytes(Socket client,int status,String type,byte[] bytes) throws Exception {
         String reason = status == 200 ? "OK" : status == 400 ? "Bad Request" : status == 401 ? "Unauthorized" : status == 403 ? "Forbidden" : status == 429 ? "Too Many Requests" : status == 404 ? "Not Found" : "Request Rejected";
         OutputStream out = client.getOutputStream();
-        out.write(("HTTP/1.1 " + status + " " + reason + "\r\n" + corsHeaders() + "Content-Type: " + type + "\r\nContent-Length: " + bytes.length + "\r\nCache-Control: no-store\r\nConnection: close\r\nX-Content-Type-Options: nosniff\r\nReferrer-Policy: no-referrer\r\nX-Frame-Options: DENY\r\nContent-Security-Policy: default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' http: https:; img-src 'self' data:; font-src 'self' data:; worker-src 'self' blob:; base-uri 'none'; frame-ancestors 'none'; form-action 'self'\r\n\r\n").getBytes(StandardCharsets.ISO_8859_1));
+        out.write(("HTTP/1.1 " + status + " " + reason + "\r\n" + corsHeaders() + "Content-Type: " + type + "\r\nContent-Length: " + bytes.length + "\r\nCache-Control: no-store\r\nConnection: close\r\nX-Content-Type-Options: nosniff\r\nReferrer-Policy: no-referrer\r\nX-Frame-Options: DENY\r\nContent-Security-Policy: default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' http: https: wss://aurea.xcenter.it; img-src 'self' data:; font-src 'self' data:; worker-src 'self' blob:; base-uri 'none'; frame-ancestors 'none'; form-action 'self'\r\n\r\n").getBytes(StandardCharsets.ISO_8859_1));
         out.write(bytes); out.flush();
     }
 }

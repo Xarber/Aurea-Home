@@ -2,6 +2,48 @@
   "schema": 1,
   "releases": [
     {
+      "version": "2.1.0",
+      "code": 36,
+      "date": "2026-11-04",
+      "critical": false,
+      "highlights": {
+        "en": "Direct native system remote, optional browser ADB controls and hosted WebRTC remote.",
+        "it": "Telecomando di sistema nativo diretto, controlli ADB web opzionali e telecomando WebRTC."
+      },
+      "fixes": {
+        "en": "Add power, larger remote layout, desktop key passthrough, touch page swipes, shared dominant artwork colors and a seamless rendered Classic wallpaper. Preserve the legacy recovery launcher.",
+        "it": "Aggiunge accensione, telecomando ampio, tastiera desktop, scorrimenti touch, colori dominanti condivisi e sfondo Classic senza bordi. Mantiene la Home di ripristino."
+      },
+      "compatibility": {
+        "en": "Browser global buttons require optional debugging authorization on the TV. Microphone audio uses direct native Remote Service, not ADB. WebRTC requires a compatible network; physical interoperability needs device testing. Package ID and signing continuity are retained.",
+        "it": "I pulsanti globali web richiedono autorizzazione debug opzionale sulla TV. Il microfono nativo usa Remote Service diretto, non ADB. WebRTC richiede una rete compatibile; serve verifica sui dispositivi. Identificativo e firma restano compatibili."
+      },
+      "features": [
+        {
+          "icon": "remote",
+          "label": {
+            "en": "System controls",
+            "it": "Controlli di sistema"
+          },
+          "detail": {
+            "en": "Native phones connect directly; browsers can use a locally authorized ADB button bridge.",
+            "it": "Gli smartphone nativi si collegano direttamente; il browser può usare il bridge ADB autorizzato localmente."
+          }
+        },
+        {
+          "icon": "sound",
+          "label": {
+            "en": "Artwork color",
+            "it": "Colore copertina"
+          },
+          "detail": {
+            "en": "Shared cover colors and dominant-area tint without platform-only color transformations.",
+            "it": "Colori condivisi e tinta proporzionata alla copertina senza trasformazioni specifiche per piattaforma."
+          }
+        }
+      ]
+    },
+    {
       "version": "2.0.8",
       "code": 35,
       "date": "2026-10-29",

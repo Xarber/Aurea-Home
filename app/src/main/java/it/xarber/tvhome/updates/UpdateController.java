@@ -71,7 +71,7 @@ public final class UpdateController {
     public void toggle(String key){preferences.edit().putBoolean(key,!preferences.getBoolean(key,!key.equals("auto_download"))).apply();changed();}
     public long lastSuccess(){return preferences.getLong("last_success",0);}
     public long downloadId(){return preferences.getLong("download_id",-1);}
-    public File apk(){File root=context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);return root==null?null:new File(root,"updates/MiTV-Home.apk");}
+    public File apk(){File root=context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);return root==null?null:new File(root,"updates/Aurea-Home.apk");}
     public boolean managedStore(){try{String installer=Build.VERSION.SDK_INT>=30?context.getPackageManager().getInstallSourceInfo(context.getPackageName()).getInstallingPackageName():context.getPackageManager().getInstallerPackageName(context.getPackageName());return "com.android.vending".equals(installer)||"com.amazon.venezia".equals(installer)||"com.sec.android.app.samsungapps".equals(installer);}catch(Exception ignored){return false;}}
     public void openStore(){String uri="market://details?id="+context.getPackageName();try{context.startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(uri)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));}catch(Exception unavailable){status="Managed store unavailable on this device";changed();}}
     private boolean compatible(UpdateCandidate offer)throws Exception{return UpdatePolicy.accepts(BuildConfig.VERSION_CODE,offer.code,channel,offer.channel,BuildConfig.BUILD_VARIANT,offer.variant,Build.VERSION.SDK_INT,offer.minimumSdk,UpdateVerifier.installedSigner(context),offer.signer);}
@@ -123,7 +123,7 @@ public final class UpdateController {
     private static final class Reply{int code;String body="",etag="";}
     private Reply fetch(String address,String etag,int limit)throws Exception{
         HttpsURLConnection connection=(HttpsURLConnection)new URL(address).openConnection();
-        connection.setConnectTimeout(15000);connection.setReadTimeout(20000);connection.setRequestProperty("User-Agent","MiTV-Home/"+BuildConfig.VERSION_NAME);
+        connection.setConnectTimeout(15000);connection.setReadTimeout(20000);connection.setRequestProperty("User-Agent","Aurea-Home/"+BuildConfig.VERSION_NAME);
         connection.setRequestProperty("Accept","application/vnd.github+json");if(!etag.isEmpty())connection.setRequestProperty("If-None-Match",etag);
         try{
             Reply result=new Reply();result.code=connection.getResponseCode();

@@ -23,7 +23,7 @@ A static browser page alone cannot host an HTTP server or publish Bonjour.
 
 ## Failed build diagnosis
 
-Run [40837709728](https://github.com/Xarber/MiTV-Home/actions/runs/40837709728)
+Run [40837709728](https://github.com/Xarber/Aurea-Home/actions/runs/40837709728)
 failed all four Android formats because HomeRemoteService.handle referenced
 `command`, which only exists in key(). The Control Center guard now sits in key(),
 after the active Expo/Legacy Home dispatches. Android workflows compile the Java

@@ -42,6 +42,7 @@ import { SlidingDetails } from './src/components/SlidingDetails';
 import { anchorFor, Anchor } from './src/components/AnchoredPanel';
 import { BlurTargetView } from 'expo-blur';
 import {useMusicActivity} from './src/hooks/useMusicActivity';
+import {usePageSwipe} from './src/hooks/usePageSwipe';
 import {useDemoRemoteServer} from './src/hooks/useDemoRemoteServer';
 import {MusicTint} from './src/components/MusicTint';
 import { Glass, GlassTarget, BlurEnabled } from './src/components/Glass';
@@ -57,15 +58,15 @@ export function NativeTVHome() {
     </TVCanvas>
   );
 }
-export default function PreviewTVHome({targets,onTarget,wallpaper}:{wallpaper?:{id:string;motion:boolean;musicTint?:boolean};targets?:import('./src/remote/types').RemoteCatalog;onTarget?:(id:string)=>void}={}) {
+export default function PreviewTVHome({targets,onTarget,wallpaper,onOpenRemote}:{onOpenRemote?:()=>void;wallpaper?:{id:string;motion:boolean;musicTint?:boolean};targets?:import('./src/remote/types').RemoteCatalog;onTarget?:(id:string)=>void}={}) {
   const launcher = usePreviewLauncher();
   const extra = targets ? [...targets.inputs,...targets.apps].map(item=>({id:item.id,name:item.name,icon:(item.kind==='app'?'apps':item.kind==='live'?'tv':'inputs') as import('./src/model/catalog').IconName,color:'#596377',category:(item.kind==='app'?'apps':'inputs') as 'apps'|'inputs',kind:item.kind})) : [];
   const entries=targets?[launcher.entry('inputs'),launcher.entry('all'),...extra]:launcher.catalog;
   const model:Launcher=targets?{...launcher,catalog:entries,entry:id=>entries.find(item=>item.id===id)??entries[0]!,prefs:{...launcher.prefs,dock:['inputs',...extra.filter(item=>item.category==='apps').slice(0,4).map(item=>item.id),'all']}}:launcher;
   const withWallpaper=wallpaper?{...model,prefs:{...model.prefs,wallpaper:wallpaper.id,motion:wallpaper.motion,musicTint:wallpaper.musicTint}}:model;
-  return <LauncherView demo={withWallpaper} onTarget={onTarget} />;
+  return <LauncherView demo={withWallpaper} onTarget={onTarget} onOpenRemote={onOpenRemote} />;
 }
-function LauncherView({ demo,onTarget }: { demo: Launcher;onTarget?:(id:string)=>void }) {
+function LauncherView({ demo,onTarget,onOpenRemote }: { demo: Launcher;onOpenRemote?:()=>void;onTarget?:(id:string)=>void }) {
   const inputsScroll = useRef<React.ComponentRef<typeof ScrollView>>(null),
     appsScroll = useRef<React.ComponentRef<typeof ScrollView>>(null);
   const inputOffset = useTVScrollFocus(inputsScroll, 'page-1'),
@@ -348,6 +349,7 @@ function LauncherView({ demo,onTarget }: { demo: Launcher;onTarget?:(id:string)=
     window.addEventListener('wheel', wheel, { passive: false });
     return () => window.removeEventListener('wheel', wheel);
   }, [demo.panel, demo.page, changePage]);
+  const swipe=usePageSwipe(demo.page,!!demo.panel,changePage);
   const selected = entry(demo.selected);
   const time = now.toLocaleTimeString(
     demo.prefs.language === 'it' ? 'it-IT' : 'en-GB',
@@ -394,7 +396,7 @@ function LauncherView({ demo,onTarget }: { demo: Launcher;onTarget?:(id:string)=
       <View style={[s.root, { height: canvasHeight, maxHeight: canvasHeight }]}>
         <BlurTargetView ref={target} style={StyleSheet.absoluteFill}>
           <Wallpaper id={demo.prefs.wallpaper} motion={demo.prefs.motion} />
-          <MusicTint enabled={demo.prefs.musicTint===true} playing={demo.playing&&demo.music} colors={demo.native?(demo.snapshot?.music.colors??['#e6eaf0','#929aa8']):tracks[demo.track]!.colors}/>
+          <MusicTint dominance={demo.snapshot?.music.dominance} enabled={demo.prefs.musicTint===true} playing={demo.playing&&demo.music} colors={demo.native?(demo.snapshot?.music.colors??['#e6eaf0','#929aa8']):tracks[demo.track]!.colors}/>
 
           <View testID="launcher-hero"
             style={[
@@ -471,7 +473,7 @@ function LauncherView({ demo,onTarget }: { demo: Launcher;onTarget?:(id:string)=
             )}
           </View>
         </BlurTargetView>
-        <View nativeID="launcher-scene" style={{ flex: 1, overflow: 'hidden' }}>
+        <View {...swipe} nativeID="launcher-scene" style={{ flex: 1, overflow: 'hidden' }}>
           {demo.page > 0 && (
             <View
               style={[StyleSheet.absoluteFill, s.libraryBlur,demo.prefs.blur===false&&({backdropFilter:"none"} as object)]}
@@ -920,6 +922,7 @@ function LauncherView({ demo,onTarget }: { demo: Launcher;onTarget?:(id:string)=
           />
         ) : (
           <Panels
+            openRemote={onOpenRemote}
             server={demoServer}
             demo={demo}
             t={t}

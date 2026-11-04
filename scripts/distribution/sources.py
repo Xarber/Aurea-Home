@@ -3,7 +3,7 @@
 """Generate channel-specific AltSources only from a published, validated release."""
 import argparse,json
 from pathlib import Path
-BASE='https://github.com/Xarber/MiTV-Home'
+BASE='https://github.com/Xarber/Aurea-Home'
 META=BASE+'/releases/download/sources-v1.0/'
 def source(channel):
     return {'name':'Aurea '+('Beta' if channel=='beta' else 'Stable'),'subtitle':'Aurea Remote for iPhone and iPad','description':'Local television controls, apps, inputs and music activities. Unsigned IPAs are signed by your compatible installer.','website':BASE,'iconURL':META+'icon-512.png','tintColor':'858BEA','sourceURL':META+('altsource-beta.json' if channel=='beta' else 'altsource.json'),'apps':[],'news':[]}

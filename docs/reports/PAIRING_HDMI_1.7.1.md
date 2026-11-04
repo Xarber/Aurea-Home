@@ -45,7 +45,7 @@ conversion, using an in-place update. Verified SHA-256, embedded version 1.7.1 /
 code 19 / commit `8a2f896`, ARMv7 support and the existing release signing identity
 with Android 10 verification. Android reported Success; package listing confirmed
 code 19, and the installed APK's on-device hash matched the verified artifact.
-Default Home remained MiTV Home. Cold launch completed successfully.
+Default Home remained Aurea Home. Cold launch completed successfully.
 
 Fresh physical screenshots showed the new HDMI setting initially requesting an
 explicit choice. A later screenshot showed the pending PIN-entry screen with a

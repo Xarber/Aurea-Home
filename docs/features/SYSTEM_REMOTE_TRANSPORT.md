@@ -121,3 +121,10 @@ actual backgrounding still closes capture. The microphone is disabled when the
 system service is not ready, instead of requesting audio then immediately failing.
 Capture errors remain visible outside the compact icon. Physical voice success
 has not been established by these lifecycle changes.
+
+## 2.1 superseding paths
+
+The earlier no-ADB description above records 2.0.x behavior. The user subsequently
+authorized the optional [local ADB buttons](LOCAL_ADB_REMOTE.md). Native companions
+now implement [direct system control](DIRECT_NATIVE_REMOTE.md), avoiding the TV's
+self-origin rejection. [Hosted WebRTC](HOSTED_REMOTE.md) reuses TV HTTP trust.

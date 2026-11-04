@@ -9,7 +9,7 @@ export default function App() {
   const web = Platform.OS === 'web';
   const params = web ? new URLSearchParams(location.search) : undefined;
   const tvHosted = web && !!document.querySelector('meta[name="aurea-remote"]');
-  const phone = !web || tvHosted || params?.get('remote') === '1';
+  const phone = !web || tvHosted || params?.get('remote') === '1' || web&&location.hostname==='aurea.xcenter.it'&&params?.get('demo')!=='1';
   const preview = web && !tvHosted && params?.get('preview') === '1';
   return (
     <SafeAreaProvider>

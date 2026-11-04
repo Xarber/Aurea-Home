@@ -2,7 +2,7 @@
   "expo": {
     "name": "Aurea Home",
     "slug": "aurea-home",
-    "version": "2.0.8",
+    "version": "2.1.0",
     "platforms": [
       "android",
       "web"
@@ -17,7 +17,7 @@
     },
     "android": {
       "package": "it.xarber.mitvhome",
-      "versionCode": 35
+      "versionCode": 36
     },
     "plugins": [
       "expo-secure-store",
@@ -46,7 +46,7 @@
           "NSAllowsLocalNetworking": true
         }
       },
-      "buildNumber": "35"
+      "buildNumber": "36"
     },
     "icon": "./public/branding/icon-1024.png"
   }

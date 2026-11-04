@@ -291,6 +291,10 @@ export function NativePanels({
         )}
         {panel === 'remote' && (
           <>
+            {row('Connect from aurea.xcenter.it','remote',()=>{void demo.execute('hostedRemote').then(value=>setRemote(previous=>({...previous,hostedUrl:value.url,hostedReady:value.ready})));})}
+            {typeof remote.hostedUrl==='string'&&text(remote.hostedUrl)}
+            {typeof remote.hostedUrl==='string'&&text('Open this link on your phone or computer. Enter the TV pairing code when requested. Both devices must allow a direct WebRTC connection.')}
+
             {row('Background Home & AirPlay', 'apps',()=>action('backgroundAccess'))}
             {remote.backgroundAccess===false&&text('Allow display over other apps to let Home and AirPlay return from the background.')}
 
