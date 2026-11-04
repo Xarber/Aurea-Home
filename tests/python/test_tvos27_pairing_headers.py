@@ -41,7 +41,7 @@ class PairingHeadersChecks(unittest.IsolatedAsyncioTestCase):
                 def __init__(self):self.requests=[]
                 async def post(self,path,headers,body=None):
                     self.requests.append((path,dict(headers)));return types.SimpleNamespace(body=b"response")
-            for client_name in ["MiTV Home","Another installation"]:
+            for client_name in ["Aurea Home","Another installation"]:
                 receiver=Receiver();procedure=namespace["AirPlayHapPairSetupProcedure"](receiver,SRP(),client_name)
                 await procedure.start_pairing();await procedure.finish_pairing("","1234",client_name)
                 self.assertEqual([path for path,_ in receiver.requests],["/pair-pin-start","/pair-setup","/pair-setup","/pair-setup"])

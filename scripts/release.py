@@ -9,6 +9,8 @@ from pathlib import Path
 import re
 import subprocess
 import zipfile
+from html.parser import HTMLParser
+from urllib.parse import urlsplit, unquote
 
 ROOT = Path(__file__).resolve().parents[1]
 HISTORY = ROOT / 'app/src/main/assets/release-history.json'
@@ -48,7 +50,32 @@ def changelog():
 def generate():
     (ROOT / 'CHANGELOG.md').write_text(changelog())
     commits = subprocess.check_output(['git', 'log', '--reverse', '--format=%H %ad %s%n%b', '--date=short', '98cbd64^..HEAD'], cwd=ROOT, text=True)
-    (ROOT / 'app/src/main/assets/developer-changelog.txt').write_text('MiTV Home developer changelog\nLegacy subjects are preserved. New work uses Conventional Commits.\n\n' + commits)
+    (ROOT / 'app/src/main/assets/developer-changelog.txt').write_text('Aurea Home developer changelog\nLegacy subjects are preserved. New work uses Conventional Commits.\n\n' + commits)
+
+def validate_embedded_web(archive, prefix=''):
+    base = prefix + 'assets/remoteapp/'
+    names = set(archive.namelist())
+    assert base + 'index.html' in names, 'Missing embedded remote index'
+    references = []
+    class Resources(HTMLParser):
+        def handle_starttag(self, tag, attributes):
+            attributes = dict(attributes)
+            value = attributes.get('src') if tag == 'script' else attributes.get('href') if tag == 'link' else None
+            if value: references.append(value)
+    Resources().feed(archive.read(base + 'index.html').decode('utf-8'))
+    assert any(urlsplit(value).path.endswith('.js') for value in references), 'Remote has no JavaScript entry'
+    for value in references:
+        parsed = urlsplit(value)
+        assert not parsed.scheme and not parsed.netloc, 'Embedded remote resource must be local'
+        path = unquote(parsed.path).lstrip('/')
+        assert '..' not in path.split('/'), 'Invalid remote asset path'
+        assert base + path in names, 'Missing embedded remote resource: ' + path
+    expected_root = ROOT / 'app/src/main/assets/remoteapp'
+    if expected_root.is_dir():
+        for resource in expected_root.rglob('*'):
+            if resource.is_file():
+                relative = resource.relative_to(expected_root).as_posix()
+                assert base + relative in names, 'Android omitted exported web asset: ' + relative
 
 def validate_archive(path, kind, commit, channel):
     current = metadata()
@@ -57,6 +84,7 @@ def validate_archive(path, kind, commit, channel):
     with zipfile.ZipFile(path) as archive:
         assert archive.testzip() is None, 'Corrupt ZIP'
         names = set(archive.namelist())
+        validate_embedded_web(archive, prefix)
         assert prefix + 'manifest/AndroidManifest.xml' in names if kind == 'aab' else 'AndroidManifest.xml' in names
         assert ('BundleConfig.pb' in names) if kind == 'aab' else any(re.fullmatch(r'classes\d*\.dex', name) for name in names)
         abis = {'arm64-v8a', 'armeabi-v7a', 'x86', 'x86_64'}
@@ -88,7 +116,7 @@ def main():
         (ROOT/'app/src/main/assets/build-metadata.json').write_text(json.dumps(data, indent=2)+'\n')
         print(json.dumps(data))
     elif args.action == 'notes':
-        print(f'## MiTV Home {current["version"]}\n\n{current["highlights"]["en"]}\n\n### Fixes & Improvements\n\n{current["fixes"]["en"]}\n\nAndroid TV 8+; signed universal APK for sideloading, AAB for store tooling. iOS is not supported.\n\nMac Music playback remains unresolved; iPad radio/local-library playback was reported working. Port 80 falls back to 8765 when Android restricts privileged ports.\n\nSee CHANGELOG.md and docs/INSTALL.md. Signing differs from local debug builds.')
+        print(f'## Aurea Home {current["version"]}\n\n{current["highlights"]["en"]}\n\n### Fixes & Improvements\n\n{current["fixes"]["en"]}\n\nAndroid TV and Android phone APK/AAB, iOS unsigned IPA (external signing required), iOS simulator and web/PWA artifacts.\n\nMac Music playback remains unresolved; iPad radio/local-library playback was reported working. Port 80 falls back to 8765 when Android restricts privileged ports.\n\nSee CHANGELOG.md and docs/INSTALL.md. Signing differs from local debug builds.')
         print('\n### Developer changes\n')
         # Previous project release, if any; keep upstream history out of initial notes.
         tags = subprocess.check_output(['git','tag','--merged','HEAD','--sort=-version:refname','--list','v*'],cwd=ROOT,text=True).splitlines()

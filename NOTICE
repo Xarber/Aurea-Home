@@ -1,0 +1,10 @@
+
+Aurea 2.1 remote integrations:
+- PeerJS 1.5.5 (MIT), https://github.com/peers/peerjs. Bundled client license:
+  app/src/main/assets/peer/PEERJS-LICENSE. Self-hosted peer 1.0.2 is MIT.
+- react-native-tcp-socket 6.4.3 (MIT), https://github.com/Rapsssito/react-native-tcp-socket.
+- node-forge 1.4.3, BSD 3-Clause option of its BSD/GPL dual license,
+  https://github.com/digitalbazaar/forge. Original upstream notices are retained.
+- The bounded Remote v2 wire implementation follows the public protocol fields
+  documented by androidtvremote2 0.3.2; Google Polo and Android keycode definitions
+  remain attributed to their upstream authors. No raw protocol logging is enabled.

@@ -1,0 +1,40 @@
+name: Internal — browser and PWA checks
+on:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  validate:
+    name: Browser navigation, pairing and PWA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
+      - uses: actions/download-artifact@v6
+        with:
+          name: Aurea-embedded-remote-${{ github.sha }}
+          path: dist/
+      - run: npx playwright install --with-deps chromium
+      - name: Browser regression tests
+        run: npm run test:e2e
+      - name: Paired browser demo remote
+        if: ${{ !cancelled() }}
+        run: npm run test:demo-bridge
+      - name: PWA update and offline validation
+        if: ${{ !cancelled() }}
+        run: node scripts/expo/verify-pwa-update.mjs
+      - name: Retain browser failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: Aurea-web-test-results-${{ github.sha }}
+          path: |
+            playwright-results/
+            playwright-report/
+          if-no-files-found: ignore

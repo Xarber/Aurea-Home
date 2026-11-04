@@ -6,7 +6,7 @@ from pathlib import Path
 expected=json.loads(Path(sys.argv[1]).read_text());tag=expected['tag']
 for attempt in range(6):
     try:
-        release=json.loads(subprocess.check_output(['gh','api',f'repos/Xarber/MiTV-Home/releases/tags/{tag}'],text=True))
+        release=json.loads(subprocess.check_output(['gh','api',f'repos/Xarber/Aurea-Home/releases/tags/{tag}'],text=True))
         assert not release['draft'] and release['prerelease']==(expected['channel']=='beta')
         assert release['target_commitish']==expected['commit']
         names={asset['name']:asset for asset in release['assets']}

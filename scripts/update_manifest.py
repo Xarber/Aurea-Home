@@ -22,7 +22,7 @@ def manifest(directory,tag,commit,channel):
     assert tag==expected and '-android-universal-' in apk.name and apk.suffix=='.apk'
     result=dict(schema=1,package=data['package'],version=data['version'],code=data['code'],channel=data['channel'],variant=data['variant'],tag=tag,commit=commit,
                 minimumSdk=data['minimumSdk'],critical=release.get('critical',False),release=release,
-                apk=dict(url=f'https://github.com/Xarber/MiTV-Home/releases/download/{tag}/{apk.name}',size=data['size'],sha256=data['sha256'],signerSha256=data['signerSha256']))
+                apk=dict(url=f'https://github.com/Xarber/Aurea-Home/releases/download/{tag}/{apk.name}',size=data['size'],sha256=data['sha256'],signerSha256=data['signerSha256']))
     (directory/'update-manifest.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n')
 if __name__=='__main__':
     parser=argparse.ArgumentParser();parser.add_argument('action',choices=['package','manifest']);parser.add_argument('--apk',type=Path);parser.add_argument('--report',type=Path);parser.add_argument('--dir',type=Path);parser.add_argument('--tag');parser.add_argument('--commit',required=True);parser.add_argument('--channel',required=True)

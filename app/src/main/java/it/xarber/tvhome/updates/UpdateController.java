@@ -71,7 +71,7 @@ public final class UpdateController {
     public void toggle(String key){preferences.edit().putBoolean(key,!preferences.getBoolean(key,!key.equals("auto_download"))).apply();changed();}
     public long lastSuccess(){return preferences.getLong("last_success",0);}
     public long downloadId(){return preferences.getLong("download_id",-1);}
-    public File apk(){File root=context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);return root==null?null:new File(root,"updates/MiTV-Home.apk");}
+    public File apk(){File root=context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);return root==null?null:new File(root,"updates/Aurea-Home.apk");}
     public boolean managedStore(){try{String installer=Build.VERSION.SDK_INT>=30?context.getPackageManager().getInstallSourceInfo(context.getPackageName()).getInstallingPackageName():context.getPackageManager().getInstallerPackageName(context.getPackageName());return "com.android.vending".equals(installer)||"com.amazon.venezia".equals(installer)||"com.sec.android.app.samsungapps".equals(installer);}catch(Exception ignored){return false;}}
     public void openStore(){String uri="market://details?id="+context.getPackageName();try{context.startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(uri)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));}catch(Exception unavailable){status="Managed store unavailable on this device";changed();}}
     private boolean compatible(UpdateCandidate offer)throws Exception{return UpdatePolicy.accepts(BuildConfig.VERSION_CODE,offer.code,channel,offer.channel,BuildConfig.BUILD_VARIANT,offer.variant,Build.VERSION.SDK_INT,offer.minimumSdk,UpdateVerifier.installedSigner(context),offer.signer);}
@@ -123,7 +123,7 @@ public final class UpdateController {
     private static final class Reply{int code;String body="",etag="";}
     private Reply fetch(String address,String etag,int limit)throws Exception{
         HttpsURLConnection connection=(HttpsURLConnection)new URL(address).openConnection();
-        connection.setConnectTimeout(15000);connection.setReadTimeout(20000);connection.setRequestProperty("User-Agent","MiTV-Home/"+BuildConfig.VERSION_NAME);
+        connection.setConnectTimeout(15000);connection.setReadTimeout(20000);connection.setRequestProperty("User-Agent","Aurea-Home/"+BuildConfig.VERSION_NAME);
         connection.setRequestProperty("Accept","application/vnd.github+json");if(!etag.isEmpty())connection.setRequestProperty("If-None-Match",etag);
         try{
             Reply result=new Reply();result.code=connection.getResponseCode();
@@ -143,7 +143,7 @@ public final class UpdateController {
             if(!target.getParentFile().isDirectory()&&!target.getParentFile().mkdirs())throw new IOException("Update storage unavailable");
             if(new StatFs(target.getParent()).getAvailableBytes()<candidate.size*3+64*1024*1024L){status="Not enough storage for the update";changed();return;}
             if(target.exists()&&!target.delete())throw new IOException("Update storage unavailable");
-            DownloadManager.Request request=new DownloadManager.Request(Uri.parse(candidate.url)).setTitle("MiTV Home "+candidate.version)
+            DownloadManager.Request request=new DownloadManager.Request(Uri.parse(candidate.url)).setTitle("Aurea Home "+candidate.version)
                 .setDescription(AppLanguage.text(context,"Downloading update"))
                 .setMimeType("application/vnd.android.package-archive").setDestinationUri(Uri.fromFile(target))
                 .setAllowedOverMetered(!unmeteredOnly()).setAllowedOverRoaming(false).setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
@@ -182,7 +182,7 @@ public final class UpdateController {
         int existing=preferences.getInt("install_session",-1);
         if(existing>=0){android.content.pm.PackageInstaller.SessionInfo info=context.getPackageManager().getPackageInstaller().getSessionInfo(existing);if(info!=null){try{context.startActivity(info.createDetailsIntent().addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));}catch(Exception unavailable){status="Installation needs confirmation";changed();}return;}preferences.edit().remove("install_session").remove("install_expected").apply();}
         if(!context.getPackageManager().canRequestPackageInstalls()){
-            preferences.edit().putBoolean("await_permission",true).apply();status="Allow MiTV Home to install updates, then return";changed();
+            preferences.edit().putBoolean("await_permission",true).apply();status="Allow Aurea Home to install updates, then return";changed();
             try{context.startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,Uri.parse("package:"+context.getPackageName())).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));}catch(Exception unsupported){status="Installation permission screen unavailable";changed();}return;
         }
         preferences.edit().remove("await_permission").apply();installing=true;status="Preparing Android installer…";changed();
@@ -213,7 +213,7 @@ public final class UpdateController {
             Intent confirmation=intent.getParcelableExtra(Intent.EXTRA_INTENT);
             status="Installation needs confirmation";
             if(confirmation!=null){confirmation.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);if(foreground){try{context.startActivity(confirmation);}catch(Exception unavailable){status="Open Updates to complete installation";}}
-                else{NotificationManager notifications=(NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);notifications.createNotificationChannel(new NotificationChannel("home_updates","MiTV Home updates",NotificationManager.IMPORTANCE_DEFAULT));PendingIntent action=PendingIntent.getActivity(context,expected,confirmation,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);try{notifications.notify(1601,new NotificationCompat.Builder(context,"home_updates").setSmallIcon(android.R.drawable.stat_sys_download_done).setContentTitle("MiTV Home").setContentText(AppLanguage.text(context,"Installation needs confirmation")).setContentIntent(action).setAutoCancel(true).build());}catch(SecurityException ignored){}}
+                else{NotificationManager notifications=(NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);notifications.createNotificationChannel(new NotificationChannel("home_updates","Aurea Home updates",NotificationManager.IMPORTANCE_DEFAULT));PendingIntent action=PendingIntent.getActivity(context,expected,confirmation,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);try{notifications.notify(1601,new NotificationCompat.Builder(context,"home_updates").setSmallIcon(android.R.drawable.stat_sys_download_done).setContentTitle("Aurea Home").setContentText(AppLanguage.text(context,"Installation needs confirmation")).setContentIntent(action).setAutoCancel(true).build());}catch(SecurityException ignored){}}
             }
         }else{
             status=result==PackageInstaller.STATUS_SUCCESS?"Update installed successfully":result==PackageInstaller.STATUS_FAILURE_ABORTED?"Installation cancelled — retry":result==PackageInstaller.STATUS_FAILURE_STORAGE?"Not enough storage for the update":result==PackageInstaller.STATUS_FAILURE_CONFLICT?"Update signing identity mismatch":result==PackageInstaller.STATUS_FAILURE_BLOCKED?"Installation blocked by Android settings":"Installation failed — retry";

@@ -14,8 +14,8 @@ public final class UpdatePolicyChecks {
         check(!accept(16,17,"beta","beta","store",29,SIGNER),"variant rejected");
         check(!accept(16,17,"beta","beta","github-extended",25,SIGNER),"incompatible SDK rejected");
         check(!accept(16,17,"beta","beta","github-extended",29,"b".repeat(64)),"wrong signer rejected");
-        String tag="v1.6.0-beta.17.0123456",prefix="https://github.com/Xarber/MiTV-Home/releases/download/"+tag+"/";
-        check(UpdatePolicy.assetUrl(prefix+"MiTV-Home-v1.6.0-android-universal-beta-github-extended-0123456.apk",tag),"owned universal asset");
+        String tag="v1.6.0-beta.17.0123456",prefix="https://github.com/Xarber/Aurea-Home/releases/download/"+tag+"/";
+        check(UpdatePolicy.assetUrl(prefix+"Aurea-Home-v1.6.0-android-universal-beta-github-extended-0123456.apk",tag),"owned universal asset");
         for(String url:new String[]{prefix+"app.aab",prefix+"app.apk",prefix+"../android-universal-a.apk",prefix+"%2e%2e/android-universal-a.apk",prefix.replace("https:","http:")+"android-universal-a.apk",prefix.replace("github.com/","github.com.evil.example/")+"android-universal-a.apk",prefix+"android-universal-a.apk?token=bad"})check(!UpdatePolicy.assetUrl(url,tag),"hostile artifact rejected");
         check(UpdatePolicy.manifestUrl(prefix+"update-manifest.json",tag),"owned metadata");
         check(!UpdatePolicy.manifestUrl(prefix+"update-manifest.json","sources-v1.0"),"metadata release rejected");

@@ -46,7 +46,7 @@ The previous installed APK was preserved privately before replacement.
 Supported replacement installation succeeded without uninstalling or clearing
 app data. Package Manager reports code 23; SHA-256 of the installed APK
 matches the verified artifact. Cold launch returned Status ok (1.839 s),
-and MiTV Home remains the default Home activity. The user retried pairing
+and Aurea Home remains the default Home activity. The user retried pairing
 and reported “It works!” on 2026-10-28, then authorized release promotion.
 This is user-reported physical pairing success, not an automated playback
 or simultaneous-phone-streaming test. No PIN was collected or logged.

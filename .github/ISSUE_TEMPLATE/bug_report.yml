@@ -4,7 +4,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: MiTV Home version
+      label: Aurea Home version
     validations:
       required: true
   - type: input

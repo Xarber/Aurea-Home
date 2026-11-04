@@ -1,0 +1,51 @@
+name: iOS companion builds
+on:
+  workflow_call:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: iOS package to build
+        type: choice
+        options: [all, unsigned, simulator]
+        default: all
+permissions:
+  contents: read
+jobs:
+  ios:
+    name: Phone iOS ${{ matrix.target }}
+    # Both packages target ARM64; avoid slow cross-compilation on the Intel runner.
+    runs-on: macos-26
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.target == 'unsigned' && '["unsigned"]' || github.event_name == 'workflow_dispatch' && inputs.target == 'simulator' && '["simulator"]' || '["unsigned","simulator"]') }}
+    env:
+      EXPO_PUBLIC_SOURCE_COMMIT: ${{ github.sha }}
+      AUREA_TARGET: remote
+      FORCE_BUNDLING: '1'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci && python3 scripts/phone/prepare.py
+      - run: npx expo prebuild --platform ios --skip-dependency-update react-native,react
+        working-directory: .phone-native
+      - name: Compile without signing
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          if [ "$TARGET" = simulator ]; then SDK=iphonesimulator; DEST='generic/platform=iOS Simulator'; else SDK=iphoneos; DEST='generic/platform=iOS'; fi
+          xcodebuild -workspace .phone-native/ios/AureaRemote.xcworkspace -scheme AureaRemote -configuration Release -sdk "$SDK" -destination "$DEST" -derivedDataPath "$RUNNER_TEMP/aurea-ios" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO ARCHS=arm64 ONLY_ACTIVE_ARCH=NO build
+      - name: Package and validate
+        env:
+          TARGET: ${{ matrix.target }}
+        run: python3 scripts/phone/package.py ios "$TARGET"
+      - uses: actions/upload-artifact@v5
+        with:
+          name: Aurea-Remote-${{ github.ref_name }}-ios-${{ matrix.target }}-${{ github.sha }}
+          path: phone-dist/
+          if-no-files-found: error

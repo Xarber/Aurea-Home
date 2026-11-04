@@ -2,6 +2,102 @@
 
 Generated from `app/src/main/assets/release-history.json`. Legacy versions reflect repository history; dates describe implementation, not a verified public release.
 
+## 2.1.0 — 2026-11-04
+
+Direct native system remote, optional browser ADB controls and hosted WebRTC remote.
+
+### Fixes & Improvements
+
+Add power, larger remote layout, desktop key passthrough, touch page swipes, shared dominant artwork colors and a seamless rendered Classic wallpaper. Preserve the legacy recovery launcher.
+
+## 2.0.8 — 2026-10-29
+
+Cleaner remote controls with layout and touchpad preferences in Settings.
+
+### Fixes & Improvements
+
+Remove the extra selector bars, use horizontal compact volume and matched full rockers, prevent touchpad page scrolling, retain microphone capture across layout changes and correct a portable CI screenshot path.
+
+## 2.0.7 — 2026-10-29
+
+A complete TV remote with automatic view switching and a touchpad.
+
+### Fixes & Improvements
+
+Use Android platform TLS for system controls, add a separate reconnect action, restore Classic wallpaper and match the connected TV in launcher preview.
+
+## 2.0.6 — 2026-10-29
+
+Use your phone microphone for Android TV voice search.
+
+### Fixes & Improvements
+
+Encrypted in-memory voice packets, bounded recording sessions and cleanup on disconnect, app backgrounding and TV switching.
+
+## 2.0.5 — 2026-10-29
+
+More TV controls and deeper TV wallpaper colors.
+
+### Fixes & Improvements
+
+Separate system-service errors from launcher connectivity, reconnect without replaying keys, correct TV manifest lint, and wait for rendered animation frames in browser checks.
+
+## 2.0.4 — 2026-10-29
+
+More reliable Home controls and smoother wallpaper changes.
+
+### Fixes & Improvements
+
+Single Home/input ownership; paused activities hide after five minutes. Wallpaper tint stays behind banners, covers rotating edges, and is slightly dimmer only on TV. Corrects explicit launcher export declarations.
+
+## 2.0.3 — 2026-10-29
+
+Android launcher registration and build reliability improvements.
+
+### Fixes & Improvements
+
+Separate TV and phone launcher declarations; additional CI packaging memory and animation-aware browser checks.
+
+## 2.0.2 — 2026-10-29
+
+Smooth music colors and a phone-controllable web demo.
+
+### Fixes & Improvements
+
+Remote wallpaper follows the TV across the full window; minimum waveform bars stay circular. Corrects the Android host compilation failure.
+
+## 2.0.1 — 2026-10-29
+
+Refined native remote, pairing recovery and music-themed wallpapers.
+
+### Fixes & Improvements
+
+Safe-area-aware anchored popups, submenu Back navigation, menu and combined playback buttons, customized input names/icons and silent paused waves.
+
+## 2.0.0 — 2026-10-28
+
+Expo becomes the shared Home, phone and web application base.
+
+### Fixes & Improvements
+
+Improves TV focus and pairing restoration, shares AirPlay music activities with the phone remote, adds pairing confirmation and an optional blur switch, and corrects native build packaging.
+
+## 1.8.1 — 2026-10-28
+
+Fixes the phone remote page bundled inside the TV app.
+
+### Fixes & Improvements
+
+Preserves Expo JavaScript and CSS during Android asset packaging and verifies required web files before publication.
+
+## 1.8.0 — 2026-10-28
+
+Aurea Home identity, minimal wallpapers and a paired phone remote.
+
+### Fixes & Improvements
+
+Improves small-screen sources, reconnects discovery after network changes and separates credentials for each TV.
+
 ## 1.7.5 — 2026-10-28
 
 Fixes the immediate error when submitting an Apple TV pairing code.

@@ -1,10 +1,10 @@
 # Building
 
-Use JDK 21, Android SDK platform 37.0, build tools 37.0.0, NDK 27.0.12077973, and CMake 3.22.1. The wrapper pins Gradle 9.8.1.
+Run `npm ci` at the repository root before native builds. Use JDK 21, Android SDK platform 37.0, build tools 37.0.0, NDK 27.0.12077973, and CMake 3.22.1. The wrapper pins Gradle 9.4.1.
 
 ```sh
-git clone --recurse-submodules https://github.com/Xarber/MiTV-Home.git
-cd MiTV-Home
+git clone --recurse-submodules https://github.com/Xarber/Aurea-Home.git
+cd Aurea-Home
 ./gradlew :app:assembleDebug :app:lintDebug
 ```
 
@@ -46,3 +46,11 @@ Do not use this shortcut after native-source changes or claim full native-source
 validation. Ordinary CI source builds are unchanged and retain all four ABIs.
 Local bundled builds retain their existing ARM32/ARM64 scope. Sign with the
 existing release identity and record the actual source commit before deployment.
+
+## Complete application builds
+
+Use Node 24 and `npm ci` at the repository root. `npm run build` exports the standalone web/PWA to `dist`. The full native host embeds that exact-commit export under `app/src/main/assets/remoteapp`.
+
+Run `gh workflow run build.yml --ref testing` for every supported format; no input fields or dependency run IDs are needed. Android TV and phone use the same native source host and build matrix, preserving their separate identifiers and managed signing key. Internal phone.yml builds only iOS device/simulator formats. Internal demo.yml validates the already exported browser/PWA artifact. Both are called by build.yml.
+
+All six native formats, web/PWA and source are collected in the same run. See [RELEASES.md](RELEASES.md) for the job graph, artifacts, publication gates and installation restrictions. Full source builds are the authoritative native verification path; older isolated ARM workflow switches have been retired.

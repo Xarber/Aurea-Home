@@ -16,7 +16,7 @@ without changing legacy verification or transient authentication. Gradle explici
 selects the patched wheel. Build output records source/patch/wheel hashes.
 
 Discovery and reconnect now exclude local Android interface addresses, marked
-MiTV Home/preview receivers and the exact shared legacy UxPlay simulated identity.
+Aurea Home/preview receivers and the exact shared legacy UxPlay simulated identity.
 The existing Kotlin NSD registration adds a marker without changing Apple's model
 compatibility field or C/C++ behavior. Filtering does not depend on friendly names
 or reject all devices with an older Apple TV model.
@@ -59,7 +59,7 @@ fake-receiver tests as physical-TV proof.
 The existing authorized GitHub pipeline was also submitted after the storage
 blocker, reusing successful native dependencies. This does not complete the user's
 local-build request. Remote run for commit `dbc5b4d`:
-https://github.com/Xarber/MiTV-Home/actions/runs/40604486783
+https://github.com/Xarber/Aurea-Home/actions/runs/40604486783
 
 No build success or installation is claimed for that in-progress run.
 
@@ -76,7 +76,7 @@ release signing identity with Android 10 verification. Inspected packaged Python
 to confirm both the client-name header patch and receiver-discovery filter were
 present. Installed in place without uninstalling or clearing data. Android reported
 Success; package listing confirmed code 20. The installed APK hash matched the
-verified artifact, cold launch succeeded and default Home remained MiTV Home.
+verified artifact, cold launch succeeded and default Home remained Aurea Home.
 
 The actual receiver's network advertisement included the new software marker.
 Home's phone remote returned HTTP 200. These checks verify marker publication and

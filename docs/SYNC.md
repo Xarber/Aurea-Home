@@ -1,6 +1,6 @@
 # Local connectivity, backup and provenance
 
-MiTV Home does not have a cloud synchronization engine or shared user-history database. The existing direct LAN AirPlay receiver and foreground HTTP remote avoid centralized content storage. Device discovery/session handling belong to the Kotlin/native receiver; phone pairing and ephemeral presence belong to HomeRemoteServer.
+Aurea Home does not have a cloud synchronization engine or shared user-history database. The existing direct LAN AirPlay receiver and foreground HTTP remote avoid centralized content storage. Device discovery/session handling belong to the Kotlin/native receiver; phone pairing and ephemeral presence belong to HomeRemoteServer.
 
 Presentation backup uses Android's document provider and schema-1 JSON. HomePreferences exports only dock/input profile/language/activity appearance; imports are validated and confirmed, with a previous-state snapshot available for recovery. No automatic merge, background synchronization, resumable transfer or peer migration protocol is claimed. Conflicting configurations are explicitly replaced after confirmation rather than silently merged.
 
@@ -13,3 +13,7 @@ Presentation backup uses Android's document provider and schema-1 JSON. HomePref
 - Developer notification preview is **simulated**, local UI only, with no external device command and no production preference/history/analytics write. Its enum diagnostic event is labeled simulated-local-ui and the bounded process ring disappears on termination.
 
 No achievements, model calibration, training or production analytics consume simulated UI state. Additional measurements/synchronization would need explicit source/freshness/units and isolation contracts; this document does not imply those features already exist.
+
+2.1 adds opt-in WebRTC remote commands using XCenter signaling. This is a remote
+transport, not user-history synchronization or a backup system. See
+[Hosted remote](features/HOSTED_REMOTE.md) for consent, pairing and network limits.

@@ -1,21 +1,112 @@
-# Home remote HTTP API
+# Local remote HTTP API
 
-Server exists only while Home is resumed. Requests must originate from loopback/link-local/private LAN addresses. URL is the actual TV IPv4 address and active port; port 80 may fall back to 8765. Use trusted LANs: HTTP has no transport encryption and tokens are readable to a capable local-network observer. Do not expose this listener to the Internet. Pairing is authorization, not TLS.
+`HomeRemoteService` owns the listener independently of the Home activity. Private,
+link-local or loopback peers only; exact Host validation. Port 80 falls back to
+8765 if unavailable. Use the actual address shown on the TV. HTTP pairing is
+explicit authorization, not TLS; use trusted home Wi-Fi and never expose it to the
+Internet. See [phone companion](features/PHONE_REMOTE.md) for the complete contract.
 
-## Routes
-
-| Method/path | JSON body | Result |
+| Method/path | Request | Result |
 | --- | --- | --- |
-| GET `/` or `/index.html` | None | Embedded remote page and corresponding-source link |
-| POST `/pair/start` | None | Requests top-left PIN notification or refreshes open QR panel |
-| POST `/pair` | `pin` string | 192-bit URL-safe token; rotates PIN and closes QR panel |
-| POST `/api/key` | `token`, `command` | Executes allowlisted key; refreshes presence |
-| POST `/api/presence` | `token`, optional `disconnect` bool | Heartbeat or disconnect |
+| GET `/` | None | Embedded phone remote, source link |
+| POST `/hello` | Empty object | Schema and random persistent application ID; no private state |
+| POST `/pair/start` | Empty object | Top-left code notification or open QR refresh |
+| POST `/pair` | Six-digit `pin` | Token and TV ID; persists trust, rotates PIN, closes QR |
+| POST `/api/state` | `token` | Device name, actual playback/system-control state, timestamps |
+| POST `/api/catalog` | `token` | Allowlisted installed apps and actual TV inputs |
+| POST `/api/icon`, `/api/artwork` | `token`, catalog/artwork `id` | Bounded supplied image data |
+| POST `/api/key` | `token`, allowlisted `command` | Foreground launcher or paired system-service key |
+| POST `/api/launch` | `token`, catalog `id` | Known app/input/live-TV launch |
+| POST `/api/media` | `token`, `source`, `action`, optional numeric `value` | Capability/source-checked playback control |
+| POST `/api/presence` | `token`, optional `disconnect` | Presence lease |
+| POST `/api/revoke` | `token` | Revokes this token only |
+| POST `/api/system/pair/start` | `token` | Starts explicit loopback system-service pairing |
+| POST `/api/system/pair/finish` | `token`, six-hex-digit `pin` | Completes system-service pairing |
 
-Commands: up/down/left/right/ok/back/home/volumeup/volumedown/playpause/next/previous. PIN expires after five minutes. Five failed PIN attempts per minute are allowed. Notice requests are throttled to one per three seconds. At most 16 tokens exist in memory. Backgrounding Home/revocation invalidates all tokens. Presence heartbeat is 5s; stale presence expires after 15s. QR stores PIN in a fragment cleared before request transmission. Authenticated presence drives the remote activity.
+Keys: up/down/left/right/ok/back/home/volumeup/volumedown/playpause/next/previous.
+Five-minute phone PIN, five failed attempts/minute, notices throttled to three
+seconds. Up to 16 encrypted tokens persist across service restarts. Presence
+expires after 15 seconds; the phone refreshes actual state every two seconds while
+active. No commands are queued for replay. QR PIN fragments are removed before
+API requests and may complete same-origin pairing automatically.
 
-## Validation and errors
+HTTP/1.1, bounded 8 KiB headers/4 KiB JSON bodies, duplicate/transfer-encoding
+rejection, complete reads and read timeout. Foreign origins require a well-formed
+HTTPS origin (localhost development exception). CORS is exact-origin; each browser
+token is bound to that origin. Native/same-TV-origin tokens use a separate class.
+OPTIONS is parsed only for this explicit browser policy; default host parser tests
+retain strict same-origin behavior. Authentication is required for every `/api/`
+action regardless of preflight. No credentials/private state enter PWA caches.
 
-HTTP/1.1 only, exact local Host authority, matching Origin when supplied, no transfer encoding or duplicate headers, 8 KiB headers, 4 KiB JSON bodies, complete reads and 3s per-client timeout. POST bodies must be application/json. The listener processes one connection at a time: slow clients can temporarily delay other clients within the timeout; no remote public access is intended.
+## In-process Expo TV adapter
 
-400 malformed request/JSON, 401 unknown token, 403 incorrect/expired PIN or foreign Host/Origin, 404 unknown route, 405 method, 413 oversized body, 415 media type, 429 pairing throttled, 431 oversized headers. Responses are no-store, nosniff, deny framing and restrict page connections to the same origin. No cross-origin permission is granted.
+`NativeModules.AureaTV` is registered only by the handwritten TV host. This is not
+an HTTP endpoint and is absent from generated phone apps and the browser preview.
+`execute(operation, JSON)` accepts a bounded JSON object (32 KiB); image results
+are bounded data URIs, never arbitrary URLs. `pairedRequest` has its own smaller
+4 KiB bound and fixed scan/pair/cancel operations. Native methods do not expose
+credentials or unrestricted intent execution.
+
+The typed snapshot includes the real app/input catalog, canonical saved dock,
+appearance/language, network availability, receiver/paired playback, volume,
+remote presence, update state and exact native build metadata. App and input
+launches are validated against the current catalog. Media actions check the
+current source and reported capabilities. Preference writes validate the batch
+before committing. Settings use supported Android intents with explicit fallbacks.
+
+`AureaTVEvent` carries fixed key/home/pairing/notice events. `AureaTVWaveform`
+carries six calculated PCM bands only while the native receiver is active and
+Home is foreground. Paired Apple TV bars remain decorative. No browser example
+is substituted when a native request fails.
+
+`ready` confirms a valid initial snapshot and enables the native startup recovery
+guard. Release/update actions delegate to existing native controllers; backup and
+restore use Android document providers and preserve the existing validation rules.
+
+## Remote wallpaper / browser demo extension (2.0.2)
+
+`/api/state` may include `wallpaper: {id: string, motion: boolean, musicTint: boolean}`.
+The phone validates this optional value without rejecting older state payloads.
+The native service reads existing TV preferences and does not modify them.
+
+The explicit Node demo server implements the existing hello/pair/state/catalog,
+key/launch/media/presence/revoke protocol, with `provenance: simulated` and music
+source `demo`. Native system-pairing operations are intentionally unsupported.
+The private loopback POST `/__demo/events` streams NDJSON; `/__demo/state` accepts
+owner snapshots and returns phone presence plus the LAN URL. Both require the
+in-memory owner header and matching tab identity. `/__demo/health` reports owner
+availability without credentials. No private endpoint or authenticated response
+is cached by the PWA. See EXPO_DEMO.md for security and lifecycle constraints.
+
+Music state may include activityVisible:boolean (presentation only); false hides a
+paused activity without ending its playback session or disabling controls. Native
+key payloads carry eventId to reject duplicate bridged delivery. Background Home
+failure returns foreground_access_required; permission is requested through the
+TV's Remote settings, never granted automatically by the application.
+
+## Phone microphone (2.0.6)
+
+Authenticated `/api/voice/start`, `/api/voice/chunk`, `/api/voice/end` forward
+phone PCM through the paired system remote. Only chunk bodies allow 16 KiB;
+ordinary JSON retains 4 KiB. Voice payloads use ephemeral RSA-OAEP/AES-GCM;
+owner binding, sequencing and deadlines are checked independently of decryption.
+See [exact voice contract and trust limitations](features/PHONE_VOICE.md).
+
+## System control reconnect and backend
+
+`POST /api/system/connect` requires remote trust and reconnects the existing
+system-control identity without initiating pairing or sending a key. The optional
+state `systemRemote.backend` is `android-tls` in the TV host or `python-tls` in host
+protocol tests. Neither backend selection nor saved pairing alone means ready.
+`system_tls_failed` denotes native transport failure; authentication rejection
+remains separate. See [system transport](features/SYSTEM_REMOTE_TRANSPORT.md).
+
+### 2.1 remote additions
+
+Authenticated `POST /api/system/local-adb` accepts only `{enabled:boolean}` and
+returns local bridge status. `state.localAdb` reports enabled/ready/status;
+`systemRemote.voiceReady` is separate from button readiness, and backend can be
+`local-adb` or client-side `native-client`. `key` adds `power` (Android KEYCODE_POWER).
+Music includes `dominance` (0.5–0.92), calculated from sampled cover area and shared
+by all wallpaper clients. Native phone system pairing/control/voice use their
+direct Remote Service connection instead of these TV relay routes.
