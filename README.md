@@ -6,13 +6,13 @@
 <img src="https://img.shields.io/badge/Android-8%2B-9acda9" alt="Android 8 or newer">
 </p>
 
-**Aurea Home** (formerly Aurea Home) is a remote-first Android TV launcher with a six-item dock, fullscreen artwork, fast input shortcuts, and an integrated AirPlay receiver. Built for the living room, with Italian and English throughout.
+**Aurea Home** is a remote-first Android TV launcher with a six-item dock, fullscreen artwork, fast input shortcuts, and an integrated AirPlay receiver. Built for the living room, with Italian and English throughout.
 
-<p align="center"><a href="https://github.com/Xarber/Aurea-Home/releases/latest"><strong>Download APK</strong></a> · <a href="docs/INSTALL.md">Install & restore</a> · <a href="docs/BUILDING.md">Build it yourself</a> · <a href="https://github.com/Xarber/Aurea-Home/issues">Report an issue</a></p>
+<p align="center"><a href="https://github.com/Xarber/Aurea-Home/releases/latest"><strong>Download APK</strong></a> · <a href="https://aurea.xcenter.it">Web remote</a> · <a href="https://aurea.xcenter.it/?demo=1">Launcher demo</a> · <a href="docs/INSTALL.md">Install & restore</a> · <a href="docs/BUILDING.md">Build it yourself</a> · <a href="https://github.com/Xarber/Aurea-Home/issues">Report an issue</a></p>
 
 ![Stable Android launcher screenshot](docs/assets/home.png)
 
-The screenshot above shows the current stable release. The Expo migration is being validated on `testing`.
+The screenshot above shows an earlier native release. Open the hosted launcher demo for the current shared Expo interface.
 
 ## Expo application base
 

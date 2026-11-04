@@ -55,3 +55,39 @@ peer ID over public HTTPS. The dedicated aurea-peer unit was active; existing
 Velunivo services were preserved. Source-stamped release.json was verified. The
 TV website link also has its own QR, and pairing events refresh the visible PIN
 inside an already-open TV pairing panel when origin binding rotates the code.
+
+## Publication and deployment
+
+- Feature promotion merged through PR #15 (beta) and #16 (main). Main source:
+  f97f2edbf9928d5c837eaca4f00d58e2156a19d0. Full native workflow:
+  https://github.com/Xarber/Aurea-Home/actions/runs/41825050717 (submitted/running;
+  no completed native artifact or release claimed at this point).
+- Public website: https://aurea.xcenter.it, version 2.1.0, deployed source
+  55b95493c370c718e70529ba1ddd0f066ad4f560 (application code in the main merge).
+  Real two-browser WebRTC pairing and music launch passed again with zero errors.
+  The previous validated 0d6c70f selector is recorded as rollback. Aurea and
+  existing Velunivo systemd services were active; no healthy PeerServer restarted.
+- No physical TV installation or new debugging authorization was performed for
+  this batch. Native phone/TV verification remains pending. No temporary worktree
+  or branch was created; pre-existing main/testing worktrees and Dependabot PRs
+  were preserved.
+
+Live PWA installation exposed a proxy-prefix overlap: `/peer` also intercepted
+`/peer-client.js`, making precaching fail despite normal WebRTC working. The
+signaling location is now `/peer/`, leaving the static client asset reachable.
+The production offline-shell test is repeated after this routing fix.
+
+The live check additionally found local Finder metadata (`.DS_Store`) in the
+precache list, rejected correctly by nginx's hidden-file protection. The exporter
+now omits hidden files/directories; it does not weaken server protection. Nginx
+serves manifests with application/manifest+json. These hosting/web-export-only
+changes do not change the native binary; PR checks remain required, and their
+merge can skip a duplicate native build of the same version.
+
+Production follow-up passed: source-stamped web 7171ca6, default remote view,
+secure context, activated/controlling service worker, offline remote-shell reload,
+public signaling, and explicit application/manifest+json headers. Main's existing
+native 2.1.0 pipeline remains the binary build; these later nginx/export/docs-only
+promotions use normal protected PR checks and skip duplicate native publication
+on merge. Android Gradle Plugin 9.2.1's cached proguard-common rules were inspected:
+annotated JavascriptInterface methods are retained, including HostedRemote's bridge.
