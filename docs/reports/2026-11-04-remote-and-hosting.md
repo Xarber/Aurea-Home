@@ -76,3 +76,10 @@ Live PWA installation exposed a proxy-prefix overlap: `/peer` also intercepted
 `/peer-client.js`, making precaching fail despite normal WebRTC working. The
 signaling location is now `/peer/`, leaving the static client asset reachable.
 The production offline-shell test is repeated after this routing fix.
+
+The live check additionally found local Finder metadata (`.DS_Store`) in the
+precache list, rejected correctly by nginx's hidden-file protection. The exporter
+now omits hidden files/directories; it does not weaken server protection. Nginx
+serves manifests with application/manifest+json. These hosting/web-export-only
+changes do not change the native binary; PR checks remain required, and their
+merge can skip a duplicate native build of the same version.
