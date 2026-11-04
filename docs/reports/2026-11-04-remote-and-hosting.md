@@ -40,3 +40,10 @@ receive a number-like string. Numeric positions now have their own optional
 transition values, preserving synchronized and interrupted fades. Both focused
 palette regression tests passed after correction. Hosted verification is repeated
 against that corrected source, not the earlier deployment.
+
+A new integration test executes the actual native-client TypeScript against two
+real local TLS servers through a Node adapter for the native socket boundary. It
+passed RSA/Polo proof, delayed certificate retrieval with early Configure frames,
+SetActive/Start readiness, ping response, direct power key, local RSA-OAEP/AES-GCM
+voice unwrap and zero-padded 8 KiB PCM. This is real protocol/crypto testing on the
+host, with mocked Expo storage/randomness/socket adapters, not a physical phone.
