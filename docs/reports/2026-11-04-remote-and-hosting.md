@@ -55,3 +55,19 @@ peer ID over public HTTPS. The dedicated aurea-peer unit was active; existing
 Velunivo services were preserved. Source-stamped release.json was verified. The
 TV website link also has its own QR, and pairing events refresh the visible PIN
 inside an already-open TV pairing panel when origin binding rotates the code.
+
+## Publication and deployment
+
+- Feature promotion merged through PR #15 (beta) and #16 (main). Main source:
+  f97f2edbf9928d5c837eaca4f00d58e2156a19d0. Full native workflow:
+  https://github.com/Xarber/Aurea-Home/actions/runs/41825050717 (submitted/running;
+  no completed native artifact or release claimed at this point).
+- Public website: https://aurea.xcenter.it, version 2.1.0, deployed source
+  55b95493c370c718e70529ba1ddd0f066ad4f560 (application code in the main merge).
+  Real two-browser WebRTC pairing and music launch passed again with zero errors.
+  The previous validated 0d6c70f selector is recorded as rollback. Aurea and
+  existing Velunivo systemd services were active; no healthy PeerServer restarted.
+- No physical TV installation or new debugging authorization was performed for
+  this batch. Native phone/TV verification remains pending. No temporary worktree
+  or branch was created; pre-existing main/testing worktrees and Dependabot PRs
+  were preserved.
