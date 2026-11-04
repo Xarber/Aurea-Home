@@ -103,7 +103,7 @@ export class RemoteClient {
  }
  async key(command:RemoteKey){
   const global=['power','channelup','channeldown','rewind','fastforward','stop','voice','red','green','yellow','blue'];
-  if(this.direct&&!this.fixture&&this.snapshot.status==='connected'&&command!=='control'&&(!this.snapshot.device?.homeActive||global.includes(command))){try{await this.direct.key(command);}catch(error){this.update({error:error instanceof Error?error.message:'system_connection_failed'});}return;}
+  if(this.direct&&!this.fixture&&this.snapshot.status==='connected'&&command!=='control'&&command!=='home'&&(!this.snapshot.device?.homeActive||global.includes(command))){try{await this.direct.key(command);}catch(error){this.update({error:error instanceof Error?error.message:'system_connection_failed'});}return;}
   return this.action('key',{command});
  }
  launch(id:string){return this.action('launch',{id});}

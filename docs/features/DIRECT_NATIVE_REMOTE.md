@@ -37,3 +37,8 @@ web success is not evidence of native interoperability.
 Reference: pinned androidtvremote2 0.3.2 and Google's Polo schema, inspected for
 field numbers, RSA proof and minimum PCM sizes. No upstream raw-message logging
 or historical Anymote implementation is used.
+
+### Foreground restoration and pairing responsiveness
+Home always uses the authenticated launcher bridge, including when Home is in the background. It never depends on the phone's system pairing or the optional TV-local ADB bridge. App/input launches retain the server's pending-launch/foreground restoration path. Android background-launch restrictions still apply.
+
+New phone identities use Forge's step-based RSA generation with a five-millisecond work budget, explicit timer yields, cancellation on target changes and a 30-second deadline. This prevents long prime searches from monopolizing the JavaScript event loop. Physical phone pairing must still be validated.

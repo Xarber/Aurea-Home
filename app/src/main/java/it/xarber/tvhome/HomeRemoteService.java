@@ -98,7 +98,7 @@ public final class HomeRemoteService extends Service {
     private JSONObject key(String command)throws Exception{
         if(!RemoteKeys.supported(command))return SystemRemoteController.error("unsupported");
         if(command.equals("mute")){AudioManager audio=getSystemService(AudioManager.class);audio.adjustStreamVolume(AudioManager.STREAM_MUSIC,AudioManager.ADJUST_TOGGLE_MUTE,0);return accepted();}
-        if(localAdb.enabled()&&LocalAdbController.keyCode(command)!=null&&(RemoteKeys.systemOnly(command)||!TVPlatform.foreground()&&home()==null))return localAdb.key(command);
+        if(!command.equals("home")&&localAdb.enabled()&&LocalAdbController.keyCode(command)!=null&&(RemoteKeys.systemOnly(command)||!TVPlatform.foreground()&&home()==null))return localAdb.key(command);
         if(RemoteKeys.systemOnly(command))return system.state().optBoolean("paired")?system.request("key",new JSONObject().put("command",command)):SystemRemoteController.error("system_pairing_required");
         if(TVPlatform.foreground())return TVPlatform.remoteKey(command);
         if(home()!=null)return onMain(()->{LegacyHomeActivity activity=home();if(activity==null)return SystemRemoteController.error("home_changed");activity.remoteCommand(command);return accepted();});
