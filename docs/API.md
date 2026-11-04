@@ -37,3 +37,76 @@ token is bound to that origin. Native/same-TV-origin tokens use a separate class
 OPTIONS is parsed only for this explicit browser policy; default host parser tests
 retain strict same-origin behavior. Authentication is required for every `/api/`
 action regardless of preflight. No credentials/private state enter PWA caches.
+
+## In-process Expo TV adapter
+
+`NativeModules.AureaTV` is registered only by the handwritten TV host. This is not
+an HTTP endpoint and is absent from generated phone apps and the browser preview.
+`execute(operation, JSON)` accepts a bounded JSON object (32 KiB); image results
+are bounded data URIs, never arbitrary URLs. `pairedRequest` has its own smaller
+4 KiB bound and fixed scan/pair/cancel operations. Native methods do not expose
+credentials or unrestricted intent execution.
+
+The typed snapshot includes the real app/input catalog, canonical saved dock,
+appearance/language, network availability, receiver/paired playback, volume,
+remote presence, update state and exact native build metadata. App and input
+launches are validated against the current catalog. Media actions check the
+current source and reported capabilities. Preference writes validate the batch
+before committing. Settings use supported Android intents with explicit fallbacks.
+
+`AureaTVEvent` carries fixed key/home/pairing/notice events. `AureaTVWaveform`
+carries six calculated PCM bands only while the native receiver is active and
+Home is foreground. Paired Apple TV bars remain decorative. No browser example
+is substituted when a native request fails.
+
+`ready` confirms a valid initial snapshot and enables the native startup recovery
+guard. Release/update actions delegate to existing native controllers; backup and
+restore use Android document providers and preserve the existing validation rules.
+
+## Remote wallpaper / browser demo extension (2.0.2)
+
+`/api/state` may include `wallpaper: {id: string, motion: boolean, musicTint: boolean}`.
+The phone validates this optional value without rejecting older state payloads.
+The native service reads existing TV preferences and does not modify them.
+
+The explicit Node demo server implements the existing hello/pair/state/catalog,
+key/launch/media/presence/revoke protocol, with `provenance: simulated` and music
+source `demo`. Native system-pairing operations are intentionally unsupported.
+The private loopback POST `/__demo/events` streams NDJSON; `/__demo/state` accepts
+owner snapshots and returns phone presence plus the LAN URL. Both require the
+in-memory owner header and matching tab identity. `/__demo/health` reports owner
+availability without credentials. No private endpoint or authenticated response
+is cached by the PWA. See EXPO_DEMO.md for security and lifecycle constraints.
+
+Music state may include activityVisible:boolean (presentation only); false hides a
+paused activity without ending its playback session or disabling controls. Native
+key payloads carry eventId to reject duplicate bridged delivery. Background Home
+failure returns foreground_access_required; permission is requested through the
+TV's Remote settings, never granted automatically by the application.
+
+## Phone microphone (2.0.6)
+
+Authenticated `/api/voice/start`, `/api/voice/chunk`, `/api/voice/end` forward
+phone PCM through the paired system remote. Only chunk bodies allow 16 KiB;
+ordinary JSON retains 4 KiB. Voice payloads use ephemeral RSA-OAEP/AES-GCM;
+owner binding, sequencing and deadlines are checked independently of decryption.
+See [exact voice contract and trust limitations](features/PHONE_VOICE.md).
+
+## System control reconnect and backend
+
+`POST /api/system/connect` requires remote trust and reconnects the existing
+system-control identity without initiating pairing or sending a key. The optional
+state `systemRemote.backend` is `android-tls` in the TV host or `python-tls` in host
+protocol tests. Neither backend selection nor saved pairing alone means ready.
+`system_tls_failed` denotes native transport failure; authentication rejection
+remains separate. See [system transport](features/SYSTEM_REMOTE_TRANSPORT.md).
+
+### 2.1 remote additions
+
+Authenticated `POST /api/system/local-adb` accepts only `{enabled:boolean}` and
+returns local bridge status. `state.localAdb` reports enabled/ready/status;
+`systemRemote.voiceReady` is separate from button readiness, and backend can be
+`local-adb` or client-side `native-client`. `key` adds `power` (Android KEYCODE_POWER).
+Music includes `dominance` (0.5–0.92), calculated from sampled cover area and shared
+by all wallpaper clients. Native phone system pairing/control/voice use their
+direct Remote Service connection instead of these TV relay routes.

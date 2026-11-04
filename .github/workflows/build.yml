@@ -1,4 +1,4 @@
-name: Build MiTV Home
+name: Build Aurea — all platforms
 on:
   push:
     branches: [beta, main]
@@ -6,15 +6,6 @@ on:
   pull_request:
     branches: [beta, main]
   workflow_dispatch:
-    inputs:
-      apple_tv_preflight:
-        description: Build Android Apple TV client dependencies only
-        type: boolean
-        default: false
-      apple_tv_dependency_run:
-        description: Optional successful same-repository native dependency run to reuse
-        type: string
-        default: ''
 permissions:
   contents: read
   actions: read
@@ -22,15 +13,14 @@ concurrency:
   group: mitv-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 jobs:
-  phone-companion:
-    name: Phone companion formats
-    if: github.event_name != 'pull_request' && !inputs.apple_tv_preflight
+  ios:
+    name: iOS companion
+    if: github.event_name != 'pull_request'
     uses: ./.github/workflows/phone.yml
     secrets: inherit
 
   web-remote:
-    name: Embedded phone web remote
-    if: github.event_name != 'pull_request' && !inputs.apple_tv_preflight
+    name: Export web and embedded remote
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
@@ -38,21 +28,23 @@ jobs:
         with:
           node-version: '24'
           cache: npm
-          cache-dependency-path: demo/package-lock.json
-      - run: npm ci && npm run typecheck && npm test && npm run build
-        working-directory: demo
+          cache-dependency-path: package-lock.json
+      - run: npm ci && npm run build
         env:
           EXPO_PUBLIC_SOURCE_COMMIT: ${{ github.sha }}
-      - run: npx playwright install --with-deps chromium && npm run test:e2e && node scripts/verify-pwa-update.mjs
-        working-directory: demo
       - uses: actions/upload-artifact@v5
         with:
           name: Aurea-embedded-remote-${{ github.sha }}
-          path: demo/dist/
+          path: dist/
           if-no-files-found: error
 
+  web-validation:
+    name: Browser and PWA validation
+    needs: web-remote
+    uses: ./.github/workflows/demo.yml
+
   apple-tv-runtime:
-    name: Apple TV runtime ${{ matrix.abi }}
+    name: Android dependencies ${{ matrix.abi }}
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
     timeout-minutes: 45
@@ -71,19 +63,15 @@ jobs:
         id: native-wheels
         with:
           path: wheels/
-          key: apple-tv-cp311-${{ matrix.abi }}-${{ hashFiles('scripts/apple_tv/build_wheels.py') }}
-      - name: Reuse previously compiled pinned dependencies
-        if: inputs.apple_tv_dependency_run != ''
-        uses: actions/download-artifact@v6
-        with:
-          pattern: apple-tv-wheels-${{ matrix.abi }}-*
-          run-id: ${{ inputs.apple_tv_dependency_run }}
-          github-token: ${{ github.token }}
-          path: wheels
-          merge-multiple: true
-      - name: Cross-compile pinned dependencies
-        if: steps.native-wheels.outputs.cache-hit != 'true' && inputs.apple_tv_dependency_run == ''
-        run: python scripts/apple_tv/build_wheels.py --abi '${{ matrix.abi }}' --work "$RUNNER_TEMP/apple-tv" --output wheels
+          key: apple-tv-provenance-v2-cp311-${{ matrix.abi }}-${{ hashFiles('scripts/apple_tv/build_wheels.py') }}
+      - name: Prepare verified dependencies automatically
+        env:
+          ABI: ${{ matrix.abi }}
+        run: |
+          if ! python scripts/apple_tv/verify_wheels.py --abi "$ABI" wheels > /dev/null 2>&1; then
+            rm -rf wheels
+            python scripts/apple_tv/build_wheels.py --abi "$ABI" --work "$RUNNER_TEMP/apple-tv" --output wheels
+          fi
       - name: Verify native wheel provenance and bytes
         run: python scripts/apple_tv/verify_wheels.py --abi '${{ matrix.abi }}' wheels
       - uses: actions/upload-artifact@v5
@@ -93,7 +81,7 @@ jobs:
           if-no-files-found: error
 
   apple-tv-pure:
-    name: Apple TV portable Python dependencies
+    name: Shared Python dependencies
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -111,6 +99,8 @@ jobs:
         run: |
           python -m pip install wheels/pyatv-0.18.0-py3-none-any.whl srptools==2.0.0 cryptography==50.0.2
           python -m unittest discover -s tests/python -p test_srp_compatibility.py -v
+          python -m unittest discover -s tests/python -p test_voice_session.py -v
+          python -m unittest discover -s tests/python -p test_system_remote.py -v
       - uses: actions/upload-artifact@v5
         with:
           name: apple-tv-wheels-pure-${{ github.sha }}
@@ -130,27 +120,27 @@ jobs:
           java-version: '21'
       - run: scripts/check-host.sh
       - uses: actions/setup-node@v6
-        if: github.event_name == 'pull_request'
         with:
           node-version: '24'
           cache: npm
-          cache-dependency-path: demo/package-lock.json
+          cache-dependency-path: package-lock.json
       - run: npm ci && npm run typecheck && npm test
-        if: github.event_name == 'pull_request'
-        working-directory: demo
 
   android:
     needs: [apple-tv-runtime, apple-tv-pure, web-remote]
-    name: Android ${{ matrix.format }}
-    if: github.event_name != 'pull_request' && !inputs.apple_tv_preflight
+    name: Android ${{ matrix.target }} ${{ matrix.format }}
+    if: github.event_name != 'pull_request'
     strategy:
       fail-fast: false
       matrix:
+        target: [tv, remote]
         format: [apk, aab]
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     env:
       MITV_BUILD_CHANNEL: ${{ github.ref_name }}
+      EXPO_PUBLIC_SOURCE_COMMIT: ${{ github.sha }}
+      AUREA_TARGET: ${{ matrix.target }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -163,6 +153,12 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
       - name: Collect exact-run Android Python dependencies
         uses: actions/download-artifact@v6
         with:
@@ -199,23 +195,38 @@ jobs:
           MITV_KEY_ALIAS: ${{ secrets.MITV_KEY_ALIAS }}
           MITV_KEY_PASSWORD: ${{ secrets.MITV_KEY_PASSWORD }}
           PACKAGE_FORMAT: ${{ matrix.format }}
+          TARGET: ${{ matrix.target }}
         run: |
-          if [ "$PACKAGE_FORMAT" = apk ]; then
-            ./gradlew :app:assembleRelease :app:lintRelease --console=plain --stacktrace
-          else
-            ./gradlew :app:bundleRelease :app:lintRelease --console=plain --stacktrace
-          fi
+          FLAGS=("-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8" --max-workers=2)
+          if [ "$TARGET" = remote ]; then FLAGS+=(-PmobileRemote -PhomeApplicationId=it.xarber.aurea.remote); fi
+          if [ "$PACKAGE_FORMAT" = apk ]; then TASK=assembleRelease; else TASK=bundleRelease; fi
+          ./gradlew :app:compileReleaseJavaWithJavac "${FLAGS[@]}" --console=plain --stacktrace
+          ./gradlew ":app:$TASK" "${FLAGS[@]}" --console=plain --stacktrace
       - name: Verify signed packages and embedded provenance
         env:
           GH_TOKEN: ${{ github.token }}
           PACKAGE_FORMAT: ${{ matrix.format }}
+          TARGET: ${{ matrix.target }}
         run: |
+          if [ "$TARGET" = remote ]; then
+            AUREA_ANDROID_OUTPUTS=app/build/outputs python3 scripts/phone/package.py android "$PACKAGE_FORMAT"
+            if [ "$PACKAGE_FORMAT" = aab ]; then
+              gh api repos/google/bundletool/releases/tags/1.18.3 > "$RUNNER_TEMP/bundletool-release.json"
+              python3 scripts/fetch_bundletool.py "$RUNNER_TEMP/bundletool-release.json" "$RUNNER_TEMP/bundletool.jar"
+              java -jar "$RUNNER_TEMP/bundletool.jar" validate --bundle=app/build/outputs/bundle/release/app-release.aab
+              java -jar "$RUNNER_TEMP/bundletool.jar" dump manifest --bundle=app/build/outputs/bundle/release/app-release.aab --module=base > "$RUNNER_TEMP/phone-manifest.xml"
+              VERSION="$(python3 -c 'import json; print(json.load(open("app.json"))["expo"]["version"])')"
+              CODE="$(python3 -c 'import json; print(json.load(open("app.json"))["expo"]["android"]["versionCode"])')"
+              python3 scripts/validate_manifest.py "$RUNNER_TEMP/phone-manifest.xml" "$VERSION" "$CODE" it.xarber.aurea.remote
+            fi
+            exit 0
+          fi
           mkdir -p dist
           VERSION="$(python3 -c 'import json; print(json.load(open("app/src/main/assets/build-metadata.json"))["version"])')"
           CODE="$(python3 -c 'import json; print(json.load(open("app/src/main/assets/build-metadata.json"))["code"])')"
           SHORT_SHA="${GITHUB_SHA:0:7}"
           if [ "$PACKAGE_FORMAT" = apk ]; then
-            FILE="dist/MiTV-Home-v${VERSION}-android-universal-${MITV_BUILD_CHANNEL}-github-extended-${SHORT_SHA}.apk"
+            FILE="dist/Aurea-Home-v${VERSION}-android-universal-${MITV_BUILD_CHANNEL}-github-extended-${SHORT_SHA}.apk"
             cp app/build/outputs/apk/release/app-release.apk "$FILE"
             "$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --verbose "$FILE"
             "$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --print-certs "$FILE" > "$RUNNER_TEMP/apk-signers.txt"
@@ -226,7 +237,7 @@ jobs:
             grep -F "versionName='$VERSION'" "$RUNNER_TEMP/badging.txt"
             ! grep -q 'application-debuggable' "$RUNNER_TEMP/badging.txt"
           else
-            FILE="dist/MiTV-Home-v${VERSION}-android-${MITV_BUILD_CHANNEL}-github-extended-${SHORT_SHA}.aab"
+            FILE="dist/Aurea-Home-v${VERSION}-android-${MITV_BUILD_CHANNEL}-github-extended-${SHORT_SHA}.aab"
             cp app/build/outputs/bundle/release/app-release.aab "$FILE"
             jarsigner -verify "$FILE" | tee "$RUNNER_TEMP/aab-signature.txt"
             grep -q 'jar verified' "$RUNNER_TEMP/aab-signature.txt"
@@ -239,15 +250,22 @@ jobs:
           python3 scripts/release.py validate --file "$FILE" --kind "$PACKAGE_FORMAT"
       - uses: actions/upload-artifact@v5
         with:
-          name: MiTV-Home-${{ github.ref_name }}-${{ matrix.format }}-${{ github.sha }}
-          path: dist/
+          name: ${{ matrix.target == 'remote' && 'Aurea-Remote' || 'Aurea-Home' }}-${{ github.ref_name }}-android-${{ matrix.format }}-${{ github.sha }}
+          path: ${{ matrix.target == 'remote' && 'phone-dist/' || 'dist/' }}
           if-no-files-found: error
           retention-days: 30
+      - name: Android lint
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          FLAGS=("-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8" --max-workers=2)
+          if [ "$TARGET" = remote ]; then FLAGS+=(-PmobileRemote -PhomeApplicationId=it.xarber.aurea.remote); fi
+          ./gradlew :app:lintRelease "${FLAGS[@]}" --console=plain
       - name: Retain lint reports on failure
         if: failure()
         uses: actions/upload-artifact@v5
         with:
-          name: lint-${{ matrix.format }}-${{ github.sha }}
+          name: lint-${{ matrix.target }}-${{ matrix.format }}-${{ github.sha }}
           path: app/build/reports/lint-results-release.*
           if-no-files-found: ignore
       - name: Remove signing material
@@ -256,7 +274,7 @@ jobs:
 
   source:
     name: Corresponding source
-    if: github.event_name != 'pull_request' && !inputs.apple_tv_preflight
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
@@ -264,20 +282,20 @@ jobs:
           submodules: recursive
       - run: |
           mkdir -p dist
-          python3 scripts/source_archive.py "dist/MiTV-Home-source-${GITHUB_SHA:0:7}.tar.gz"
+          python3 scripts/source_archive.py "dist/Aurea-Home-source-${GITHUB_SHA:0:7}.tar.gz"
           cd dist
           sha256sum *.tar.gz > SOURCE-SHA256SUMS.txt
       - uses: actions/upload-artifact@v5
         with:
-          name: MiTV-Home-${{ github.ref_name }}-source-${{ github.sha }}
+          name: Aurea-Home-${{ github.ref_name }}-source-${{ github.sha }}
           path: dist/
           if-no-files-found: error
           retention-days: 30
 
   publish:
     name: Publish validated channel
-    if: github.event_name != 'pull_request' && !inputs.apple_tv_preflight && (github.ref_name == 'main' || github.ref_name == 'beta')
-    needs: [checks, android, source, phone-companion]
+    if: github.event_name != 'pull_request' && (github.ref_name == 'main' || github.ref_name == 'beta')
+    needs: [checks, web-validation, android, source, ios]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -287,9 +305,20 @@ jobs:
           fetch-depth: 0
       - uses: actions/download-artifact@v6
         with:
-          pattern: MiTV-Home-${{ github.ref_name }}-*-${{ github.sha }}
+          pattern: Aurea-Home-${{ github.ref_name }}-*-${{ github.sha }}
           path: dist
           merge-multiple: true
+      - uses: actions/download-artifact@v6
+        with:
+          pattern: Aurea-Remote-${{ github.ref_name }}-*-${{ github.sha }}
+          path: dist/companions
+          merge-multiple: true
+      - uses: actions/download-artifact@v6
+        with:
+          name: Aurea-embedded-remote-${{ github.sha }}
+          path: web-dist/
+      - name: Validate all companion artifacts and package web
+        run: python3 scripts/ci/release_collection.py
       - name: Publish exact validated artifact collection
         env:
           GH_TOKEN: ${{ github.token }}
@@ -315,7 +344,59 @@ jobs:
           cp distribution/obtainium.json dist/obtainium.json
           cp distribution/obtainium-beta.json dist/obtainium-beta.json
           (cd dist && sha256sum ./*.apk ./*.aab ./*.tar.gz update-manifest.json obtainium.json obtainium-beta.json > SHA256SUMS.txt)
-          gh release create "$TAG" --draft --target "$GITHUB_SHA" --title "MiTV Home $VERSION ($MITV_BUILD_CHANNEL)" --notes-file "$RUNNER_TEMP/release-notes.md" "${RELEASE_ARGS[@]}" dist/*.apk dist/*.aab dist/*.tar.gz dist/SHA256SUMS.txt dist/obtainium.json dist/obtainium-beta.json dist/update-manifest.json
-          test "$(gh release view "$TAG" --json assets --jq '.assets | length')" -ge 7
+          python3 scripts/ci/release_collection.py --checksums
+          gh release create "$TAG" --draft --target "$GITHUB_SHA" --title "Aurea Home $VERSION ($MITV_BUILD_CHANNEL)" --notes-file "$RUNNER_TEMP/release-notes.md" "${RELEASE_ARGS[@]}" dist/*.apk dist/*.aab dist/*.tar.gz dist/SHA256SUMS.txt dist/obtainium.json dist/obtainium-beta.json dist/update-manifest.json dist/companions/*
+          test "$(gh release view "$TAG" --json assets --jq '.assets | length')" -ge 21
           if [ "$MITV_BUILD_CHANNEL" = beta ]; then gh release edit "$TAG" --draft=false --latest=false; else gh release edit "$TAG" --draft=false --latest; fi
           python3 scripts/check_published_update.py dist/update-manifest.json
+
+  summary:
+    name: Build results
+    if: always()
+    needs: [checks, web-remote, web-validation, apple-tv-runtime, apple-tv-pure, android, ios, source, publish, distribution-sources]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - name: Explain all build results
+        env:
+          BUILD_RESULTS: ${{ toJSON(needs) }}
+        run: python3 scripts/ci/summary.py
+
+  distribution-sources:
+    name: Update AltSource and Obtainium sources
+    concurrency:
+      group: aurea-distribution-sources
+      cancel-in-progress: false
+    needs: publish
+    if: github.event_name != 'pull_request' && (github.ref_name == 'main' || github.ref_name == 'beta')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v6
+        with:
+          pattern: Aurea-Remote-${{ github.ref_name }}-ios-unsigned-${{ github.sha }}
+          path: source-artifact/
+          merge-multiple: true
+      - name: Generate and publish actual release sources
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="$(python3 -c 'import json; print(json.load(open("app.json"))["expo"]["version"])')"
+          CODE="$(python3 -c 'import json; print(json.load(open("app.json"))["expo"]["ios"]["buildNumber"])')"
+          TAG="v${VERSION}"
+          if [ "$GITHUB_REF_NAME" = beta ]; then TAG="${TAG}-beta.${CODE}.${GITHUB_SHA:0:7}"; fi
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" > "$RUNNER_TEMP/actual-release.json"
+          mkdir -p source-history distribution-generated
+          if gh release view sources-v1.0 > /dev/null 2>&1; then
+            gh release download sources-v1.0 --pattern 'altsource*.json' --dir source-history --clobber
+          fi
+          python3 scripts/distribution/sources.py --release "$RUNNER_TEMP/actual-release.json" --sidecar source-artifact/*.ipa.json --previous source-history --out distribution-generated
+          cp distribution/obtainium*.json distribution-generated/
+          cp public/branding/icon-512.png distribution-generated/
+          if ! gh release view sources-v1.0 > /dev/null 2>&1; then
+            gh release create sources-v1.0 --latest=false --title 'Aurea distribution sources' --notes 'Mutable installation metadata only. Application versions are separate releases.'
+          fi
+          gh release upload sources-v1.0 distribution-generated/* --clobber
+          python3 scripts/distribution/verify_public.py

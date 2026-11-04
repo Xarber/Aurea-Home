@@ -91,17 +91,12 @@ TV-hosted same-origin page in that case. Do not disable browser security.
 
 The native TV pipeline embeds the exact-commit Expo web export in
 `app/src/main/assets/remoteapp/`. The old bundled remote remains a fallback if those
-assets are absent in a local compile. Run `npm --prefix demo run build` and copy
-`demo/dist` there before building locally when testing the complete new web UI.
+assets are absent in a local compile. Run `npm run build` and copy
+`dist` there before building locally when testing the complete new web UI.
 
-`phone.yml` prepares four independent artifact-only jobs: signed universal APK,
-signed AAB, unsigned physical iOS IPA and ARM64 simulator app.zip. An unsigned IPA
-requires external signing before ordinary device installation; a simulator bundle
-cannot install on a phone. These are companion packages (`it.xarber.aurea.remote`),
-never TV launcher updates (`it.xarber.mitvhome`). No store, phone update feed or
-new website deployment is activated. Existing native-TV update feeds stay intact.
-See [PWA behavior](PWA.md), [branding](../BRANDING.md) and the
-[validation report](../reports/AUREA_PHONE_PWA.md).
+The single `build.yml` workflow produces Android phone APK/AAB through the shared root native host, alongside TV APK/AAB. Internal `phone.yml` builds iOS unsigned device IPA and ARM64 simulator app.zip. Internal `demo.yml` validates the exact web export. Run only `gh workflow run build.yml --ref testing`; no dependency-run selection or separate workflow is required.
+
+The entire application is bundled; mobile opens the remote by default. Phone packages remain separate from the TV updater. See [RELEASES.md](../RELEASES.md) for artifacts, complete release gates and installation restrictions.
 
 ### Android asset packaging
 
@@ -111,3 +106,78 @@ those directories. Release validation checks HTML script/link references and eve
 exported web asset inside both APK and AAB, preventing a working HTML shell with
 missing JavaScript from being published. The defect was found by fetching the
 actual installed TV's script URL; browser-only exports did not expose it.
+
+TV integration now runs behind the Expo Home surface. The production package owns
+the existing remote/receiver services; isolated preview packages deliberately do
+not advertise duplicate receivers or listen on the TV remote port. Test pairing
+and activities with the production-package candidate, not the isolated UI preview.
+
+## 2.0.1 native phone corrections
+
+Popups measure native triggers relative to the same root used for their material and content. Safe-area/keyboard bounds prevent clipping; phone-only materials use native iOS Liquid Glass when both Expo availability checks pass, native iOS blur otherwise, and the existing live Android blur target on Android. TV blur parameters are unchanged. Back traverses the visited submenu stack; outside dismissal still closes the whole popup.
+
+Remote buttons include combined Play/Pause, Menu and Control Center. Holding OK opens an item menu; holding Back opens Control Center. Menu works through authenticated launcher commands or the paired Android TV Remote Service; Control Center requests require Home. App grids use fixed row gaps and independent column spacing. Physical input IDs are stable while TV customization or a CEC child name supplies the display label and logos.
+
+System pairing distinguishes accepted trust from control-channel readiness. If the pairing socket closes, success requires authenticating the control channel with the same certificate. Explicit pairing acknowledgements remain saved if the control channel is temporarily reconnecting. HTTP requests use bounded parallel workers so the pairing exchange cannot block normal state refreshes.
+
+The Android phone build never renders Native TV Home merely because it was installed on a television and does not register a Leanback launcher entry. It remains a different package from TV production. Package identity cannot migrate automatically across historical prototypes.
+
+Developer Preview launcher requests landscape and restores the previous orientation policy on exit. Resizable iOS 27 windows and browsers can refuse orientation locks; the layout continues to adapt to the actual window. These changes require a native binary; they are not an OTA update.
+
+### Wallpaper and palette rendering (2.0.2)
+
+The optional state `wallpaper` object carries canonical TV preference `id`, `motion`
+and `musicTint`. Older servers remain compatible and use the remote's Ink fallback.
+The remote renders one full-window background, with centered controls on desktop;
+popup anchors use that same full-window coordinate space. Artwork-derived colors
+crossfade for 1.8 seconds in tint and spectrum gradients. Rapid changes begin from
+the currently blended palette; reduced motion applies the target immediately.
+Six shared spectrum bars use their actual height with a minimum equal to their
+width, preserving circular zero levels in collapsed and expanded views. Existing
+native receiver bands remain measured; remote-player fallback bars are animation.
+
+### Home ownership and paused activities (2.0.4)
+
+Optional music.activityVisible is false after five paused minutes; active playback
+state is preserved for controls, and playback restores visibility. A matching UI
+clock supports older servers. Home uses canonical Android Home/task restoration
+without system pairing, acknowledges foreground arrival, and reports missing
+background access. Remote settings on the TV expose Android's Display over other
+apps permission page. The grant remains user-controlled. Other apps' navigation
+continues to require the system remote service.
+
+### Extended Android TV controls (2.0.5)
+
+TV controls groups the standard system-service keys separately from local Home
+navigation: channels, media transport, colored keys and TV voice assistant.
+A quick mute button uses AudioManager. System-only controls require pairing;
+read-only reconnection never repeats a key after uncertain delivery. The TV-side
+adapter starts with loopback and can fall back only to an interface address of
+this same TV supplied by native code. A system_connection_failed error preserves
+the working launcher bridge. Phone-microphone streaming is not implemented; voice
+currently opens the TV's assistant. Actual key behavior depends on the TV/app.
+
+### Phone microphone (2.0.6)
+
+The phone controls button now captures the phone microphone instead of sending
+only the assistant key. See [voice capture, encryption and compatibility](PHONE_VOICE.md).
+Native phones request recording consent; secure browsers use AudioWorklet.
+The TV's HTTP remote page explains the browser restriction. No audio files are
+saved; sessions stop on cancellation/background/disconnect and after 30 seconds.
+
+### Automatic complete handset (2.0.7)
+
+The main Remote tab now switches to a complete handset when Home is no longer
+foreground. Auto/Home/Complete controls allow manual selection; Arrows/Touchpad
+switch the navigation surface. Complete controls are grouped as a handset rather
+than a popup grid. The system reconnect action uses existing pairing. See
+[transport, native TLS and compatibility](SYSTEM_REMOTE_TRANSPORT.md).
+
+### Cleaner remote preferences (2.0.8)
+
+Settings contains Automatic remote layout, the manual Complete remote toggle when
+Auto is off, and Touchpad navigation. These settings persist without altering saved
+TV pairings. Main controls have no layout/touchpad tab bars. Compact volume is
+horizontal; complete rockers have equal heights. Trackpad wheel and touch swipes
+inside the navigation surface do not scroll the page. See the transport document
+for the unresolved self-originating connection limit on the tested TV.

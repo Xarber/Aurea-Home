@@ -1,16 +1,11 @@
-name: Aurea Home demo
+name: Internal — browser and PWA checks
 on:
-  push:
-    branches: [beta, main]
-    paths: ['demo/**', 'scripts/start-demo-preview.py', '.github/workflows/demo.yml']
-  workflow_dispatch:
+  workflow_call:
 permissions:
   contents: read
-concurrency:
-  group: aurea-demo-${{ github.ref }}
-  cancel-in-progress: false
 jobs:
-  preview:
+  validate:
+    name: Browser navigation, pairing and PWA
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -19,27 +14,27 @@ jobs:
         with:
           node-version: '24'
           cache: npm
-          cache-dependency-path: demo/package-lock.json
+          cache-dependency-path: package-lock.json
       - run: npm ci
-        working-directory: demo
-      - run: npm run typecheck && npm test && npm run build
-        working-directory: demo
+      - uses: actions/download-artifact@v6
+        with:
+          name: Aurea-embedded-remote-${{ github.sha }}
+          path: dist/
       - run: npx playwright install --with-deps chromium
-        working-directory: demo
-      - run: npm run test:e2e
-        working-directory: demo
-      - run: node scripts/verify-pwa-update.mjs
-        working-directory: demo
-      - name: Export Android demo JavaScript (not an APK)
-        run: npx expo export --platform android --output-dir dist-android
-        working-directory: demo
-      - uses: actions/upload-artifact@v5
-        with:
-          name: Aurea-Home-web-demo-${{ github.sha }}
-          path: demo/dist/
-          if-no-files-found: error
-      - uses: actions/upload-artifact@v5
+      - name: Browser regression tests
+        run: npm run test:e2e
+      - name: Paired browser demo remote
+        if: ${{ !cancelled() }}
+        run: npm run test:demo-bridge
+      - name: PWA update and offline validation
+        if: ${{ !cancelled() }}
+        run: node scripts/expo/verify-pwa-update.mjs
+      - name: Retain browser failure evidence
         if: failure()
+        uses: actions/upload-artifact@v5
         with:
-          name: Aurea-Home-demo-test-results-${{ github.sha }}
-          path: demo/playwright-results/
+          name: Aurea-web-test-results-${{ github.sha }}
+          path: |
+            playwright-results/
+            playwright-report/
+          if-no-files-found: ignore

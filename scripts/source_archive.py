@@ -32,10 +32,10 @@ with tarfile.open(sys.argv[1], 'w:gz', format=tarfile.PAX_FORMAT) as archive:
     epoch = subprocess.check_output(['git','show','-s','--format=%ct','HEAD'],cwd=root,text=True).strip()
     channel = subprocess.check_output(['git','branch','--show-current'],cwd=root,text=True).strip()
     provenance = f"commit={commit}\nchannel={channel}\nepoch={epoch}\n".encode()
-    info = tarfile.TarInfo('MiTV-Home/source-build.properties'); info.size=len(provenance); info.mtime=int(epoch)
+    info = tarfile.TarInfo('Aurea-Home/source-build.properties'); info.size=len(provenance); info.mtime=int(epoch)
     archive.addfile(info,io.BytesIO(provenance))
     for path in tracked(root):
-        archive.add(path, arcname='MiTV-Home/'+str(path.relative_to(root)), recursive=False)
+        archive.add(path, arcname='Aurea-Home/'+str(path.relative_to(root)), recursive=False)
 print('Archived all tracked sources and pinned submodules')
 
 # LGPL dependency: include the exact unmodified upstream source with the
@@ -60,7 +60,7 @@ if (root/'scripts/apple_tv/build_pure_wheels.py').exists():
         with tarfile.open(destination, 'r:gz') as existing, tarfile.open(temporary, 'w:gz', format=tarfile.PAX_FORMAT) as combined:
             for member in existing:
                 combined.addfile(member, existing.extractfile(member) if member.isfile() else None)
-            info = tarfile.TarInfo('MiTV-Home/third_party/python/zeroconf-0.151.5.tar.gz')
+            info = tarfile.TarInfo('Aurea-Home/third_party/python/zeroconf-0.151.5.tar.gz')
             info.size=len(payload);info.mtime=int(epoch)
             combined.addfile(info, io.BytesIO(payload))
         temporary.replace(destination)

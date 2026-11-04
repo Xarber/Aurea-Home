@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">MiTV Home</string>
+    <string name="app_name">Aurea Home</string>
     <string name="notification_channel">Servizio AirPlay</string>
     <string name="notification_title">AirPlay attivo</string>
     <string name="notification_text">Pronto a ricevere connessioni AirPlay</string>

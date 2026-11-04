@@ -1,6 +1,6 @@
 # Web installation, offline use and updates
 
-`npm run build` exports Expo and runs `scripts/pwa.mjs`. It generates distinct
+`npm run build` exports Expo and runs `scripts/expo/pwa.mjs`. It generates distinct
 Home/Remote manifests with stable IDs, standalone start URLs, icons, shortcuts,
 theme metadata, Apple Touch Icon and a content-hashed service worker. Editable
 icon source and reproducible exports are documented in [branding](../BRANDING.md).
@@ -28,3 +28,6 @@ install native APKs or claim native OTA support.
 Headless Chrome verifies manifest output, registration and offline preview
 navigation; actual Android/iOS/desktop installation prompts remain device checks.
 The localhost production export runs independently of Metro.
+
+TV-only scaling and native service adapters do not change the browser's dimensions
+or authorize caching private TV data. Root web exports remain independently usable.

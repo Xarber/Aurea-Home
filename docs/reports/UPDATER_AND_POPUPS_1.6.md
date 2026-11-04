@@ -1,4 +1,4 @@
-# MiTV Home 1.6 validation — 27 October 2026
+# Aurea Home 1.6 validation — 27 October 2026
 
 ## Implemented scope
 

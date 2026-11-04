@@ -23,3 +23,19 @@ their previous TV icon has not been silently replaced as part of PWA work.
 
 A full legal naming check and expanded light/tinted native icon variants remain
 branding follow-up work, not release validation claimed here.
+
+TV-only wallpaper rendering may apply a bounded 1.18 chroma expansion around
+linear-light Rec.709 luminance. It preserves calculated luminance and neutrals,
+leaving source brand assets, banners, web and phone palettes untouched. This is
+rendering compensation, not a measured display profile or physical calibration.
+
+## 2.1 identity migration
+
+The repository and current artifacts use **Aurea Home** / **Aurea Remote** under
+`Xarber/Aurea-Home`. The editable SVG brand sources remain authoritative. Public
+labels, repository links and new artifact names no longer use the former vendor
+branding. Android's established `it.xarber.mitvhome` application ID, private
+preference namespaces, signing secrets and historical commit subjects remain
+compatibility identifiers: renaming these would create a second installation or
+lose update/settings continuity. They do not imply Xiaomi affiliation. The native
+legacy Recovery Home remains permanently available through developer settings.

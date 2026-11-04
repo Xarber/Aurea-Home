@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later
- * MiTV Home FairPlay v2 compatibility, 2026.
+ * Aurea Home FairPlay v2 compatibility, 2026.
  * The distinct v2 phase-one capture is from joerg-krause/shairplay,
  * fairplay_v2 commit d5f0953d2380502366592e30a0a59fe3879f3c59.
  * Version-matched phase-two handling also follows mazer666/PhairPlay.

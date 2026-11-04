@@ -42,3 +42,39 @@ stable device ID detects IP reuse but is not a TLS server identity. Phone storag
 uses SecureStore or an encrypted origin-scoped web vault. Offline/PWA caching is
 static-only, never pairing/API responses or command queues. See
 [phone security and limitations](features/PHONE_REMOTE.md) and [PWA](features/PWA.md).
+
+## Expo host boundary
+
+The native bridge is trusted in-process code, not an exported network command
+surface. Its operations are allowlisted and bounded. Incoming HTTP clients still
+use the existing authenticated remote API, source/capability checks and origin
+policy. Browser preview fixtures cannot call the TV module. The separate preview
+does not advertise a competing receiver or start the production remote listener.
+
+Wi-Fi SSID access follows Android's permission and location-service restrictions.
+The settings action requests the OS permission interactively; neither build scripts
+nor the application silently grant it. UI navigation logs record only fixed
+movement/group names, not app labels, pairing codes, SSIDs or media metadata.
+
+## Phone microphone
+
+Recording requires explicit phone OS consent and a visible Listening indicator.
+No audio files or payload logs; voice session keys remain in memory. AES-GCM audio
+packets bind the authenticated token owner, session and sequence, with ephemeral
+RSA key wrapping. Existing HTTP initial pairing/public-key delivery still assumes
+a trusted LAN and does not provide TLS identity protection against active attacks.
+Capture stops on backgrounding, TV changes and timeout; server idle expiry bounds
+cleanup after network loss. Details: [phone voice](features/PHONE_VOICE.md).
+
+The Remote v2 native TLS adapter restricts endpoints to this TV's own interfaces
+and pairing/control ports. Its random abstract Unix IPC socket additionally checks
+Android peer UID. It adds no public relay, debug permission, accessibility grant,
+ADB client or key rotation. The self-signed service-certificate exchange follows
+the existing upstream protocol trust model. See
+[system transport](features/SYSTEM_REMOTE_TRANSPORT.md) for limits and cancellation.
+
+Optional local ADB, direct native mutual TLS and hosted data-channel trust are
+separate capabilities. See LOCAL_ADB_REMOTE.md, DIRECT_NATIVE_REMOTE.md and
+HOSTED_REMOTE.md under docs/features for boundaries and limitations. No arbitrary
+shell endpoint, credentials in signaling, raw audio logging or command replay is
+permitted. Public hosting and repository rename were explicitly requested.

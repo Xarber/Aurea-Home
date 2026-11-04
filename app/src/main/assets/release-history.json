@@ -2,6 +2,393 @@
   "schema": 1,
   "releases": [
     {
+      "version": "2.1.0",
+      "code": 36,
+      "date": "2026-11-04",
+      "critical": false,
+      "highlights": {
+        "en": "Direct native system remote, optional browser ADB controls and hosted WebRTC remote.",
+        "it": "Telecomando di sistema nativo diretto, controlli ADB web opzionali e telecomando WebRTC."
+      },
+      "fixes": {
+        "en": "Add power, larger remote layout, desktop key passthrough, touch page swipes, shared dominant artwork colors and a seamless rendered Classic wallpaper. Preserve the legacy recovery launcher.",
+        "it": "Aggiunge accensione, telecomando ampio, tastiera desktop, scorrimenti touch, colori dominanti condivisi e sfondo Classic senza bordi. Mantiene la Home di ripristino."
+      },
+      "compatibility": {
+        "en": "Browser global buttons require optional debugging authorization on the TV. Microphone audio uses direct native Remote Service, not ADB. WebRTC requires a compatible network; physical interoperability needs device testing. Package ID and signing continuity are retained.",
+        "it": "I pulsanti globali web richiedono autorizzazione debug opzionale sulla TV. Il microfono nativo usa Remote Service diretto, non ADB. WebRTC richiede una rete compatibile; serve verifica sui dispositivi. Identificativo e firma restano compatibili."
+      },
+      "features": [
+        {
+          "icon": "remote",
+          "label": {
+            "en": "System controls",
+            "it": "Controlli di sistema"
+          },
+          "detail": {
+            "en": "Native phones connect directly; browsers can use a locally authorized ADB button bridge.",
+            "it": "Gli smartphone nativi si collegano direttamente; il browser può usare il bridge ADB autorizzato localmente."
+          }
+        },
+        {
+          "icon": "sound",
+          "label": {
+            "en": "Artwork color",
+            "it": "Colore copertina"
+          },
+          "detail": {
+            "en": "Shared cover colors and dominant-area tint without platform-only color transformations.",
+            "it": "Colori condivisi e tinta proporzionata alla copertina senza trasformazioni specifiche per piattaforma."
+          }
+        }
+      ]
+    },
+    {
+      "version": "2.0.8",
+      "code": 35,
+      "date": "2026-10-29",
+      "critical": false,
+      "highlights": {
+        "en": "Cleaner remote controls with layout and touchpad preferences in Settings.",
+        "it": "Telecomando più pulito, con preferenze di layout e touchpad nelle Impostazioni."
+      },
+      "fixes": {
+        "en": "Remove the extra selector bars, use horizontal compact volume and matched full rockers, prevent touchpad page scrolling, retain microphone capture across layout changes and correct a portable CI screenshot path.",
+        "it": "Rimuove le barre di selezione extra, rende orizzontale il volume compatto e uniforma i bilancieri, impedisce lo scorrimento dal touchpad, mantiene il microfono cambiando layout e corregge il percorso degli screenshot CI."
+      },
+      "compatibility": {
+        "en": "Global controls and microphone require a working system-service connection. Some TVs reject connections originating on the TV itself. No debugging fallback is enabled.",
+        "it": "I controlli globali e il microfono richiedono una connessione funzionante al servizio di sistema. Alcune TV rifiutano connessioni originate dalla TV stessa. Nessun fallback di debug è attivato."
+      },
+      "features": [
+        {
+          "icon": "remote",
+          "label": {
+            "en": "Compact handset",
+            "it": "Telecomando compatto"
+          },
+          "detail": {
+            "en": "Automatic Home/Complete layout; manual and touchpad choices live in Settings.",
+            "it": "Layout Home/Completo automatico; scelte manuali e touchpad nelle Impostazioni."
+          }
+        }
+      ]
+    },
+    {
+      "version": "2.0.7",
+      "code": 34,
+      "date": "2026-10-29",
+      "critical": false,
+      "highlights": {
+        "en": "A complete TV remote with automatic view switching and a touchpad.",
+        "it": "Telecomando TV completo con cambio automatico della vista e touchpad."
+      },
+      "fixes": {
+        "en": "Use Android platform TLS for system controls, add a separate reconnect action, restore Classic wallpaper and match the connected TV in launcher preview.",
+        "it": "Usa TLS nativo Android per i controlli di sistema, aggiunge la riconnessione, ripristina lo sfondo Classic e lo mantiene nell’anteprima del launcher."
+      },
+      "compatibility": {
+        "en": "System controls need the Android TV Remote Service pairing. Browser commands still pass through the trusted TV server. Native TLS interoperability needs device verification; no ADB or accessibility fallback is enabled.",
+        "it": "I controlli di sistema richiedono l’abbinamento al servizio telecomando Android TV. I comandi web passano dal server TV autorizzato. La compatibilità TLS richiede verifica sul dispositivo; nessun fallback ADB o accessibilità è attivato."
+      },
+      "features": [
+        {
+          "icon": "remote",
+          "label": {
+            "en": "Complete remote",
+            "it": "Telecomando completo"
+          },
+          "detail": {
+            "en": "Automatically show full controls outside Home, or choose Home/Complete manually. Swipe on the touchpad or use arrow buttons.",
+            "it": "Mostra automaticamente tutti i controlli fuori da Home oppure scegli Home/Completo. Scorri sul touchpad o usa le frecce."
+          }
+        },
+        {
+          "icon": "apps",
+          "label": {
+            "en": "Original Classic colors",
+            "it": "Colori Classic originali"
+          },
+          "detail": {
+            "en": "Restore the original blue/violet artwork instead of the gray fallback, including the remote’s launcher preview.",
+            "it": "Ripristina lo sfondo originale blu/viola al posto del ripiego grigio, anche nell’anteprima del telecomando."
+          }
+        }
+      ]
+    },
+    {
+      "version": "2.0.6",
+      "code": 33,
+      "date": "2026-10-29",
+      "critical": false,
+      "highlights": {
+        "en": "Use your phone microphone for Android TV voice search.",
+        "it": "Usa il microfono del telefono per la ricerca vocale su Android TV."
+      },
+      "fixes": {
+        "en": "Encrypted in-memory voice packets, bounded recording sessions and cleanup on disconnect, app backgrounding and TV switching.",
+        "it": "Pacchetti vocali cifrati in memoria, registrazione limitata e interruzione alla disconnessione, in background o cambiando TV."
+      },
+      "compatibility": {
+        "en": "Requires paired Android TV system controls and receiver voice support. Native phones request microphone permission. Browsers need HTTPS/localhost; plain HTTP cannot capture audio. Recognition depends on the TV assistant.",
+        "it": "Richiede i controlli di sistema abbinati e il supporto vocale della TV. I telefoni richiedono il permesso microfono. I browser richiedono HTTPS/localhost; HTTP non può acquisire audio. Il riconoscimento dipende dall’assistente TV."
+      },
+      "features": [
+        {
+          "icon": "remote",
+          "label": {
+            "en": "Phone microphone",
+            "it": "Microfono del telefono"
+          },
+          "detail": {
+            "en": "Tap to speak and tap again to stop; recording ends automatically after 30 seconds. Audio is not saved to disk.",
+            "it": "Tocca per parlare e di nuovo per interrompere; termina automaticamente dopo 30 secondi. L’audio non viene salvato su disco."
+          }
+        }
+      ]
+    },
+    {
+      "version": "2.0.5",
+      "code": 32,
+      "date": "2026-10-29",
+      "critical": false,
+      "highlights": {
+        "en": "More TV controls and deeper TV wallpaper colors.",
+        "it": "Più controlli TV e colori degli sfondi più intensi."
+      },
+      "fixes": {
+        "en": "Separate system-service errors from launcher connectivity, reconnect without replaying keys, correct TV manifest lint, and wait for rendered animation frames in browser checks.",
+        "it": "Distingue gli errori del telecomando di sistema, riconnette senza ripetere i tasti, corregge il manifest TV e verifica i fotogrammi effettivi delle animazioni."
+      },
+      "compatibility": {
+        "en": "System keys require Android TV Remote Service pairing and depend on the current app. Voice opens the TV assistant; phone microphone streaming is not included. TV color adjustment preserves calculated luminance; physical appearance needs testing.",
+        "it": "I tasti di sistema richiedono l’abbinamento al servizio telecomando Android TV e dipendono dall’app. La voce apre l’assistente TV; il microfono del telefono non viene trasmesso. I colori TV mantengono la luminanza calcolata e richiedono verifica sullo schermo."
+      },
+      "features": [
+        {
+          "icon": "remote",
+          "label": {
+            "en": "TV controls",
+            "it": "Controlli TV"
+          },
+          "detail": {
+            "en": "Home, Back, volume and mute, channels, media transport, colored keys and TV voice assistant.",
+            "it": "Home, Indietro, volume e silenzioso, canali, controlli multimediali, tasti colorati e assistente vocale TV."
+          }
+        },
+        {
+          "icon": "apps",
+          "label": {
+            "en": "Deeper TV colors",
+            "it": "Colori TV più intensi"
+          },
+          "detail": {
+            "en": "TV-only chroma compensation; web colors, blur and app banners are unchanged.",
+            "it": "Compensazione cromatica solo sulla TV; colori web, sfocatura e banner delle app invariati."
+          }
+        }
+      ]
+    },
+    {
+      "version": "2.0.4",
+      "code": 30,
+      "date": "2026-10-29",
+      "critical": false,
+      "highlights": {
+        "en": "More reliable Home controls and smoother wallpaper changes.",
+        "it": "Controlli Home più affidabili e cambi di sfondo graduali."
+      },
+      "fixes": {
+        "en": "Single Home/input ownership; paused activities hide after five minutes. Wallpaper tint stays behind banners, covers rotating edges, and is slightly dimmer only on TV. Corrects explicit launcher export declarations.",
+        "it": "Una sola Home gestisce gli input; le attività in pausa spariscono dopo cinque minuti. La tinta resta dietro i banner, copre i bordi in movimento ed è leggermente meno intensa solo sulla TV. Corrette le dichiarazioni di avvio Android."
+      },
+      "compatibility": {
+        "en": "Background Home and AirPlay use Android-supported task restoration and may require Display over other apps permission. New native behavior awaits device validation.",
+        "it": "Home e AirPlay in background usano le API Android e possono richiedere il permesso Mostra sopra altre app. Le modifiche native richiedono verifica sul dispositivo."
+      },
+      "features": [
+        {
+          "icon": "controls",
+          "label": {
+            "en": "Home and remote recovery",
+            "it": "Ripristino Home e telecomandi"
+          },
+          "detail": {
+            "en": "Retires duplicate Home roots, resets interrupted input state, and offers a background-access permission shortcut.",
+            "it": "Chiude le Home duplicate, ripristina gli input interrotti e offre un collegamento al permesso per il background."
+          }
+        },
+        {
+          "icon": "sound",
+          "label": {
+            "en": "Music and wallpaper transitions",
+            "it": "Musica e transizioni dello sfondo"
+          },
+          "detail": {
+            "en": "Activities expire after five paused minutes and return on playback; wallpapers and music tint preferences fade gradually.",
+            "it": "Le attività spariscono dopo cinque minuti di pausa e tornano alla ripresa; sfondi e tinta musicale cambiano gradualmente."
+          }
+        }
+      ]
+    },
+    {
+      "version": "2.0.3",
+      "code": 29,
+      "date": "2026-10-29",
+      "critical": false,
+      "highlights": {
+        "en": "Android launcher registration and build reliability improvements.",
+        "it": "Registrazione del launcher Android e build più affidabili."
+      },
+      "fixes": {
+        "en": "Separate TV and phone launcher declarations; additional CI packaging memory and animation-aware browser checks.",
+        "it": "Dichiarazioni separate per TV e telefono, più memoria di compilazione e verifiche delle animazioni più affidabili."
+      },
+      "compatibility": {
+        "en": "Retains existing package identifiers, signing keys, preferences and visual effects.",
+        "it": "Mantiene identificatori, firme, preferenze ed effetti visivi esistenti."
+      },
+      "features": [
+        {
+          "icon": "controls",
+          "label": {
+            "en": "Android entry points",
+            "it": "Avvio Android"
+          },
+          "detail": {
+            "en": "TV Home and phone launcher entries are explicit and validated independently.",
+            "it": "Gli avvii per Home TV e telecomando telefono sono espliciti e verificati separatamente."
+          }
+        }
+      ]
+    },
+    {
+      "version": "2.0.2",
+      "code": 28,
+      "date": "2026-10-29",
+      "critical": false,
+      "highlights": {
+        "en": "Smooth music colors and a phone-controllable web demo.",
+        "it": "Colori musicali fluidi e demo web controllabile dal telefono."
+      },
+      "fixes": {
+        "en": "Remote wallpaper follows the TV across the full window; minimum waveform bars stay circular. Corrects the Android host compilation failure.",
+        "it": "Lo sfondo del telecomando segue la TV su tutta la finestra; le onde minime restano circolari. Corregge la compilazione del servizio Android."
+      },
+      "compatibility": {
+        "en": "Web demo remote control requires the opt-in local LAN server and an open owner browser. It never controls real TV services. Native builds still require device testing.",
+        "it": "Il controllo della demo richiede il server LAN locale e il browser del computer aperto. Non controlla servizi TV reali. Le build native richiedono verifica sul dispositivo."
+      },
+      "features": [
+        {
+          "icon": "sound",
+          "label": {
+            "en": "Gradual artwork colors",
+            "it": "Colori della copertina graduali"
+          },
+          "detail": {
+            "en": "Wallpaper tint and waveform colors crossfade over 1.8 seconds and continue smoothly after quick song changes.",
+            "it": "Sfumatura e onde cambiano colore in 1,8 secondi, anche dopo cambi rapidi di brano."
+          }
+        },
+        {
+          "icon": "remote",
+          "label": {
+            "en": "Connected wallpaper and web demo",
+            "it": "Sfondo connesso e demo web"
+          },
+          "detail": {
+            "en": "The remote follows TV wallpaper preferences. An opt-in local demo server supports approved phone pairing, in-app controls and Bonjour advertising.",
+            "it": "Il telecomando segue le preferenze dello sfondo TV. Un server demo locale opzionale supporta abbinamento, controlli e annuncio Bonjour."
+          }
+        }
+      ]
+    },
+    {
+      "version": "2.0.1",
+      "code": 27,
+      "date": "2026-10-29",
+      "critical": false,
+      "highlights": {
+        "en": "Refined native remote, pairing recovery and music-themed wallpapers.",
+        "it": "Telecomando nativo migliorato, recupero abbinamento e sfondi musicali."
+      },
+      "fixes": {
+        "en": "Safe-area-aware anchored popups, submenu Back navigation, menu and combined playback buttons, customized input names/icons and silent paused waves.",
+        "it": "Popup ancorati rispettosi delle aree sicure, ritorno nei sottomenu, pulsanti menu e riproduzione, ingressi personalizzati e onde in pausa al minimo."
+      },
+      "compatibility": {
+        "en": "Preserves the production Android TV package and signing key. iOS glass and preview rotation depend on OS support. Native fixes require device verification.",
+        "it": "Mantiene pacchetto e firma Android TV. Vetro iOS e rotazione anteprima dipendono dal sistema. Le correzioni native richiedono verifica sul dispositivo."
+      },
+      "features": [
+        {
+          "icon": "remote",
+          "label": {
+            "en": "Native phone controls",
+            "it": "Controlli nativi sul telefono"
+          },
+          "detail": {
+            "en": "Anchored native materials, safe areas, explicit menu controls and verified system pairing.",
+            "it": "Materiali nativi ancorati, aree sicure, menu espliciti e abbinamento verificato."
+          }
+        },
+        {
+          "icon": "sound",
+          "label": {
+            "en": "Music wallpaper tint",
+            "it": "Sfumatura musicale dello sfondo"
+          },
+          "detail": {
+            "en": "An optional animated artwork gradient works with every wallpaper. Input hero marks use normalized visible bounds.",
+            "it": "Un gradiente animato opzionale della copertina funziona con ogni sfondo. I loghi degli ingressi usano dimensioni visibili uniformi."
+          }
+        }
+      ]
+    },
+    {
+      "version": "2.0.0",
+      "code": 26,
+      "date": "2026-10-28",
+      "critical": false,
+      "highlights": {
+        "en": "Expo becomes the shared Home, phone and web application base.",
+        "it": "Expo diventa la base condivisa delle app Home, telefono e web."
+      },
+      "fixes": {
+        "en": "Improves TV focus and pairing restoration, shares AirPlay music activities with the phone remote, adds pairing confirmation and an optional blur switch, and corrects native build packaging.",
+        "it": "Migliora focus TV e ripristino abbinamento, condivide le attività musicali AirPlay con il telecomando, aggiunge conferma abbinamento e sfocatura opzionale e corregge il confezionamento nativo."
+      },
+      "compatibility": {
+        "en": "Preserves Android TV package, signing identity and preferences. This framework migration requires physical TV validation before stable promotion. Mac Music interoperability remains unresolved.",
+        "it": "Mantiene pacchetto, firma e preferenze Android TV. La migrazione richiede verifica sulla TV fisica prima della promozione stabile. La compatibilità con Musica su Mac rimane irrisolta."
+      },
+      "features": [
+        {
+          "icon": "apps",
+          "label": {
+            "en": "Expo Home interface",
+            "it": "Interfaccia Home Expo"
+          },
+          "detail": {
+            "en": "A native React Native TV surface with real apps, registered inputs, saved dock, activities and native service controls.",
+            "it": "Interfaccia nativa React Native TV con app reali, ingressi registrati, dock salvato, attività e controlli dei servizi nativi."
+          }
+        },
+        {
+          "icon": "remote",
+          "label": {
+            "en": "Shared phone and web base",
+            "it": "Base condivisa telefono e web"
+          },
+          "detail": {
+            "en": "The separate phone remote and installable web preview share the root Expo project.",
+            "it": "Il telecomando per telefono e l’anteprima web installabile condividono il progetto Expo principale."
+          }
+        }
+      ]
+    },
+    {
       "version": "1.8.1",
       "code": 25,
       "date": "2026-10-28",

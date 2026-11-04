@@ -45,3 +45,85 @@ class SystemRemoteChecks(unittest.TestCase):
         with patch.dict(sys.modules,{'androidtvremote2':module,'androidtvremote2.certificate_generator':generator}):
             self.prepare();self.client.pair_deadline=time.monotonic()-1
             self.assertEqual(self.request('pair_finish',pin='ABC123')['error'],'pairing_expired')
+
+class PairingRecoveryChecks(unittest.TestCase):
+    setUp=SystemRemoteChecks.setUp
+    tearDown=SystemRemoteChecks.tearDown
+    request=SystemRemoteChecks.request
+    prepare=SystemRemoteChecks.prepare
+    def adapter(self,remote):
+        module=types.ModuleType('androidtvremote2');module.AndroidTVRemote=remote
+        generator=types.ModuleType('androidtvremote2.certificate_generator');generator.generate_selfsigned_cert=lambda _:None
+        return patch.dict(sys.modules,{'androidtvremote2':module,'androidtvremote2.certificate_generator':generator})
+    def test_closed_pairing_socket_requires_authenticated_control_connection(self):
+        class CloseAfterPair(FakeRemote):
+            async def async_finish_pairing(self,pin):raise type('ConnectionClosed',(Exception,),{})()
+        with self.adapter(CloseAfterPair):
+            self.prepare();self.request('pair_begin');result=self.request('pair_finish',pin='ABC123')
+            self.assertTrue(result['paired']);self.assertTrue(result['ready'])
+    def test_closed_pairing_socket_cannot_hide_invalid_authentication(self):
+        class Untrusted(FakeRemote):
+            async def async_finish_pairing(self,pin):raise type('ConnectionClosed',(Exception,),{})()
+            async def async_connect(self):raise type('InvalidAuth',(Exception,),{})()
+        with self.adapter(Untrusted):
+            self.prepare();self.request('pair_begin');result=self.request('pair_finish',pin='ABC123')
+            self.assertEqual(result['error'],'authentication_failed');self.assertFalse(self.client.paired)
+    def test_acknowledged_pair_survives_temporary_control_unavailability(self):
+        class DelayedControl(FakeRemote):
+            async def async_connect(self):raise type('CannotConnect',(Exception,),{})()
+        with self.adapter(DelayedControl):
+            self.prepare();self.request('pair_begin');result=self.request('pair_finish',pin='ABC123')
+            self.assertTrue(result['paired']);self.assertFalse(result['ready']);self.assertEqual(result['status'],'reconnecting')
+
+class ExtendedRemoteChecks(unittest.TestCase):
+    setUp=SystemRemoteChecks.setUp
+    tearDown=SystemRemoteChecks.tearDown
+    request=SystemRemoteChecks.request
+    prepare=SystemRemoteChecks.prepare
+    adapter=PairingRecoveryChecks.adapter
+    def test_standard_tv_commands_and_read_only_recovery(self):
+        with self.adapter(FakeRemote):
+            self.prepare();self.request('pair_begin');self.request('pair_finish',pin='ABC123');remote=FakeRemote.instances[-1]
+            for command in ['mute','channelup','channeldown','rewind','fastforward','stop','voice','red','green','yellow','blue']:self.assertEqual(self.request('key',command=command)['status'],'accepted')
+            self.assertEqual(remote.keys,['VOLUME_MUTE','CHANNEL_UP','CHANNEL_DOWN','MEDIA_REWIND','MEDIA_FAST_FORWARD','MEDIA_STOP','VOICE_ASSIST','PROG_RED','PROG_GREEN','PROG_YELLOW','PROG_BLUE'])
+            self.client.ready=False;before=list(remote.keys);self.assertTrue(self.request('connect')['ready']);self.assertEqual(remote.keys,before)
+    def test_only_connection_establishment_can_fallback_to_native_supplied_self_address(self):
+        class ResetLoopback(FakeRemote):
+            async def async_connect(self):
+                if self.host=='127.0.0.1':raise type('CannotConnect',(Exception,),{})()
+        with self.adapter(ResetLoopback):
+            self.request('prepare',certificate='PUBLIC CERTIFICATE',key='PRIVATE KEY NEVER LOG',paired=True,localAddress='192.168.1.101')
+            self.assertTrue(self.request('connect')['ready']);self.assertEqual(FakeRemote.instances[-1].host,'192.168.1.101')
+    def test_uncertain_key_delivery_is_never_replayed(self):
+        class LostAfterSend(FakeRemote):
+            def send_key_command(self,key):self.keys.append(key);raise type('ConnectionClosed',(Exception,),{})()
+        with self.adapter(LostAfterSend):
+            self.prepare();self.request('pair_begin');self.request('pair_finish',pin='ABC123');remote=FakeRemote.instances[-1]
+            self.assertIn('error',self.request('key',command='next'));self.assertEqual(remote.keys,['MEDIA_NEXT'])
+
+class VoiceDispatchChecks(unittest.TestCase):
+    setUp=SystemRemoteChecks.setUp
+    tearDown=SystemRemoteChecks.tearDown
+    request=SystemRemoteChecks.request
+    prepare=SystemRemoteChecks.prepare
+    adapter=PairingRecoveryChecks.adapter
+    def test_voice_owner_binding_and_disconnect_cleanup(self):
+        try:import voice_session
+        except ImportError:self.skipTest('cryptography not installed in host Python')
+        class Stream:
+            closed=False
+            def send_chunk(self,data):return True
+            def end(self):self.closed=True
+        class VoiceRemote(FakeRemote):
+            async def start_voice(self,timeout):self.stream=Stream();return self.stream
+        with self.adapter(VoiceRemote):
+            self.prepare();self.request('pair_begin');self.request('pair_finish',pin='ABC123')
+            owner='a'*64;started=self.request('voice_start',owner=owner);self.assertIn('publicKey',started)
+            self.assertEqual(self.request('voice_start',owner='b'*64)['error'],'voice_busy')
+            self.assertEqual(self.request('voice_chunk',owner='b'*64,id=started['id'])['error'],'voice_session_expired')
+            self.request('voice_end',owner='b'*64,id=started['id']);self.assertIsNotNone(self.client.voice)
+            self.request('voice_end',owner=owner,id=started['id']);self.assertIsNone(self.client.voice)
+            self.assertTrue(FakeRemote.instances[-1].stream.closed)
+            self.request('voice_start',owner=owner);self.request('disconnect');self.assertIsNone(self.client.voice)
+            logs=''.join(p.read_text() for p in Path(self.root.name).glob('*.jsonl'))
+            self.assertNotIn(started['publicKey'],logs);self.assertNotIn(owner,logs)

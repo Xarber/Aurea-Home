@@ -39,3 +39,15 @@ node_modules/
 /demo/android/
 /demo/ios/
 /demo/dist-ios/
+
+# Expo root and isolated generated phone host
+/.expo/
+/dist/
+/dist-android/
+/dist-ios/
+/playwright-results/
+/test-results/
+/.phone-native/
+/phone-dist/
+
+/playwright-report/

@@ -1,0 +1,16 @@
+[Unit]
+Description=Aurea private WebRTC signaling
+After=network.target
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/srv/xcenter/apps/aurea/server
+ExecStart=/usr/bin/node /srv/xcenter/apps/aurea/server/peer.cjs
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+[Install]
+WantedBy=multi-user.target

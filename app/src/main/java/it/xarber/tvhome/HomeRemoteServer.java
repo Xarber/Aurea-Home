@@ -34,6 +34,8 @@ final class HomeRemoteServer implements Runnable {
     private int failedPairAttempts;
     private long pairWindowStart;
     private long lastPairNoticeAt;
+    private final java.util.Set<Socket> connections=java.util.concurrent.ConcurrentHashMap.newKeySet();
+    private final java.util.concurrent.ThreadPoolExecutor workers=new java.util.concurrent.ThreadPoolExecutor(3,3,0,java.util.concurrent.TimeUnit.SECONDS,new java.util.concurrent.ArrayBlockingQueue<>(12),task->{Thread worker=new Thread(task,"AureaRemoteHTTP");worker.setDaemon(true);return worker;});
     private ServerSocket socket;
     private Thread thread;
     private int port = 80;
@@ -83,23 +85,25 @@ final class HomeRemoteServer implements Runnable {
         thread.start();
     }
 
-    synchronized void revokeAll() { tokens.clear(); activeRemotes.clear(); trust.clear(); rotatePairing(); }
+    synchronized void revokeAll() { commands.run("voice-cancel"); tokens.clear(); activeRemotes.clear(); trust.clear(); rotatePairing(); }
     private void persistTrust() throws Exception {trust.save(new JSONObject().put("credentials",trustEntries().toString()).put("identifier","phone-remotes").put("name","Aurea Home"));}
 
     private org.json.JSONArray trustEntries() throws Exception {org.json.JSONArray entries=new org.json.JSONArray();for(java.util.Map.Entry<String,String> entry:tokens.entrySet())entries.put(new JSONObject().put("token",entry.getKey()).put("origin",entry.getValue()));return entries;}
     void stop() {
+        commands.run("voice-cancel");
         running = false;
+        for(Socket client:connections)try{client.close();}catch(Exception ignored){}
+        workers.shutdownNow();
         synchronized(this){activeRemotes.clear();}
         try { if (socket != null) socket.close(); } catch (Exception ignored) {}
     }
 
     @Override public void run() {
-        while (running) {
-            try (Socket client = socket.accept()) {
-                client.setSoTimeout(3000);
-                try{handle(client);}finally{responseOrigin.remove();}
-            } catch (Exception ignored) { if (!running) return; }
-        }
+        while(running)try{
+            Socket client=socket.accept();client.setSoTimeout(3000);connections.add(client);
+            try{workers.execute(()->{try(Socket active=client){handle(active);}catch(Exception ignored){}finally{connections.remove(client);responseOrigin.remove();}});}
+            catch(java.util.concurrent.RejectedExecutionException busy){connections.remove(client);client.close();}
+        }catch(Exception ignored){if(!running)return;}
     }
 
     private void handle(Socket client) throws Exception {
@@ -124,10 +128,10 @@ final class HomeRemoteServer implements Runnable {
 
         if (method.equals("GET") && (path.equals("/") || path.equals("/index.html"))) {
             String asset="remote.html";try(InputStream probe=context.getAssets().open("remoteapp/index.html")){asset="remoteapp/index.html";}catch(java.io.IOException ignored){}
-            try (InputStream page = context.getAssets().open(asset)) { respond(client, 200, "text/html; charset=utf-8", new String(readAll(page), StandardCharsets.UTF_8).replace("<head>","<head><meta name=\"aurea-remote\" content=\"1\">").replace("https://github.com/Xarber/MiTV-Home\"", "https://github.com/Xarber/MiTV-Home/tree/" + io.github.jqssun.airplay.BuildConfig.SOURCE_COMMIT + "\"")); }
+            try (InputStream page = context.getAssets().open(asset)) { respond(client, 200, "text/html; charset=utf-8", new String(readAll(page), StandardCharsets.UTF_8).replace("<head>","<head><meta name=\"aurea-remote\" content=\"1\">").replace("https://github.com/Xarber/Aurea-Home\"", "https://github.com/Xarber/Aurea-Home/tree/" + io.github.jqssun.airplay.BuildConfig.SOURCE_COMMIT + "\"")); }
             return;
         }
-        if(method.equals("GET")&&(path.startsWith("/_expo/")||path.startsWith("/assets/")||path.equals("/favicon.ico")||path.startsWith("/branding/")||path.startsWith("/screenshots/")||path.equals("/manifest.webmanifest")||path.equals("/remote.webmanifest")||path.equals("/sw.js")||path.equals("/release.json"))){
+        if(method.equals("GET")&&(path.startsWith("/_expo/")||path.startsWith("/assets/")||path.equals("/favicon.ico")||path.startsWith("/branding/")||path.startsWith("/screenshots/")||path.equals("/manifest.webmanifest")||path.equals("/remote.webmanifest")||path.equals("/voice-capture.js")||path.equals("/sw.js")||path.equals("/release.json"))){
             if(path.contains("..")||!path.matches("/[A-Za-z0-9_./-]+")){respond(client,404,"text/plain","not found");return;}
             try(InputStream asset=context.getAssets().open("remoteapp"+path)){
                 String mime=path.endsWith(".webmanifest")?"application/manifest+json":path.endsWith(".json")?"application/json":path.endsWith(".svg")?"image/svg+xml":path.endsWith(".js")?"application/javascript; charset=utf-8":path.endsWith(".css")?"text/css; charset=utf-8":path.endsWith(".png")?"image/png":path.endsWith(".ico")?"image/x-icon":"application/octet-stream";
@@ -180,13 +184,19 @@ final class HomeRemoteServer implements Runnable {
                 else activeRemotes.put(authenticatedToken,android.os.SystemClock.elapsedRealtime());
             }
             if(path.equals("/api/revoke")){
+                commands.request("voice_end",new JSONObject().put("owner",hexOwner(payload.optString("token"))));
                 synchronized(this){String token=payload.optString("token"),binding=tokens.remove(token);try{persistTrust();}catch(Exception unavailable){tokens.put(token,binding);respond(client,500,"application/json","{\"error\":\"storage_failed\"}");return;}activeRemotes.remove(token);}
                 respond(client,200,"application/json","{\"ok\":true}");return;
             }
+            if(path.startsWith("/api/voice/")||path.equals("/api/presence")&&payload.optBoolean("disconnect",false)){
+                // Internal owner identity is derived from authenticated trust, never supplied by clients.
+                payload.put("owner",hexOwner(payload.optString("token")));
+                if(path.equals("/api/presence"))commands.request("voice_end",payload);
+            }
             if (path.equals("/api/presence")) { respond(client,200,"application/json","{\"ok\":true}"); return; }
-            if(path.equals("/api/key")&&!payload.optString("command").matches("up|down|left|right|ok|back|home|volumeup|volumedown|playpause|next|previous")){respond(client,400,"application/json","{\"error\":\"unsupported\"}");return;}
+            if(path.equals("/api/key")&&!RemoteKeys.supported(payload.optString("command"))){respond(client,400,"application/json","{\"error\":\"unsupported\"}");return;}
             java.util.Map<String,String> routes=new java.util.HashMap<>();
-            routes.put("/api/key","key");routes.put("/api/state","state");routes.put("/api/catalog","catalog");routes.put("/api/icon","icon");routes.put("/api/artwork","artwork");routes.put("/api/launch","launch");routes.put("/api/media","media");routes.put("/api/system/pair/start","system_pair_begin");routes.put("/api/system/pair/finish","system_pair_finish");
+            routes.put("/api/system/local-adb","local_adb");routes.put("/api/system/connect","system_connect");routes.put("/api/voice/start","voice_start");routes.put("/api/voice/chunk","voice_chunk");routes.put("/api/voice/end","voice_end");routes.put("/api/key","key");routes.put("/api/state","state");routes.put("/api/catalog","catalog");routes.put("/api/icon","icon");routes.put("/api/artwork","artwork");routes.put("/api/launch","launch");routes.put("/api/media","media");routes.put("/api/system/pair/start","system_pair_begin");routes.put("/api/system/pair/finish","system_pair_finish");
             String operation=routes.get(path);if(operation==null){respond(client,404,"application/json","{\"error\":\"not_found\"}");return;}
             JSONObject result;
             try{result=commands.request(operation,payload);if(operation.equals("state"))result.put("id",deviceId);}catch(Exception unavailable){result=SystemRemoteController.error("unavailable");}
@@ -196,6 +206,9 @@ final class HomeRemoteServer implements Runnable {
         respond(client, 404, "text/plain", "not found");
     }
 
+    private static String hexOwner(String token)throws Exception{
+        byte[] hash=java.security.MessageDigest.getInstance("SHA-256").digest(token.getBytes(StandardCharsets.UTF_8));StringBuilder result=new StringBuilder();for(byte value:hash)result.append(String.format(java.util.Locale.ROOT,"%02x",value&255));return result.toString();
+    }
     private static byte[] readAll(InputStream in) throws Exception {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         byte[] buffer = new byte[2048]; int n;
@@ -210,7 +223,7 @@ final class HomeRemoteServer implements Runnable {
     private void respondBytes(Socket client,int status,String type,byte[] bytes) throws Exception {
         String reason = status == 200 ? "OK" : status == 400 ? "Bad Request" : status == 401 ? "Unauthorized" : status == 403 ? "Forbidden" : status == 429 ? "Too Many Requests" : status == 404 ? "Not Found" : "Request Rejected";
         OutputStream out = client.getOutputStream();
-        out.write(("HTTP/1.1 " + status + " " + reason + "\r\n" + corsHeaders() + "Content-Type: " + type + "\r\nContent-Length: " + bytes.length + "\r\nCache-Control: no-store\r\nConnection: close\r\nX-Content-Type-Options: nosniff\r\nReferrer-Policy: no-referrer\r\nX-Frame-Options: DENY\r\nContent-Security-Policy: default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' http: https:; img-src 'self' data:; font-src 'self' data:; worker-src 'self' blob:; base-uri 'none'; frame-ancestors 'none'; form-action 'self'\r\n\r\n").getBytes(StandardCharsets.ISO_8859_1));
+        out.write(("HTTP/1.1 " + status + " " + reason + "\r\n" + corsHeaders() + "Content-Type: " + type + "\r\nContent-Length: " + bytes.length + "\r\nCache-Control: no-store\r\nConnection: close\r\nX-Content-Type-Options: nosniff\r\nReferrer-Policy: no-referrer\r\nX-Frame-Options: DENY\r\nContent-Security-Policy: default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' http: https: wss://aurea.xcenter.it; img-src 'self' data:; font-src 'self' data:; worker-src 'self' blob:; base-uri 'none'; frame-ancestors 'none'; form-action 'self'\r\n\r\n").getBytes(StandardCharsets.ISO_8859_1));
         out.write(bytes); out.flush();
     }
 }

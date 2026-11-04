@@ -1,6 +1,6 @@
 # Documentation map
 
-- [Aurea Home / Expo demo and wallpapers](features/EXPO_DEMO.md).
+- [Expo application base, preview and wallpapers](features/EXPO_DEMO.md).
 
 - [Architecture](ARCHITECTURE.md): components, ownership and data flow.
 - [Features](FEATURES.md): implemented behavior and limitations.
@@ -20,3 +20,28 @@
 See also [changelog](../CHANGELOG.md), [security](../SECURITY.md), [contributing](../CONTRIBUTING.md), and [agent instructions](../AGENTS.md).
 
 See [phone remote](features/PHONE_REMOTE.md), [PWA](features/PWA.md), and [branding](BRANDING.md) for the separate Expo companion and native background bridge.
+
+- [Phone remote and launcher preview](features/phone-remote.md)
+- [Expo remote batch and untested boundaries](reports/2026-10-28-expo-remote-batch.md)
+
+- [TV blur performance preference](features/TV_BLUR.md)
+- [TV follow-up and build diagnosis](reports/2026-10-29-tv-follow-up.md)
+
+- [One complete build entry point](decisions/0004-one-build-entry-point.md)
+- [Workflow simplification and validation report](reports/2026-10-29-workflows.md)
+
+- [Native remote and music follow-up](reports/2026-10-29-remote-native.md)
+
+- [Palette transitions, demo phone bridge and Android build correction](reports/2026-10-29-palette-demo.md)
+- [Android build failures and physical 2.0.2 installation](reports/2026-10-29-android-build-recovery.md)
+- [Input ownership, background permission and wallpaper transitions](reports/2026-10-29-input-foreground-recovery.md)
+- [System controls, build triage and TV colors](reports/2026-10-29-system-controls-colors.md)
+- [Phone microphone capture and TV voice service](features/PHONE_VOICE.md)
+- [Phone microphone implementation and validation](reports/2026-10-29-phone-voice.md)
+- [System remote TLS and adaptive handset](features/SYSTEM_REMOTE_TRANSPORT.md)
+- [Remote transport, handset and Classic restoration report](reports/2026-10-29-system-remote-handset.md)
+- [Compact remote, microphone lifecycle and CI recovery](reports/2026-10-29-compact-remote.md)
+
+- [Direct native remote](features/DIRECT_NATIVE_REMOTE.md)
+- [Optional local debugging buttons](features/LOCAL_ADB_REMOTE.md)
+- [Hosted WebRTC remote and demo](features/HOSTED_REMOTE.md)
