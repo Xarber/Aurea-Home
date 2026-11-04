@@ -83,3 +83,11 @@ now omits hidden files/directories; it does not weaken server protection. Nginx
 serves manifests with application/manifest+json. These hosting/web-export-only
 changes do not change the native binary; PR checks remain required, and their
 merge can skip a duplicate native build of the same version.
+
+Production follow-up passed: source-stamped web 7171ca6, default remote view,
+secure context, activated/controlling service worker, offline remote-shell reload,
+public signaling, and explicit application/manifest+json headers. Main's existing
+native 2.1.0 pipeline remains the binary build; these later nginx/export/docs-only
+promotions use normal protected PR checks and skip duplicate native publication
+on merge. Android Gradle Plugin 9.2.1's cached proguard-common rules were inspected:
+annotated JavascriptInterface methods are retained, including HostedRemote's bridge.
