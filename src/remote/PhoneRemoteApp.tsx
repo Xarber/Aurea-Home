@@ -31,7 +31,7 @@ export default function PhoneRemoteApp({preview=false}:{preview?:boolean}){
  const remote=useRemote(preview),{client,state}=remote;const insets=useSafeAreaInsets();const screen=useWindowDimensions();
  const {view:remoteView,setView:setRemoteView,touchpad,toggleTouchpad}=useRemotePreferences();
  const [touchActive,setTouchActive]=useState(false),[remoteHeight,setRemoteHeight]=useState(600),[voiceError,setVoiceError]=useState<string>();
- const wide=screen.width>=900&&screen.height>=600;
+ const wide=screen.width>=760&&screen.height>=600;
  const completeRemote=fullRemote(remoteView,state.device?.homeActive);
  const [launcherPreview,setLauncherPreview]=useState(false);const [pairSuccess,setPairSuccess]=useState(false);const wasPairing=useRef(false);
  const [dev,setDev]=useState(false);const [taps,setTaps]=useState(0);
@@ -122,7 +122,7 @@ export default function PhoneRemoteApp({preview=false}:{preview?:boolean}){
  </View></GlassTarget.Provider>;
 }
 function AppCard({target,icon,connected,load,launch}:{target:RemoteTarget;icon?:string;connected:boolean;load:()=>void;launch:()=>void}){
- const wide=useWindowDimensions().width>=900;
+ const wide=useWindowDimensions().width>=760;
  useEffect(()=>{load();},[target.id,target.profile,target.name,connected]);
  return <View style={{width:wide?(target.kind==='app'?'23%':'32%'):(target.kind==='app'?'30%':'47%'),marginBottom:0}}><FocusButton id={'target:'+target.id} group="phone" label={target.name} disabled={!connected} onPress={launch} style={[s.appIcon,target.kind!=='app'&&{aspectRatio:1.9}]}>{icon?<Image source={{uri:icon}} style={{width:target.kind==='app'?48:104,height:48,borderRadius:target.kind==='app'?12:0,resizeMode:'contain'}}/>:<Icon name={target.kind==='app'?'apps':target.kind==='live'?'tv':'inputs'} size={30}/>}</FocusButton><Text style={s.appName} numberOfLines={2}>{target.name}</Text>{target.subtitle&&target.subtitle!==target.name&&<Text style={[s.caption,{textAlign:'center'}]}>{target.subtitle}</Text>}{target.connected===false&&<Text style={[s.caption,{textAlign:'center',marginTop:3}]}>No signal</Text>}</View>;
 }

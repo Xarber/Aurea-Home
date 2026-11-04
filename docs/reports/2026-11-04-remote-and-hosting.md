@@ -33,3 +33,10 @@ voice, debugging authorization or WebRTC TV session is implied by source checks.
 Pending: full signed APK/AAB and iOS builds, physical phone direct TLS/voice,
 TV-local ADB RSA approval, global app controls/power, on-TV color appearance,
 and physical-TV hosted WebRTC. Web/mocked checks do not establish those outcomes.
+
+The final 32-case browser pass caught one new palette error (31 passed): artwork
+area positions had been appended to color strings, causing interpolateColor to
+receive a number-like string. Numeric positions now have their own optional
+transition values, preserving synchronized and interrupted fades. Both focused
+palette regression tests passed after correction. Hosted verification is repeated
+against that corrected source, not the earlier deployment.
