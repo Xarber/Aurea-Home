@@ -43,3 +43,6 @@ References: Android DownloadManager and PackageInstaller.Session API documentati
 ## Reference-TV parser compatibility
 
 On the physical MiTV Android 10, getPackageArchiveInfo with GET_SIGNING_CERTIFICATES alone returned no certificate arrays; GET_SIGNATURES or both flags returned the real certificate. The verifier requests both supported flags on API 28+ and prefers SigningInfo when available, otherwise the returned legacy certificate. Missing certificates are still rejected. Real matching APK/hash/public-key mismatch checks were executed on the TV without installing through the test probe.
+
+### Repository rename compatibility
+Versions through 2.0.8 pin the historical repository path in their release URL allowlist. GitHub redirects API requests after a rename but returns canonical new asset URLs, so those old binaries reject the new release before offering it. A single manual signed APK upgrade is required; retain app data and signing continuity. Never relax the updater to accept arbitrary repositories. Current checks report rejected manifest locations as an incomplete check rather than claiming the installed version is current.

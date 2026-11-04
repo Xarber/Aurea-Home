@@ -101,7 +101,7 @@ public final class UpdateController {
                     JSONArray assets=release.optJSONArray("assets");if(assets==null)continue;
                     String manifest="";
                     for(int n=0;n<assets.length();n++){JSONObject asset=assets.getJSONObject(n);if(asset.optString("name").equals("update-manifest.json"))manifest=asset.optString("browser_download_url");}
-                    if(!UpdatePolicy.manifestUrl(manifest,tag))continue;
+                    if(!UpdatePolicy.manifestUrl(manifest,tag)){if(!manifest.isEmpty())incomplete=true;continue;}
                     UpdateCandidate offer;
                     try{offer=new UpdateCandidate(new JSONObject(fetch(manifest,"",65536).body));}catch(Exception invalid){incomplete=true;continue;}
                     if(!offer.tag.equals(tag)||!offer.channel.equals(release.optBoolean("prerelease")?"beta":"stable"))continue;
