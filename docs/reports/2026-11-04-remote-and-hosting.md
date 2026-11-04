@@ -71,3 +71,8 @@ inside an already-open TV pairing panel when origin binding rotates the code.
   this batch. Native phone/TV verification remains pending. No temporary worktree
   or branch was created; pre-existing main/testing worktrees and Dependabot PRs
   were preserved.
+
+Live PWA installation exposed a proxy-prefix overlap: `/peer` also intercepted
+`/peer-client.js`, making precaching fail despite normal WebRTC working. The
+signaling location is now `/peer/`, leaving the static client asset reachable.
+The production offline-shell test is repeated after this routing fix.
