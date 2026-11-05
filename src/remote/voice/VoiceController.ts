@@ -11,6 +11,8 @@ export class VoiceController{
  private stopped?:Promise<void>;
  private timer?:ReturnType<typeof setTimeout>;
  private starting?:Promise<void>;
+ private firstAudio?:ReturnType<typeof setTimeout>;
+ private delivered=false;
  private capture:VoiceCapture;
  private rpc:VoiceRPC;
  private status:(phase:VoicePhase,error?:string)=>void;
@@ -23,22 +25,22 @@ export class VoiceController{
    if(this.cancelled)return;
    await this.capture.start(session,packet=>this.send(packet),error=>{void this.stop(error);});
    if(this.cancelled)return;
-   this.status('listening');this.timer=setTimeout(()=>{void this.stop();},30000);
+   this.status('listening');if(!this.delivered)this.firstAudio=setTimeout(()=>{void this.stop('microphone_no_audio');},5000);this.timer=setTimeout(()=>{void this.stop();},30000);
   }catch(error){void this.stop(error instanceof Error?error.message:'microphone_failed');}
  }
  private send(packet:VoicePacket){
   if(packet.id!==this.session)return;
   if(this.pending>=3){void this.stop('voice_connection_too_slow');return;}
   this.pending++;
-  this.queue=this.queue.then(async()=>{await this.rpc('voice_chunk',{...packet});}).catch(()=>{void this.stop('voice_connection_lost');}).finally(()=>{this.pending--;});
+  this.queue=this.queue.then(async()=>{await this.rpc('voice_chunk',{...packet});this.delivered=true;clearTimeout(this.firstAudio);}).catch(()=>{void this.stop('voice_connection_lost');}).finally(()=>{this.pending--;});
  }
  stop(error?:string):Promise<void>{
   if(this.stopped)return this.stopped;
-  this.cancelled=true;clearTimeout(this.timer);this.status('stopping');
+  this.cancelled=true;clearTimeout(this.timer);clearTimeout(this.firstAudio);this.status('stopping');
   // Schedule cleanup after assignment so synchronous capture callbacks cannot reenter it.
   this.stopped=Promise.resolve().then(async()=>{
    await this.starting?.catch(()=>{});
-   try{await this.capture.stop();await this.queue;}finally{
+   try{await this.capture.stop();await this.queue;}catch{error=error??'microphone_cleanup_failed';}finally{
     if(this.session)await this.rpc('voice_end',{id:this.session}).catch(()=>{});
     this.session=undefined;this.status('idle',error);
    }

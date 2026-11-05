@@ -44,3 +44,11 @@ Home always uses the authenticated launcher bridge, including when Home is in th
 New phone identities use Forge's step-based RSA generation with a five-millisecond work budget, explicit timer yields, cancellation on target changes and a 30-second deadline. This prevents long prime searches from monopolizing the JavaScript event loop. Physical phone pairing must still be validated.
 
 The iOS TLS adapter passes the existing RSA private key as PKCS#1 to react-native-tcp-socket 6.4.3's SecKeyCreateWithData import. Android continues receiving PKCS#8. SecureStore representation, key material, certificate and pairing trust do not change. Apple documents RSA external representations at https://developer.apple.com/documentation/security/storing-keys-as-data. The real-TLS host test asserts the iOS boundary format; physical iPhone validation remains required.
+
+### Pairing progress and microphone cleanup (2.1.1)
+
+The selected TV has a visible system-controls status/action; the pairing panel names the TV and shows a spinner and first-request explanation before a code is ready. Pairing trust continues to be stored per TV host on this phone. Changing TVs clears stale local code/success UI.
+
+On iOS, Data.removeFirst leaves nonzero indices. Clearing `0..<count` after streaming could trap on microphone Stop. Cleanup now clears the actual startIndex..<endIndex range and ignores repeated native Stop requests; engine lifecycle cleanup is dispatched to main. Controller cleanup failures still end the TV session and return idle. A five-second first-audio watchdog reports missing PCM instead of silently displaying an indefinite recording state. A successful RPC chunk indicates delivery to the client transport, not confirmed speech recognition by the TV.
+
+Host checks ran the installed Swift AVAudioConverter with synthetic PCM and the actual Swift capture encryption/append/stop code (iOS-only AVAudioSession setup excluded on macOS). PKCS#1/OAEP-SHA256/AES-GCM packets decrypted into the original PCM, including residual audio and repeated stop. Direct TLS framing follows androidtvremote2's voice implementation: 16-bit mono PCM at 8 kHz, 8 KiB minimum frames, 20 KiB maximum. This evidence is not a physical microphone/Assistant test.

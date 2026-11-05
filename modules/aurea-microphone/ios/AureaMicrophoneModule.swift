@@ -30,8 +30,8 @@ public class AureaMicrophoneModule: Module {
       do { try capture.start() } catch { self.capture = nil; capture.stop(); throw error }
     }.runOnQueue(.main)
     AsyncFunction("stop") { self.capture?.stop(); self.capture = nil }.runOnQueue(.main)
-    OnAppEntersBackground { self.capture?.stop(); self.capture = nil }
-    OnDestroy { self.capture?.stop(); self.capture = nil }
+    OnAppEntersBackground { DispatchQueue.main.async { self.capture?.stop(); self.capture = nil } }
+    OnDestroy { DispatchQueue.main.async { self.capture?.stop(); self.capture = nil } }
   }
 }
 private enum CaptureError: Error { case busy, invalidSession, unavailable, encryption }
@@ -47,6 +47,7 @@ private final class MicrophoneCapture {
   private var accepting = true
   private var started = false
   private var installedTap = false
+  private var stopping = false
   private var watchdog: DispatchWorkItem?
   private let emit: (String, [String: Any]) -> Void
   init(id: String, publicKey: String, emit: @escaping (String, [String: Any]) -> Void) throws {
@@ -108,6 +109,7 @@ private final class MicrophoneCapture {
     }
   }
   func stop(error: String? = nil) {
+    guard !stopping else { return }; stopping = true
     watchdog?.cancel(); watchdog = nil
     if installedTap { engine.inputNode.removeTap(onBus: 0); installedTap = false }
     engine.stop()
@@ -115,7 +117,7 @@ private final class MicrophoneCapture {
     queue.async { [self] in
       guard key != nil else { return }
       if accepting { encrypt(pending) }
-      accepting = false; pending.resetBytes(in: 0..<pending.count); pending.removeAll(); key = nil
+      accepting = false; pending.resetBytes(in: pending.startIndex..<pending.endIndex); pending.removeAll(); key = nil
       var result: [String: Any] = ["id": id]
       if let error { result["error"] = error }
       emit("stopped", result)
