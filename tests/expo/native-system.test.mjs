@@ -12,7 +12,7 @@ function load(path){const source=readFileSync(new URL(path,import.meta.url),'utf
  if(name==='react-native')return {Platform:{OS:'ios',isTV:false}};
  if(name==='expo')return {requireOptionalNativeModule:()=>({randomSeed:async()=>crypto.randomBytes(64).toString('base64')})};
  if(name==='expo-secure-store')return {getItemAsync:async key=>store.get(key)??null,setItemAsync:async(key,value)=>{store.set(key,value);}};
- if(name==='react-native-tcp-socket')return {connectTLS(options,connected){const socket=tls.connect(options,connected),original=socket.getPeerCertificate.bind(socket);socket.getPeerCertificate=async()=>{await new Promise(resolve=>setTimeout(resolve,20));return original();};return socket;}};
+ if(name==='react-native-tcp-socket')return {connectTLS(options,connected){assert.match(options.key,/^-----BEGIN RSA PRIVATE KEY-----/,'iOS Security imports PKCS#1, not the stored PKCS#8 wrapper');const socket=tls.connect(options,connected),original=socket.getPeerCertificate.bind(socket);socket.getPeerCertificate=async()=>{await new Promise(resolve=>setTimeout(resolve,20));return original();};return socket;}};
  if(name==='./wire')return load('../../src/remote/system/wire.ts');
  if(name==='../validation')return load('../../src/remote/validation.ts');
  return require(name);

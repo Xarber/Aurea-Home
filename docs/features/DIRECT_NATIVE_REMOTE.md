@@ -42,3 +42,5 @@ or historical Anymote implementation is used.
 Home always uses the authenticated launcher bridge, including when Home is in the background. It never depends on the phone's system pairing or the optional TV-local ADB bridge. App/input launches retain the server's pending-launch/foreground restoration path. Android background-launch restrictions still apply.
 
 New phone identities use Forge's step-based RSA generation with a five-millisecond work budget, explicit timer yields, cancellation on target changes and a 30-second deadline. This prevents long prime searches from monopolizing the JavaScript event loop. Physical phone pairing must still be validated.
+
+The iOS TLS adapter passes the existing RSA private key as PKCS#1 to react-native-tcp-socket 6.4.3's SecKeyCreateWithData import. Android continues receiving PKCS#8. SecureStore representation, key material, certificate and pairing trust do not change. Apple documents RSA external representations at https://developer.apple.com/documentation/security/storing-keys-as-data. The real-TLS host test asserts the iOS boundary format; physical iPhone validation remains required.
