@@ -49,6 +49,7 @@ def changelog():
 
 def generate():
     (ROOT / 'CHANGELOG.md').write_text(changelog())
+    (ROOT / 'assets/release-history.json').write_bytes(HISTORY.read_bytes())
     commits = subprocess.check_output(['git', 'log', '--reverse', '--format=%H %ad %s%n%b', '--date=short', '98cbd64^..HEAD'], cwd=ROOT, text=True)
     (ROOT / 'app/src/main/assets/developer-changelog.txt').write_text('Aurea Home developer changelog\nLegacy subjects are preserved. New work uses Conventional Commits.\n\n' + commits)
 

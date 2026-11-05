@@ -58,3 +58,9 @@ Preserve sliding details, black activity material and nonfocusable navigation hi
 Temporary branch cleanup must preserve active Dependabot PRs and other worktrees.
 
 - Preserve the existing live blur implementation and its default intensity/materials. `blur-enabled` is a separate optional performance switch; do not conflate it with transparent activity backgrounds. Keep LegacyHomeActivity and its developer Recovery Home entry permanently unless the user explicitly reverses this requirement.
+
+## Developer ideas retrieval
+
+At the start of each development session or substantial modification, read `docs/IDEAS.json` and run `node --experimental-strip-types scripts/ideas.mjs`. Summarize Pending/Approved/Deferred counts, newly modified entries relative to the last actual review, related work and potentially already implemented ideas. Ask which relevant ideas to implement now or later; do not repeat the question during the same task and do not implement unrelated entries automatically. Preserve unselected entries. Mark Implemented only after verification, with exact commit, version, verifiedAt and changelog references.
+
+The repository collection is public and initially empty. App collections are private, local and not automatically accessible to agents. Obtain a user-exported JSON or use an explicitly authorized transport; never claim retrieval without reading it. CLI imports preview additions/conflicts and preserve existing entries; writing private exports into public source requires explicit `--allow-public-source`. No GitHub credential is embedded in the app. See `docs/features/IDEAS.md`.

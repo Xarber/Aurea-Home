@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import {IdeasPage} from '../developer/ideas/IdeasPage';
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Image, TextInput, StyleSheet } from 'react-native';
 import { AnchoredPanel, type Anchor } from './AnchoredPanel';
@@ -51,7 +52,7 @@ export function NativePanels({
   const access = useDeveloperAccess(demo.page),
     developer = access.enabled,
     revealed = access.revealed;
-  useEffect(()=>{if(!developer&&(demo.panel==='developer'||demo.panel==='diagnostics'))demo.setPanel('control');},[developer,demo.panel]);
+  useEffect(()=>{if(!developer&&(demo.panel==='developer'||demo.panel==='diagnostics'||demo.panel==='ideas'))demo.setPanel('control');},[developer,demo.panel]);
   const panel = demo.panel ?? retained,
     snapshot = demo.snapshot;
   useEffect(() => {
@@ -119,7 +120,7 @@ export function NativePanels({
     airplay: 'AirPlay',
     about: 'About Aurea Home',
     changelog: 'Changelog',
-    developer: 'Developer settings',
+    developer: 'Developer settings',ideas:'Ideas',
     profiles: 'Input appearance',
     pair: 'Paired AirPlay device',
     input: 'Choose HDMI input',
@@ -481,8 +482,10 @@ export function NativePanels({
         )}
         {panel === 'whatsnew' &&
           row('Full changelog', 'info', () => demo.setPanel('changelog'))}
+        {panel === 'ideas' && developer && <IdeasPage onChangelog={()=>demo.setPanel('changelog')}/>}
         {panel === 'developer' && (
           <>
+            {row('Ideas','apps',()=>demo.setPanel('ideas'))}
             {row('Developer changelog', 'code', () =>
               info('developerChangelog', 'diagnostics'),
             )}

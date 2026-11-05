@@ -78,3 +78,5 @@ separate capabilities. See LOCAL_ADB_REMOTE.md, DIRECT_NATIVE_REMOTE.md and
 HOSTED_REMOTE.md under docs/features for boundaries and limitations. No arbitrary
 shell endpoint, credentials in signaling, raw audio logging or command replay is
 permitted. Public hosting and repository rename were explicitly requested.
+
+Developer Ideas stay local and are excluded from remote/PeerServer traffic and automatic publication. Explicit exports may contain personal notes; review them before sharing or adding them to this public repository. Schema validation is bounded and imports preserve local records by default. Details: [Ideas](features/IDEAS.md).

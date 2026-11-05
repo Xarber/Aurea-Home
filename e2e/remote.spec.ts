@@ -35,3 +35,10 @@ test('system TV controls expose the standard Android remote keys',async({page})=
  for(const label of ['Mute','Home','Back','Use phone microphone','Channel up','Channel down','Previous','Rewind','Play / Pause','Fast forward','Next','Stop','red button','green button','yellow button','blue button'])await expect(page.getByTestId('full-remote').getByRole('button',{name:label,exact:true})).toBeVisible();
  await page.locator('[data-nav="phone-mute"]').click();await expect(page.getByTestId('full-remote')).toBeVisible();
 });
+
+test('system pairing names the selected TV and shows progress before its code is ready',async({page})=>{
+ const id='33333333-3333-3333-3333-333333333333';let release!:()=>void;const pending=new Promise<void>(resolve=>{release=resolve;});
+ await page.route('**/hello',route=>route.fulfill({json:{id}}));await page.route('**/pair/start',route=>route.fulfill({json:{}}));await page.route('**/pair',route=>route.fulfill({json:{id,token:'e'.repeat(32)}}));
+ await page.route('**/api/**',async route=>{if(route.request().url().endsWith('/system/pair/start')){await pending;await route.fulfill({json:{pairing:true}});return;}await route.fulfill({json:route.request().url().endsWith('/state')?{schema:1,id,name:'Study television',observedAt:Date.now(),homeActive:true,systemRemote:{paired:false,status:'not_paired'},music:{active:false}}:{apps:[],inputs:[]}});});
+ try{await page.goto('/?remote=1');await page.getByTestId('phone-address').fill('192.168.1.20');await page.locator('[data-nav="phone-connect"]').click();await page.getByTestId('phone-pin').fill('123456');await page.locator('[data-nav="phone-pair"]').click();await page.locator('[data-nav="phone-paired-done"]').click();await page.locator('[data-nav="phone-system-status"]').click();await expect(page.getByText('SYSTEM CONTROLS · Study television')).toBeVisible();await page.locator('[data-nav="phone-start-system"]').click();await expect(page.getByText(/Preparing a secure connection to Study television/)).toBeVisible();await expect(page.getByTestId('phone-system-pin')).toHaveCount(0);release();await expect(page.getByTestId('phone-system-pin')).toBeVisible();}finally{release();}
+});

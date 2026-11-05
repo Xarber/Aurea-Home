@@ -36,3 +36,5 @@ individual sources remain ordinary pinnable entries. The original language,
 receiver, remote trust, release-history, update and Keystore stores retain their
 names. The isolated preview has a different package and intentionally different
 private storage; production updates do not import that preview's test identity.
+
+Developer Ideas use a separate, versioned local collection; see [Ideas](features/IDEAS.md) for fields, limits, two-slot native recovery, web write serialization and explicit import conflict policy. They are not remote credentials or playback/simulation records.

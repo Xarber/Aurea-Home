@@ -45,3 +45,5 @@ See [phone remote](features/PHONE_REMOTE.md), [PWA](features/PWA.md), and [brand
 - [Direct native remote](features/DIRECT_NATIVE_REMOTE.md)
 - [Optional local debugging buttons](features/LOCAL_ADB_REMOTE.md)
 - [Hosted WebRTC remote and demo](features/HOSTED_REMOTE.md)
+- [Private developer Ideas and agent workflow](features/IDEAS.md).
+- [Pairing, voice and Ideas validation report](reports/2026-11-05-pairing-voice-and-ideas.md).

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { useEffect, useRef, useState } from 'react';
-import { AppState } from 'react-native';
+import { AppState,Platform } from 'react-native';
 import { tv } from '../platform/native/tv';
 import { nativeFocus } from '../platform/native/focus';
 /** Temporary access expires on inactivity or a main page change, never persisted. */
@@ -28,10 +28,12 @@ export function useDeveloperAccess(page: number) {
       if (value !== 'active' && Date.now() - state.current.lastInput >= 30000)
         lock();
     });
+    if(Platform.OS==='web'){document.addEventListener('pointerdown',interact);document.addEventListener('keydown',interact);document.addEventListener('input',interact);}
     const timer = setInterval(() => {
       if (Date.now() - state.current.lastInput >= 30000) lock();
     }, 1000);
     return () => {
+      if(Platform.OS==='web'){document.removeEventListener('pointerdown',interact);document.removeEventListener('keydown',interact);document.removeEventListener('input',interact);}
       focus();
       events();
       application.remove();
@@ -52,6 +54,7 @@ export function useDeveloperAccess(page: number) {
   return {
     revealed,
     enabled,
+    interact,
     tap,
     toggle: () => {
       interact();

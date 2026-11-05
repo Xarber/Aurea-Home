@@ -1,4 +1,7 @@
+import {SharedChangelog} from './SharedChangelog';
 // SPDX-License-Identifier: AGPL-3.0-only
+import {IdeasPage} from '../developer/ideas/IdeasPage';
+import {useDeveloperAccess} from '../hooks/useDeveloperAccess';
 import appConfig from '../../app.json';
 import React,{useState,useEffect} from 'react';
 import {View,Text,ScrollView,StyleSheet,Platform,Linking} from 'react-native';
@@ -13,11 +16,12 @@ import {wallpapers,entry,IconName} from '../model/catalog';
 import type {DemoServerInfo} from '../hooks/useDemoRemoteServer';
 import type {Demo} from '../hooks/useDemo';
 export function Panels({demo,t,launch,musicAnchor,settingsAnchor,server,openRemote}:{openRemote?:()=>void;server?:DemoServerInfo;demo:Demo;t:(s:string)=>string;launch:(id:string)=>void;musicAnchor:Anchor;settingsAnchor:Anchor}){
- const reduced=useReducedMotion();
+ const reduced=useReducedMotion(),access=useDeveloperAccess(demo.page);
+ useEffect(()=>{if(demo.panel==='ideas'&&!access.enabled)demo.setPanel('about');},[demo.panel,access.enabled]);
  const [retained,setRetained]=useState<string|null>(null);
  useEffect(()=>{if(demo.panel){setRetained(demo.panel);return;}const timer=setTimeout(()=>setRetained(null),300);return()=>clearTimeout(timer);},[demo.panel]);
  const panel=demo.panel??retained;if(!panel)return null;const row=(title:string,icon:IconName,action:()=>void,value?:string)=><FocusButton key={title} id={`panel-${title}`} group="modal" label={t(title)} onPress={action} style={s.row}><Icon name={icon} size={21}/><Text style={s.label}>{t(title)}</Text>{value&&<Text style={s.value}>{value}</Text>}</FocusButton>;
- const titles:Record<string,string>={control:'Control Center',music:'Music',wallpapers:'Wallpapers',remote:'Remote',airplay:'AirPlay',network:'Network',display:'Display',sound:'Sound',about:'About Aurea Home'};
+ const titles:Record<string,string>={ideas:'Ideas',changelog:'What’s new',control:'Control Center',music:'Music',wallpapers:'Wallpapers',remote:'Remote',airplay:'AirPlay',network:'Network',display:'Display',sound:'Sound',about:'About Aurea Home'};
  const title=panel.startsWith('menu:')?entry(panel.split(':')[1]!).name:panel.startsWith('pin:')?'Choose a slot':panel.startsWith('launch:')?entry(panel.split(':')[1]!).name:titles[panel]??panel;
  return <AnchoredPanel key={panel==='music'?'music':'settings'} kind={panel==='music'?'music':'settings'} anchor={panel==='music'?musicAnchor:settingsAnchor} visible={demo.panel!==null} close={demo.close}>
  {panel!=='music'&&<View style={s.header}><Text style={[s.title,{flex:1}]}>{t(title)}</Text><FocusButton id="panel-close" group="modal" label={t('Close')} onPress={demo.close} style={s.close}><Icon name="close" size={20}/></FocusButton></View>}
@@ -48,7 +52,9 @@ export function Panels({demo,t,launch,musicAnchor,settingsAnchor,server,openRemo
 
  {row('Disable blur','sun',()=>demo.change({blur:demo.prefs.blur===false}),t(demo.prefs.blur===false?'On':'Off'))}{row('Motion','sun',()=>demo.change({motion:!demo.prefs.motion}),t(demo.prefs.motion?(reduced?'Reduced motion':'On'):'Off'))}</>}
  {panel==='sound'&&<><Text style={s.description}>Listening volume</Text>{row('Volume −','volume',()=>demo.setVolume(v=>Math.max(0,v-5)),`${demo.volume}%`)}{row('Volume +','volume',()=>demo.setVolume(v=>Math.min(100,v+5)),`${demo.volume}%`)}</>}
- {panel==='about'&&<><Text style={s.description}>Aurea Home · Web preview {appConfig.expo.version}{ '\n\n' }This web preview shares the Expo Home interface with Android TV. Its sample apps and media stay in this browser. Preview changes stay in this browser.{ '\n\n' }Arrow keys navigate · Enter selects · M opens an app menu · C opens Control Center · Escape goes back · Space plays or pauses.{ '\n\n' }AGPL-3.0-only · Same project, isolated preview data. Preferences are saved only in this browser.</Text>{row('Source code','apps',()=>{void Linking.openURL('https://github.com/Xarber/Aurea-Home/tree/'+(process.env.EXPO_PUBLIC_SOURCE_COMMIT??'testing'));})}{row('Restore defaults','settings',demo.reset)}</>}
+ {panel==='changelog'&&<SharedChangelog group="modal"/>}
+ {panel==='ideas'&&access.enabled&&<IdeasPage onChangelog={()=>demo.setPanel('changelog')}/>}
+ {panel==='about'&&<>{row('Version '+appConfig.expo.version,'info',access.tap)}{access.revealed&&row('Developer options','code',access.toggle,access.enabled?'On':'Off')}{access.enabled&&row('Ideas','apps',()=>demo.setPanel('ideas'))}<Text style={s.description}>Aurea Home · Web preview {appConfig.expo.version}{ '\n\n' }This web preview shares the Expo Home interface with Android TV. Its sample apps and media stay in this browser. Preview changes stay in this browser.{ '\n\n' }Arrow keys navigate · Enter selects · M opens an app menu · C opens Control Center · Escape goes back · Space plays or pauses.{ '\n\n' }AGPL-3.0-only · Same project, isolated preview data. Preferences are saved only in this browser.</Text>{row('Source code','apps',()=>{void Linking.openURL('https://github.com/Xarber/Aurea-Home/tree/'+(process.env.EXPO_PUBLIC_SOURCE_COMMIT??'testing'));})}{row('Restore defaults','settings',demo.reset)}</>}
  {panel.startsWith('menu:')&&<>{row('Launch','play',()=>{demo.close();launch(panel.split(':')[1]!);})}{row('Pin to dock','apps',()=>demo.setPanel(`pin:${panel.split(':')[1]}`))}{panel.split(':')[1]!=='all'&&demo.prefs.dock.includes(panel.split(':')[1]!)&&row('Remove from dock','close',()=>{demo.remove(panel.split(':')[1]!);demo.close();})}</>}
  {panel.startsWith('pin:')&&demo.prefs.dock.map((id,index)=>panel.split(':')[1]==='all'&&index!==5?null:row(`${index+1} · ${entry(id).name}`,'apps',()=>{demo.pin(panel.split(':')[1]!,index);demo.close();},panel.split(':')[1]==='all'&&index!==5?'Slot 6 only':undefined))}
  {panel.startsWith('launch:')&&<><View style={s.emptyIcon}><Icon name={entry(panel.split(':')[1]!).icon} size={70}/></View><Text style={[s.title,{textAlign:'center',marginBottom:14}]}>{entry(panel.split(':')[1]!).subtitle??entry(panel.split(':')[1]!).name}</Text><Text style={s.description}></Text>{row('Home','home',()=>{demo.close();demo.setPage(0);})}</>}

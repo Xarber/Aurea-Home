@@ -2,6 +2,14 @@
 
 Generated from `app/src/main/assets/release-history.json`. Legacy versions reflect repository history; dates describe implementation, not a verified public release.
 
+## 2.1.1 — 2026-11-05
+
+Private developer ideas and clearer per-TV system pairing.
+
+### Fixes & Improvements
+
+Restore background Home without system pairing, group artwork shades by coverage, retain wallpaper contours, correct iPhone TLS key import, yield during pairing and harden microphone stop/restart. Report incomplete update checks accurately.
+
 ## 2.1.0 — 2026-11-04
 
 Direct native system remote, optional browser ADB controls and hosted WebRTC remote.

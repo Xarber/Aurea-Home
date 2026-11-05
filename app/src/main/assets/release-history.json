@@ -2,6 +2,48 @@
   "schema": 1,
   "releases": [
     {
+      "version": "2.1.1",
+      "code": 37,
+      "date": "2026-11-05",
+      "critical": false,
+      "highlights": {
+        "en": "Private developer ideas and clearer per-TV system pairing.",
+        "it": "Idee private per sviluppatori e abbinamento di sistema più chiaro per ogni TV."
+      },
+      "fixes": {
+        "en": "Restore background Home without system pairing, group artwork shades by coverage, retain wallpaper contours, correct iPhone TLS key import, yield during pairing and harden microphone stop/restart. Report incomplete update checks accurately.",
+        "it": "Ripristina Home senza abbinamento di sistema, raggruppa i colori per area, mantiene i dettagli dello sfondo, corregge la chiave TLS iPhone e migliora attesa e arresto del microfono. Segnala correttamente controlli aggiornamenti incompleti."
+      },
+      "compatibility": {
+        "en": "Physical iPhone microphone audio requires validation. Versions before the repository rename need one manual signed upgrade. Developer ideas remain local unless explicitly exported; imports require review.",
+        "it": "L’audio del microfono iPhone richiede verifica fisica. Le versioni precedenti alla rinomina richiedono un aggiornamento manuale firmato. Le idee restano locali salvo esportazione esplicita; le importazioni richiedono revisione."
+      },
+      "features": [
+        {
+          "icon": "code",
+          "label": {
+            "en": "Developer ideas",
+            "it": "Idee sviluppatore"
+          },
+          "detail": {
+            "en": "Offline capture, status history, search, batch actions and reviewed JSON imports with portable exports.",
+            "it": "Annotazioni offline, cronologia stati, ricerca, azioni multiple e importazione JSON con revisione ed esportazioni portabili."
+          }
+        },
+        {
+          "icon": "remote",
+          "label": {
+            "en": "Pairing feedback",
+            "it": "Stato abbinamento"
+          },
+          "detail": {
+            "en": "Show progress while preparing a TV code and display system-control status for the selected television.",
+            "it": "Mostra l’attesa del codice TV e lo stato dei controlli di sistema del televisore selezionato."
+          }
+        }
+      ]
+    },
+    {
       "version": "2.1.0",
       "code": 36,
       "date": "2026-11-04",

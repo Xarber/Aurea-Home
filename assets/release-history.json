@@ -1,0 +1,1017 @@
+{
+  "schema": 1,
+  "releases": [
+    {
+      "version": "2.1.1",
+      "code": 37,
+      "date": "2026-11-05",
+      "critical": false,
+      "highlights": {
+        "en": "Private developer ideas and clearer per-TV system pairing.",
+        "it": "Idee private per sviluppatori e abbinamento di sistema più chiaro per ogni TV."
+      },
+      "fixes": {
+        "en": "Restore background Home without system pairing, group artwork shades by coverage, retain wallpaper contours, correct iPhone TLS key import, yield during pairing and harden microphone stop/restart. Report incomplete update checks accurately.",
+        "it": "Ripristina Home senza abbinamento di sistema, raggruppa i colori per area, mantiene i dettagli dello sfondo, corregge la chiave TLS iPhone e migliora attesa e arresto del microfono. Segnala correttamente controlli aggiornamenti incompleti."
+      },
+      "compatibility": {
+        "en": "Physical iPhone microphone audio requires validation. Versions before the repository rename need one manual signed upgrade. Developer ideas remain local unless explicitly exported; imports require review.",
+        "it": "L’audio del microfono iPhone richiede verifica fisica. Le versioni precedenti alla rinomina richiedono un aggiornamento manuale firmato. Le idee restano locali salvo esportazione esplicita; le importazioni richiedono revisione."
+      },
+      "features": [
+        {
+          "icon": "code",
+          "label": {
+            "en": "Developer ideas",
+            "it": "Idee sviluppatore"
+          },
+          "detail": {
+            "en": "Offline capture, status history, search, batch actions and reviewed JSON imports with portable exports.",
+            "it": "Annotazioni offline, cronologia stati, ricerca, azioni multiple e importazione JSON con revisione ed esportazioni portabili."
+          }
+        },
+        {
+          "icon": "remote",
+          "label": {
+            "en": "Pairing feedback",
+            "it": "Stato abbinamento"
+          },
+          "detail": {
+            "en": "Show progress while preparing a TV code and display system-control status for the selected television.",
+            "it": "Mostra l’attesa del codice TV e lo stato dei controlli di sistema del televisore selezionato."
+          }
+        }
+      ]
+    },
+    {
+      "version": "2.1.0",
+      "code": 36,
+      "date": "2026-11-04",
+      "critical": false,
+      "highlights": {
+        "en": "Direct native system remote, optional browser ADB controls and hosted WebRTC remote.",
+        "it": "Telecomando di sistema nativo diretto, controlli ADB web opzionali e telecomando WebRTC."
+      },
+      "fixes": {
+        "en": "Add power, larger remote layout, desktop key passthrough, touch page swipes, shared dominant artwork colors and a seamless rendered Classic wallpaper. Preserve the legacy recovery launcher.",
+        "it": "Aggiunge accensione, telecomando ampio, tastiera desktop, scorrimenti touch, colori dominanti condivisi e sfondo Classic senza bordi. Mantiene la Home di ripristino."
+      },
+      "compatibility": {
+        "en": "Browser global buttons require optional debugging authorization on the TV. Microphone audio uses direct native Remote Service, not ADB. WebRTC requires a compatible network; physical interoperability needs device testing. Package ID and signing continuity are retained.",
+        "it": "I pulsanti globali web richiedono autorizzazione debug opzionale sulla TV. Il microfono nativo usa Remote Service diretto, non ADB. WebRTC richiede una rete compatibile; serve verifica sui dispositivi. Identificativo e firma restano compatibili."
+      },
+      "features": [
+        {
+          "icon": "remote",
+          "label": {
+            "en": "System controls",
+            "it": "Controlli di sistema"
+          },
+          "detail": {
+            "en": "Native phones connect directly; browsers can use a locally authorized ADB button bridge.",
+            "it": "Gli smartphone nativi si collegano direttamente; il browser può usare il bridge ADB autorizzato localmente."
+          }
+        },
+        {
+          "icon": "sound",
+          "label": {
+            "en": "Artwork color",
+            "it": "Colore copertina"
+          },
+          "detail": {
+            "en": "Shared cover colors and dominant-area tint without platform-only color transformations.",
+            "it": "Colori condivisi e tinta proporzionata alla copertina senza trasformazioni specifiche per piattaforma."
+          }
+        }
+      ]
+    },
+    {
+      "version": "2.0.8",
+      "code": 35,
+      "date": "2026-10-29",
+      "critical": false,
+      "highlights": {
+        "en": "Cleaner remote controls with layout and touchpad preferences in Settings.",
+        "it": "Telecomando più pulito, con preferenze di layout e touchpad nelle Impostazioni."
+      },
+      "fixes": {
+        "en": "Remove the extra selector bars, use horizontal compact volume and matched full rockers, prevent touchpad page scrolling, retain microphone capture across layout changes and correct a portable CI screenshot path.",
+        "it": "Rimuove le barre di selezione extra, rende orizzontale il volume compatto e uniforma i bilancieri, impedisce lo scorrimento dal touchpad, mantiene il microfono cambiando layout e corregge il percorso degli screenshot CI."
+      },
+      "compatibility": {
+        "en": "Global controls and microphone require a working system-service connection. Some TVs reject connections originating on the TV itself. No debugging fallback is enabled.",
+        "it": "I controlli globali e il microfono richiedono una connessione funzionante al servizio di sistema. Alcune TV rifiutano connessioni originate dalla TV stessa. Nessun fallback di debug è attivato."
+      },
+      "features": [
+        {
+          "icon": "remote",
+          "label": {
+            "en": "Compact handset",
+            "it": "Telecomando compatto"
+          },
+          "detail": {
+            "en": "Automatic Home/Complete layout; manual and touchpad choices live in Settings.",
+            "it": "Layout Home/Completo automatico; scelte manuali e touchpad nelle Impostazioni."
+          }
+        }
+      ]
+    },
+    {
+      "version": "2.0.7",
+      "code": 34,
+      "date": "2026-10-29",
+      "critical": false,
+      "highlights": {
+        "en": "A complete TV remote with automatic view switching and a touchpad.",
+        "it": "Telecomando TV completo con cambio automatico della vista e touchpad."
+      },
+      "fixes": {
+        "en": "Use Android platform TLS for system controls, add a separate reconnect action, restore Classic wallpaper and match the connected TV in launcher preview.",
+        "it": "Usa TLS nativo Android per i controlli di sistema, aggiunge la riconnessione, ripristina lo sfondo Classic e lo mantiene nell’anteprima del launcher."
+      },
+      "compatibility": {
+        "en": "System controls need the Android TV Remote Service pairing. Browser commands still pass through the trusted TV server. Native TLS interoperability needs device verification; no ADB or accessibility fallback is enabled.",
+        "it": "I controlli di sistema richiedono l’abbinamento al servizio telecomando Android TV. I comandi web passano dal server TV autorizzato. La compatibilità TLS richiede verifica sul dispositivo; nessun fallback ADB o accessibilità è attivato."
+      },
+      "features": [
+        {
+          "icon": "remote",
+          "label": {
+            "en": "Complete remote",
+            "it": "Telecomando completo"
+          },
+          "detail": {
+            "en": "Automatically show full controls outside Home, or choose Home/Complete manually. Swipe on the touchpad or use arrow buttons.",
+            "it": "Mostra automaticamente tutti i controlli fuori da Home oppure scegli Home/Completo. Scorri sul touchpad o usa le frecce."
+          }
+        },
+        {
+          "icon": "apps",
+          "label": {
+            "en": "Original Classic colors",
+            "it": "Colori Classic originali"
+          },
+          "detail": {
+            "en": "Restore the original blue/violet artwork instead of the gray fallback, including the remote’s launcher preview.",
+            "it": "Ripristina lo sfondo originale blu/viola al posto del ripiego grigio, anche nell’anteprima del telecomando."
+          }
+        }
+      ]
+    },
+    {
+      "version": "2.0.6",
+      "code": 33,
+      "date": "2026-10-29",
+      "critical": false,
+      "highlights": {
+        "en": "Use your phone microphone for Android TV voice search.",
+        "it": "Usa il microfono del telefono per la ricerca vocale su Android TV."
+      },
+      "fixes": {
+        "en": "Encrypted in-memory voice packets, bounded recording sessions and cleanup on disconnect, app backgrounding and TV switching.",
+        "it": "Pacchetti vocali cifrati in memoria, registrazione limitata e interruzione alla disconnessione, in background o cambiando TV."
+      },
+      "compatibility": {
+        "en": "Requires paired Android TV system controls and receiver voice support. Native phones request microphone permission. Browsers need HTTPS/localhost; plain HTTP cannot capture audio. Recognition depends on the TV assistant.",
+        "it": "Richiede i controlli di sistema abbinati e il supporto vocale della TV. I telefoni richiedono il permesso microfono. I browser richiedono HTTPS/localhost; HTTP non può acquisire audio. Il riconoscimento dipende dall’assistente TV."
+      },
+      "features": [
+        {
+          "icon": "remote",
+          "label": {
+            "en": "Phone microphone",
+            "it": "Microfono del telefono"
+          },
+          "detail": {
+            "en": "Tap to speak and tap again to stop; recording ends automatically after 30 seconds. Audio is not saved to disk.",
+            "it": "Tocca per parlare e di nuovo per interrompere; termina automaticamente dopo 30 secondi. L’audio non viene salvato su disco."
+          }
+        }
+      ]
+    },
+    {
+      "version": "2.0.5",
+      "code": 32,
+      "date": "2026-10-29",
+      "critical": false,
+      "highlights": {
+        "en": "More TV controls and deeper TV wallpaper colors.",
+        "it": "Più controlli TV e colori degli sfondi più intensi."
+      },
+      "fixes": {
+        "en": "Separate system-service errors from launcher connectivity, reconnect without replaying keys, correct TV manifest lint, and wait for rendered animation frames in browser checks.",
+        "it": "Distingue gli errori del telecomando di sistema, riconnette senza ripetere i tasti, corregge il manifest TV e verifica i fotogrammi effettivi delle animazioni."
+      },
+      "compatibility": {
+        "en": "System keys require Android TV Remote Service pairing and depend on the current app. Voice opens the TV assistant; phone microphone streaming is not included. TV color adjustment preserves calculated luminance; physical appearance needs testing.",
+        "it": "I tasti di sistema richiedono l’abbinamento al servizio telecomando Android TV e dipendono dall’app. La voce apre l’assistente TV; il microfono del telefono non viene trasmesso. I colori TV mantengono la luminanza calcolata e richiedono verifica sullo schermo."
+      },
+      "features": [
+        {
+          "icon": "remote",
+          "label": {
+            "en": "TV controls",
+            "it": "Controlli TV"
+          },
+          "detail": {
+            "en": "Home, Back, volume and mute, channels, media transport, colored keys and TV voice assistant.",
+            "it": "Home, Indietro, volume e silenzioso, canali, controlli multimediali, tasti colorati e assistente vocale TV."
+          }
+        },
+        {
+          "icon": "apps",
+          "label": {
+            "en": "Deeper TV colors",
+            "it": "Colori TV più intensi"
+          },
+          "detail": {
+            "en": "TV-only chroma compensation; web colors, blur and app banners are unchanged.",
+            "it": "Compensazione cromatica solo sulla TV; colori web, sfocatura e banner delle app invariati."
+          }
+        }
+      ]
+    },
+    {
+      "version": "2.0.4",
+      "code": 30,
+      "date": "2026-10-29",
+      "critical": false,
+      "highlights": {
+        "en": "More reliable Home controls and smoother wallpaper changes.",
+        "it": "Controlli Home più affidabili e cambi di sfondo graduali."
+      },
+      "fixes": {
+        "en": "Single Home/input ownership; paused activities hide after five minutes. Wallpaper tint stays behind banners, covers rotating edges, and is slightly dimmer only on TV. Corrects explicit launcher export declarations.",
+        "it": "Una sola Home gestisce gli input; le attività in pausa spariscono dopo cinque minuti. La tinta resta dietro i banner, copre i bordi in movimento ed è leggermente meno intensa solo sulla TV. Corrette le dichiarazioni di avvio Android."
+      },
+      "compatibility": {
+        "en": "Background Home and AirPlay use Android-supported task restoration and may require Display over other apps permission. New native behavior awaits device validation.",
+        "it": "Home e AirPlay in background usano le API Android e possono richiedere il permesso Mostra sopra altre app. Le modifiche native richiedono verifica sul dispositivo."
+      },
+      "features": [
+        {
+          "icon": "controls",
+          "label": {
+            "en": "Home and remote recovery",
+            "it": "Ripristino Home e telecomandi"
+          },
+          "detail": {
+            "en": "Retires duplicate Home roots, resets interrupted input state, and offers a background-access permission shortcut.",
+            "it": "Chiude le Home duplicate, ripristina gli input interrotti e offre un collegamento al permesso per il background."
+          }
+        },
+        {
+          "icon": "sound",
+          "label": {
+            "en": "Music and wallpaper transitions",
+            "it": "Musica e transizioni dello sfondo"
+          },
+          "detail": {
+            "en": "Activities expire after five paused minutes and return on playback; wallpapers and music tint preferences fade gradually.",
+            "it": "Le attività spariscono dopo cinque minuti di pausa e tornano alla ripresa; sfondi e tinta musicale cambiano gradualmente."
+          }
+        }
+      ]
+    },
+    {
+      "version": "2.0.3",
+      "code": 29,
+      "date": "2026-10-29",
+      "critical": false,
+      "highlights": {
+        "en": "Android launcher registration and build reliability improvements.",
+        "it": "Registrazione del launcher Android e build più affidabili."
+      },
+      "fixes": {
+        "en": "Separate TV and phone launcher declarations; additional CI packaging memory and animation-aware browser checks.",
+        "it": "Dichiarazioni separate per TV e telefono, più memoria di compilazione e verifiche delle animazioni più affidabili."
+      },
+      "compatibility": {
+        "en": "Retains existing package identifiers, signing keys, preferences and visual effects.",
+        "it": "Mantiene identificatori, firme, preferenze ed effetti visivi esistenti."
+      },
+      "features": [
+        {
+          "icon": "controls",
+          "label": {
+            "en": "Android entry points",
+            "it": "Avvio Android"
+          },
+          "detail": {
+            "en": "TV Home and phone launcher entries are explicit and validated independently.",
+            "it": "Gli avvii per Home TV e telecomando telefono sono espliciti e verificati separatamente."
+          }
+        }
+      ]
+    },
+    {
+      "version": "2.0.2",
+      "code": 28,
+      "date": "2026-10-29",
+      "critical": false,
+      "highlights": {
+        "en": "Smooth music colors and a phone-controllable web demo.",
+        "it": "Colori musicali fluidi e demo web controllabile dal telefono."
+      },
+      "fixes": {
+        "en": "Remote wallpaper follows the TV across the full window; minimum waveform bars stay circular. Corrects the Android host compilation failure.",
+        "it": "Lo sfondo del telecomando segue la TV su tutta la finestra; le onde minime restano circolari. Corregge la compilazione del servizio Android."
+      },
+      "compatibility": {
+        "en": "Web demo remote control requires the opt-in local LAN server and an open owner browser. It never controls real TV services. Native builds still require device testing.",
+        "it": "Il controllo della demo richiede il server LAN locale e il browser del computer aperto. Non controlla servizi TV reali. Le build native richiedono verifica sul dispositivo."
+      },
+      "features": [
+        {
+          "icon": "sound",
+          "label": {
+            "en": "Gradual artwork colors",
+            "it": "Colori della copertina graduali"
+          },
+          "detail": {
+            "en": "Wallpaper tint and waveform colors crossfade over 1.8 seconds and continue smoothly after quick song changes.",
+            "it": "Sfumatura e onde cambiano colore in 1,8 secondi, anche dopo cambi rapidi di brano."
+          }
+        },
+        {
+          "icon": "remote",
+          "label": {
+            "en": "Connected wallpaper and web demo",
+            "it": "Sfondo connesso e demo web"
+          },
+          "detail": {
+            "en": "The remote follows TV wallpaper preferences. An opt-in local demo server supports approved phone pairing, in-app controls and Bonjour advertising.",
+            "it": "Il telecomando segue le preferenze dello sfondo TV. Un server demo locale opzionale supporta abbinamento, controlli e annuncio Bonjour."
+          }
+        }
+      ]
+    },
+    {
+      "version": "2.0.1",
+      "code": 27,
+      "date": "2026-10-29",
+      "critical": false,
+      "highlights": {
+        "en": "Refined native remote, pairing recovery and music-themed wallpapers.",
+        "it": "Telecomando nativo migliorato, recupero abbinamento e sfondi musicali."
+      },
+      "fixes": {
+        "en": "Safe-area-aware anchored popups, submenu Back navigation, menu and combined playback buttons, customized input names/icons and silent paused waves.",
+        "it": "Popup ancorati rispettosi delle aree sicure, ritorno nei sottomenu, pulsanti menu e riproduzione, ingressi personalizzati e onde in pausa al minimo."
+      },
+      "compatibility": {
+        "en": "Preserves the production Android TV package and signing key. iOS glass and preview rotation depend on OS support. Native fixes require device verification.",
+        "it": "Mantiene pacchetto e firma Android TV. Vetro iOS e rotazione anteprima dipendono dal sistema. Le correzioni native richiedono verifica sul dispositivo."
+      },
+      "features": [
+        {
+          "icon": "remote",
+          "label": {
+            "en": "Native phone controls",
+            "it": "Controlli nativi sul telefono"
+          },
+          "detail": {
+            "en": "Anchored native materials, safe areas, explicit menu controls and verified system pairing.",
+            "it": "Materiali nativi ancorati, aree sicure, menu espliciti e abbinamento verificato."
+          }
+        },
+        {
+          "icon": "sound",
+          "label": {
+            "en": "Music wallpaper tint",
+            "it": "Sfumatura musicale dello sfondo"
+          },
+          "detail": {
+            "en": "An optional animated artwork gradient works with every wallpaper. Input hero marks use normalized visible bounds.",
+            "it": "Un gradiente animato opzionale della copertina funziona con ogni sfondo. I loghi degli ingressi usano dimensioni visibili uniformi."
+          }
+        }
+      ]
+    },
+    {
+      "version": "2.0.0",
+      "code": 26,
+      "date": "2026-10-28",
+      "critical": false,
+      "highlights": {
+        "en": "Expo becomes the shared Home, phone and web application base.",
+        "it": "Expo diventa la base condivisa delle app Home, telefono e web."
+      },
+      "fixes": {
+        "en": "Improves TV focus and pairing restoration, shares AirPlay music activities with the phone remote, adds pairing confirmation and an optional blur switch, and corrects native build packaging.",
+        "it": "Migliora focus TV e ripristino abbinamento, condivide le attività musicali AirPlay con il telecomando, aggiunge conferma abbinamento e sfocatura opzionale e corregge il confezionamento nativo."
+      },
+      "compatibility": {
+        "en": "Preserves Android TV package, signing identity and preferences. This framework migration requires physical TV validation before stable promotion. Mac Music interoperability remains unresolved.",
+        "it": "Mantiene pacchetto, firma e preferenze Android TV. La migrazione richiede verifica sulla TV fisica prima della promozione stabile. La compatibilità con Musica su Mac rimane irrisolta."
+      },
+      "features": [
+        {
+          "icon": "apps",
+          "label": {
+            "en": "Expo Home interface",
+            "it": "Interfaccia Home Expo"
+          },
+          "detail": {
+            "en": "A native React Native TV surface with real apps, registered inputs, saved dock, activities and native service controls.",
+            "it": "Interfaccia nativa React Native TV con app reali, ingressi registrati, dock salvato, attività e controlli dei servizi nativi."
+          }
+        },
+        {
+          "icon": "remote",
+          "label": {
+            "en": "Shared phone and web base",
+            "it": "Base condivisa telefono e web"
+          },
+          "detail": {
+            "en": "The separate phone remote and installable web preview share the root Expo project.",
+            "it": "Il telecomando per telefono e l’anteprima web installabile condividono il progetto Expo principale."
+          }
+        }
+      ]
+    },
+    {
+      "version": "1.8.1",
+      "code": 25,
+      "date": "2026-10-28",
+      "critical": false,
+      "highlights": {
+        "en": "Fixes the phone remote page bundled inside the TV app.",
+        "it": "Corregge la pagina telecomando per telefono inclusa nell’app TV."
+      },
+      "fixes": {
+        "en": "Preserves Expo JavaScript and CSS during Android asset packaging and verifies required web files before publication.",
+        "it": "Mantiene JavaScript e CSS di Expo durante il confezionamento Android e verifica i file web necessari prima della pubblicazione."
+      },
+      "compatibility": {
+        "en": "Keeps the existing package, signing key and settings. Global phone navigation still requires separate Android TV Remote Service pairing.",
+        "it": "Mantiene pacchetto, firma e impostazioni esistenti. La navigazione globale dal telefono richiede ancora l’abbinamento separato al servizio telecomando Android TV."
+      },
+      "features": [
+        {
+          "icon": "remote",
+          "label": {
+            "en": "Working bundled remote page",
+            "it": "Pagina telecomando inclusa funzionante"
+          },
+          "detail": {
+            "en": "Prevents Android from silently dropping the generated _expo directory.",
+            "it": "Impedisce ad Android di omettere silenziosamente la cartella _expo generata."
+          }
+        }
+      ]
+    },
+    {
+      "version": "1.8.0",
+      "code": 24,
+      "date": "2026-10-28",
+      "critical": false,
+      "highlights": {
+        "en": "Aurea Home identity, minimal wallpapers and a paired phone remote.",
+        "it": "Identità Aurea Home, sfondi minimal e telecomando abbinato per telefono."
+      },
+      "fixes": {
+        "en": "Improves small-screen sources, reconnects discovery after network changes and separates credentials for each TV.",
+        "it": "Migliora le sorgenti su schermi piccoli, ripristina la scoperta dopo cambi di rete e separa le credenziali di ogni TV."
+      },
+      "compatibility": {
+        "en": "Phone companion and background system controls require device validation. System-wide navigation needs a separate Android TV Remote Service pairing; unavailable services fail safely.",
+        "it": "Companion per telefono e comandi di sistema in background richiedono verifica sui dispositivi. La navigazione globale richiede un abbinamento separato al servizio telecomando Android TV; i servizi non disponibili vengono segnalati."
+      },
+      "features": [
+        {
+          "icon": "remote",
+          "label": {
+            "en": "Phone remote",
+            "it": "Telecomando per telefono"
+          },
+          "detail": {
+            "en": "Saved TVs, apps, inputs and in-app playback controls over the local network.",
+            "it": "TV salvate, app, sorgenti e controlli musicali nell’app sulla rete locale."
+          }
+        },
+        {
+          "icon": "apps",
+          "label": {
+            "en": "Aurea Home",
+            "it": "Aurea Home"
+          },
+          "detail": {
+            "en": "New identity and optional original minimal wallpapers; existing app data and signing identity stay compatible.",
+            "it": "Nuova identità e sfondi minimal originali opzionali; dati e firma restano compatibili."
+          }
+        }
+      ]
+    },
+    {
+      "version": "1.7.5",
+      "code": 23,
+      "date": "2026-10-28",
+      "critical": false,
+      "highlights": {
+        "en": "Fixes the immediate error when submitting an Apple TV pairing code.",
+        "it": "Corregge l’errore immediato quando si inserisce il codice di abbinamento Apple TV."
+      },
+      "fixes": {
+        "en": "Updates the HAP SRP call for the bundled authentication library and pins its version for reproducible builds.",
+        "it": "Aggiorna la chiamata HAP SRP per la libreria di autenticazione inclusa e ne fissa la versione per build riproducibili."
+      },
+      "compatibility": {
+        "en": "Apple TV pairing confirmed on the physical TV. Playback metadata depends on the Apple TV app; simultaneous phone streaming remains unverified.",
+        "it": "Abbinamento Apple TV confermato sulla TV fisica. I metadati dipendono dall’app su Apple TV; lo streaming simultaneo dal telefono non è ancora verificato."
+      },
+      "features": [
+        {
+          "icon": "remote",
+          "label": {
+            "en": "Pairing compatibility fix",
+            "it": "Correzione compatibilità abbinamento"
+          },
+          "detail": {
+            "en": "Removes a local argument error before the PIN proof can be sent. Authentication checks remain enabled.",
+            "it": "Elimina un errore locale negli argomenti prima dell’invio della prova del PIN. I controlli di autenticazione restano attivi."
+          }
+        }
+      ]
+    },
+    {
+      "version": "1.7.4",
+      "code": 22,
+      "date": "2026-10-28",
+      "critical": false,
+      "highlights": {
+        "en": "Persistent pairing diagnostics that can be retrieved from the TV without rebuilding for every failure.",
+        "it": "Diagnostica di abbinamento persistente, recuperabile dalla TV senza ricompilare per ogni errore."
+      },
+      "fixes": {
+        "en": "Records pairing phases, HTTP status, timings and safe exception locations in rotating files and Android logs; developer copy/export includes recent history.",
+        "it": "Registra fasi, stato HTTP, tempi e posizioni sicure delle eccezioni in file a rotazione e log Android; copia/esportazione sviluppatore includono la cronologia recente."
+      },
+      "compatibility": {
+        "en": "Logs exclude PINs, credentials, addresses, device names, raw packets and exception messages. Diagnostics do not themselves fix every pairing error.",
+        "it": "I log escludono PIN, credenziali, indirizzi, nomi dispositivi, pacchetti grezzi e messaggi delle eccezioni. La diagnostica non risolve da sola ogni errore."
+      },
+      "features": [
+        {
+          "icon": "code",
+          "label": {
+            "en": "Persistent protocol diagnostics",
+            "it": "Diagnostica protocollo persistente"
+          },
+          "detail": {
+            "en": "Retains bounded safe request phases, responses and error traces across app restarts, accessible through developer diagnostics or ADB.",
+            "it": "Conserva fasi delle richieste, risposte e tracce di errore sicure e limitate anche dopo il riavvio, accessibili dalla diagnostica sviluppatore o ADB."
+          }
+        }
+      ]
+    },
+    {
+      "version": "1.7.3",
+      "code": 21,
+      "date": "2026-10-28",
+      "critical": false,
+      "highlights": {
+        "en": "Understand why Apple TV pairing fails, with safe and specific error details.",
+        "it": "Scopri perché l’abbinamento Apple TV non riesce, con dettagli di errore specifici e sicuri."
+      },
+      "fixes": {
+        "en": "Distinguishes receiver authorization rejection, HTTP status, authentication failure, timeout, interrupted connection and secure storage errors without exposing PINs or credentials.",
+        "it": "Distingue rifiuto di autorizzazione, stato HTTP, mancata autenticazione, timeout, connessione interrotta ed errori di salvataggio sicuro senza esporre PIN o credenziali."
+      },
+      "compatibility": {
+        "en": "Diagnostic improvements do not resolve every tvOS pairing rejection. Remote-only control and simultaneous phone AirPlay still require successful pairing and physical coexistence tests.",
+        "it": "La diagnostica non risolve ogni rifiuto di abbinamento tvOS. Il controllo remoto e AirPlay dal telefono simultanei richiedono abbinamento riuscito e verifica fisica."
+      },
+      "features": [
+        {
+          "icon": "info",
+          "label": {
+            "en": "Specific pairing errors",
+            "it": "Errori di abbinamento specifici"
+          },
+          "detail": {
+            "en": "Reports a safe failure category and bounded HTTP status rather than replacing every failure with a generic message.",
+            "it": "Mostra una categoria di errore sicura e lo stato HTTP anziché sostituire ogni errore con un messaggio generico."
+          }
+        }
+      ]
+    },
+    {
+      "version": "1.7.2",
+      "code": 20,
+      "date": "2026-10-28",
+      "critical": false,
+      "highlights": {
+        "en": "Send the client name required for tvOS 27 pairing codes and hide software receivers from Apple TV discovery.",
+        "it": "Invia il nome client richiesto dai codici di abbinamento di tvOS 27 e nascondi i ricevitori software dalla ricerca Apple TV."
+      },
+      "fixes": {
+        "en": "Filters this launcher’s local addresses, marked receiver/preview instances and the legacy UxPlay simulated Apple TV fingerprint without relying on device names.",
+        "it": "Filtra gli indirizzi locali del launcher, i ricevitori e le anteprime contrassegnati e l’identità simulata UxPlay precedente senza usare i nomi dei dispositivi."
+      },
+      "compatibility": {
+        "en": "The tvOS 27 patch targets PIN display only. Successful authenticated playback still requires device validation.",
+        "it": "La correzione tvOS 27 riguarda solo la visualizzazione del PIN. La riproduzione autenticata richiede ancora verifica sul dispositivo."
+      },
+      "features": [
+        {
+          "icon": "airplay",
+          "label": {
+            "en": "tvOS 27 pairing compatibility",
+            "it": "Compatibilità abbinamento tvOS 27"
+          },
+          "detail": {
+            "en": "Adds a per-attempt client-name header to every AirPlay HAP pairing request using the focused upstream fix.",
+            "it": "Aggiunge il nome client a ogni richiesta di abbinamento AirPlay HAP usando la correzione upstream mirata."
+          }
+        },
+        {
+          "icon": "shield",
+          "label": {
+            "en": "Real Apple TV discovery",
+            "it": "Ricerca Apple TV reali"
+          },
+          "detail": {
+            "en": "Excludes launcher receivers and preview instances while keeping genuine devices with duplicate names or older model identifiers.",
+            "it": "Esclude ricevitori e anteprime del launcher mantenendo dispositivi reali con nomi duplicati o modelli precedenti."
+          }
+        }
+      ]
+    },
+    {
+      "version": "1.7.1",
+      "code": 19,
+      "date": "2026-10-28",
+      "critical": false,
+      "highlights": {
+        "en": "Choose the Apple TV HDMI input and return Home to enter its pairing code.",
+        "it": "Scegli l’ingresso HDMI di Apple TV e torna alla Home per inserire il codice di abbinamento."
+      },
+      "fixes": {
+        "en": "Pending pairing survives HDMI switching and Home recreation. Only unfinished code entry expires after three minutes; saved pairing has no application expiry timer.",
+        "it": "L’abbinamento in corso sopravvive al cambio HDMI e alla ricreazione della Home. Solo l’inserimento del codice scade dopo tre minuti; l’abbinamento salvato non ha un timer di scadenza nell’app."
+      },
+      "compatibility": {
+        "en": "HDMI selection uses registered TV inputs with no default port. A complete app-process restart requires starting an unfinished pairing again. Apple TV interoperability still requires physical pairing tests.",
+        "it": "La selezione HDMI usa gli ingressi registrati dalla TV senza porta predefinita. Dopo il riavvio completo del processo occorre ricominciare un abbinamento incompleto. L’interoperabilità Apple TV richiede ancora test fisici di abbinamento."
+      },
+      "features": [
+        {
+          "icon": "inputs",
+          "label": {
+            "en": "Choose your HDMI input",
+            "it": "Scegli il tuo ingresso HDMI"
+          },
+          "detail": {
+            "en": "Select any registered physical HDMI input, remember its identity and change it from paired-device settings. No port is selected automatically.",
+            "it": "Seleziona un ingresso HDMI fisico registrato, memorizzane l’identità e cambialo nelle impostazioni del dispositivo abbinato. Nessuna porta viene scelta automaticamente."
+          }
+        },
+        {
+          "icon": "airplay",
+          "label": {
+            "en": "Read the code and return",
+            "it": "Leggi il codice e torna"
+          },
+          "detail": {
+            "en": "Show pairing code switches to the selected HDMI. Press Home to restore PIN entry within the original three-minute window.",
+            "it": "Mostra codice di abbinamento apre l’HDMI scelto. Premi Home per ripristinare l’inserimento entro i tre minuti originali."
+          }
+        }
+      ]
+    },
+    {
+      "version": "1.7.0",
+      "code": 18,
+      "date": "2026-10-27",
+      "critical": false,
+      "highlights": {
+        "en": "Pair an Apple TV to show its playback and available controls in the music activity.",
+        "it": "Abbina Apple TV per mostrare la riproduzione e i controlli disponibili nell’attività musicale."
+      },
+      "fixes": {
+        "en": "Keeps local AirPlay audio priority, protects saved pairing credentials and hides unavailable remote controls.",
+        "it": "Mantiene la priorità dell’audio AirPlay locale, protegge le credenziali e nasconde i controlli remoti non disponibili."
+      },
+      "compatibility": {
+        "en": "Apple TV interoperability requires device testing. Metadata, artwork and controls depend on tvOS and the playing app. This client does not fix Mac Music receiver compatibility.",
+        "it": "L’interoperabilità Apple TV richiede test sul dispositivo. Metadati, copertina e controlli dipendono da tvOS e dall’app. Questo client non risolve la compatibilità del ricevitore con Musica sul Mac."
+      },
+      "features": [
+        {
+          "icon": "airplay",
+          "label": {
+            "en": "Paired Apple TV",
+            "it": "Apple TV abbinata"
+          },
+          "detail": {
+            "en": "Discover, PIN-pair and observe an Apple TV directly from the launcher without an always-on PC.",
+            "it": "Trova, abbina con PIN e osserva Apple TV dal launcher senza un PC sempre acceso."
+          }
+        },
+        {
+          "icon": "sound",
+          "label": {
+            "en": "Remote playback activity",
+            "it": "Attività di riproduzione remota"
+          },
+          "detail": {
+            "en": "Reuses the music activity with supplied artwork and controls; remote bars are a playback animation, not measured sound.",
+            "it": "Riutilizza l’attività musicale con copertina e controlli disponibili; le barre remote sono un’animazione, non una misura audio."
+          }
+        }
+      ]
+    },
+    {
+      "version": "1.6.0",
+      "code": 17,
+      "date": "2026-10-27",
+      "critical": false,
+      "highlights": {
+        "en": "Discover GitHub updates in Home, read release notes and download verified APKs inside the launcher.",
+        "it": "Scopri gli aggiornamenti GitHub nella Home, leggi le novità e scarica APK verificati nel launcher."
+      },
+      "fixes": {
+        "en": "Cached checks, channel and signing compatibility, metered-network preferences and Android installation confirmation preserve existing app data.",
+        "it": "Controlli con cache, compatibilità di canale e firma, preferenze di rete e conferma Android preservano i dati esistenti."
+      },
+      "compatibility": {
+        "en": "Updates require the same signing identity. Development-signed installations cannot accept the public release key. Mac Music remains unresolved.",
+        "it": "Gli aggiornamenti richiedono la stessa identità di firma. Le installazioni con firma di sviluppo non accettano la chiave pubblica di rilascio. Musica sul Mac resta da risolvere."
+      },
+      "features": [
+        {
+          "icon": "history",
+          "label": {
+            "en": "Automatic update discovery",
+            "it": "Ricerca automatica aggiornamenti"
+          },
+          "detail": {
+            "en": "Checks GitHub Releases on launch and periodically on foreground return, with caching and stable/beta filtering.",
+            "it": "Controlla GitHub Releases all’avvio e periodicamente al ritorno in primo piano, con cache e filtri stabile/beta."
+          }
+        },
+        {
+          "icon": "transfer",
+          "label": {
+            "en": "Download inside Home",
+            "it": "Scarica nella Home"
+          },
+          "detail": {
+            "en": "Read release notes while DownloadManager retrieves the universal APK with progress, network recovery and cancellation.",
+            "it": "Leggi le novità mentre DownloadManager scarica l’APK universale con avanzamento, recupero della rete e annullamento."
+          }
+        },
+        {
+          "icon": "shield",
+          "label": {
+            "en": "Verified Android installation",
+            "it": "Installazione Android verificata"
+          },
+          "detail": {
+            "en": "Checks checksum, package, version, architecture and the installed signing identity, then opens Android’s official confirmation flow.",
+            "it": "Verifica checksum, pacchetto, versione, architettura e identità di firma installata, poi apre la conferma ufficiale Android."
+          }
+        }
+      ]
+    },
+    {
+      "version": "1.5.1",
+      "code": 16,
+      "date": "2026-10-27",
+      "highlights": {
+        "en": "Clearer changelog cards with contextual icons and expandable details; compact developer tools.",
+        "it": "Schede novità più chiare con icone contestuali e dettagli espandibili; strumenti sviluppatore compatti."
+      },
+      "fixes": {
+        "en": "Remote interactions keep temporary developer access active. Diagnostics identify observation time and local-only simulations. Existing dock, AirPlay and pairing behavior is preserved.",
+        "it": "Le interazioni dal telecomando mantengono attivo l’accesso sviluppatore temporaneo. La diagnostica distingue istante di osservazione e simulazioni locali. Comportamento di dock, AirPlay e abbinamento conservato."
+      },
+      "features": [
+        {
+          "icon": "history",
+          "label": {
+            "en": "Clearer release notes",
+            "it": "Novità più chiare"
+          },
+          "detail": {
+            "en": "Each release groups features with contextual icons; fixes stay in one expandable section.",
+            "it": "Ogni versione raggruppa le funzionalità con icone contestuali; le correzioni restano in una sezione espandibile."
+          }
+        },
+        {
+          "icon": "info",
+          "label": {
+            "en": "Details on demand",
+            "it": "Dettagli su richiesta"
+          },
+          "detail": {
+            "en": "Select a feature to expand its explanation. Compatibility information remains visible in release details.",
+            "it": "Seleziona una funzionalità per espanderne la spiegazione. La compatibilità resta visibile nei dettagli della versione."
+          }
+        },
+        {
+          "icon": "code",
+          "label": {
+            "en": "Compact developer tools",
+            "it": "Strumenti sviluppatore compatti"
+          },
+          "detail": {
+            "en": "A short menu opens detailed diagnostics only on request. Triple-press access and idle expiry are unchanged.",
+            "it": "Un menu compatto apre la diagnostica dettagliata solo su richiesta. Accesso con tre pressioni e scadenza per inattività invariati."
+          }
+        }
+      ],
+      "compatibility": {
+        "en": "Direct Mac Music playback remains unresolved. Android TV hardware support varies by device.",
+        "it": "La riproduzione diretta da Musica sul Mac resta da risolvere. Il supporto hardware Android TV dipende dal dispositivo."
+      }
+    },
+    {
+      "version": "1.5.0",
+      "code": 15,
+      "date": "2026-10-27",
+      "highlights": {
+        "en": "Developer tools, a permanent changelog and portable Home preferences.",
+        "it": "Strumenti sviluppatore, cronologia permanente e preferenze Home trasferibili."
+      },
+      "fixes": {
+        "en": "Stronger remote request validation, private diagnostic exports and reproducible release builds.",
+        "it": "Richieste del telecomando più sicure, diagnostica privata e build riproducibili."
+      },
+      "features": [
+        {
+          "icon": "code",
+          "label": {
+            "en": "Developer tools",
+            "it": "Strumenti sviluppatore"
+          },
+          "detail": {
+            "en": "Triple-press the version in About to temporarily access safe diagnostics, simulations and remote revocation.",
+            "it": "Premi tre volte la versione in Informazioni per accedere temporaneamente a diagnostica, simulazioni e revoca dei telecomandi."
+          }
+        },
+        {
+          "icon": "history",
+          "label": {
+            "en": "Release history",
+            "it": "Cronologia versioni"
+          },
+          "detail": {
+            "en": "Read previous releases in Settings and see a summary once after each native update.",
+            "it": "Consulta le versioni precedenti nelle impostazioni e visualizza un riepilogo una volta dopo ogni aggiornamento nativo."
+          }
+        },
+        {
+          "icon": "transfer",
+          "label": {
+            "en": "Portable Home preferences",
+            "it": "Preferenze Home trasferibili"
+          },
+          "detail": {
+            "en": "Export and validate dock, input profiles, language and activity appearance with a recoverable import.",
+            "it": "Esporta e valida dock, profili ingressi, lingua e aspetto delle attività con importazione ripristinabile."
+          }
+        }
+      ],
+      "compatibility": {
+        "en": "Direct Mac Music playback remains unresolved. Android TV hardware support varies by device.",
+        "it": "La riproduzione diretta da Musica sul Mac resta da risolvere. Il supporto hardware Android TV dipende dal dispositivo."
+      }
+    },
+    {
+      "version": "1.4",
+      "code": 14,
+      "date": "2026-10-27",
+      "highlights": {
+        "en": "Music and remote activities reveal details on focus; choose black or transparent backgrounds.",
+        "it": "Le attività musica e telecomando mostrano dettagli al focus; sfondo nero o trasparente a scelta."
+      },
+      "fixes": {
+        "en": "Six frequency bands, album-color gradients, inset artwork and focused playback controls. Mac Music playback remains unresolved.",
+        "it": "Sei bande audio, gradienti dalla copertina e controlli con focus. La riproduzione da Musica sul Mac resta da risolvere."
+      },
+      "features": [
+        {
+          "icon": "sound",
+          "label": {
+            "en": "Music activity details",
+            "it": "Dettagli attività musica"
+          },
+          "detail": {
+            "en": "Focus the music activity to reveal supplied artwork and title; expand it for playback controls.",
+            "it": "Porta il focus sull’attività musica per vedere copertina e titolo ricevuti; espandila per i controlli di riproduzione."
+          }
+        },
+        {
+          "icon": "remote",
+          "label": {
+            "en": "Connected remote activity",
+            "it": "Attività telecomando connesso"
+          },
+          "detail": {
+            "en": "An authenticated phone heartbeat shows the connected remote activity. Stale presence expires.",
+            "it": "L’attività telecomando appare con un heartbeat autenticato del telefono. La presenza non aggiornata scade."
+          }
+        },
+        {
+          "icon": "controls",
+          "label": {
+            "en": "Activity appearance",
+            "it": "Aspetto delle attività"
+          },
+          "detail": {
+            "en": "Choose black or transparent activity backgrounds without changing the dock layout.",
+            "it": "Scegli uno sfondo nero o trasparente per le attività senza cambiare la disposizione del dock."
+          }
+        }
+      ],
+      "compatibility": {
+        "en": "Direct Mac Music playback remains unresolved. Android TV hardware support varies by device.",
+        "it": "La riproduzione diretta da Musica sul Mac resta da risolvere. Il supporto hardware Android TV dipende dal dispositivo."
+      }
+    },
+    {
+      "version": "1.3",
+      "code": 13,
+      "date": "2026-10-27",
+      "highlights": {
+        "en": "QR pairing includes its short-lived code and dismisses after pairing.",
+        "it": "Il QR include il codice temporaneo e si chiude dopo l’abbinamento."
+      },
+      "fixes": {
+        "en": "Experimental FairPlay v2 handshake framing; this does not provide complete AirPlay 2 or guarantee Mac Music playback.",
+        "it": "Handshake sperimentale FairPlay v2: non equivale ad AirPlay 2 completo e non garantisce Musica sul Mac."
+      },
+      "features": [
+        {
+          "icon": "remote",
+          "label": {
+            "en": "Automatic QR pairing",
+            "it": "Abbinamento QR automatico"
+          },
+          "detail": {
+            "en": "Scan the short-lived code, pair once and close the QR window automatically.",
+            "it": "Scansiona il codice temporaneo, abbina il dispositivo e chiudi automaticamente la finestra QR."
+          }
+        }
+      ],
+      "compatibility": {
+        "en": "Direct Mac Music playback remains unresolved. Android TV hardware support varies by device.",
+        "it": "La riproduzione diretta da Musica sul Mac resta da risolvere. Il supporto hardware Android TV dipende dal dispositivo."
+      }
+    },
+    {
+      "version": "1.1",
+      "code": 11,
+      "date": "2026-10-26",
+      "highlights": {
+        "en": "Customizable six-position dock, HDMI shortcuts, integrated AirPlay and phone remote.",
+        "it": "Dock personalizzabile a sei posizioni, ingressi HDMI, AirPlay e telecomando dal telefono."
+      },
+      "fixes": {
+        "en": "Three animated navigation stops, Italian and English, and fresh popup backdrops.",
+        "it": "Tre punti di navigazione animati, italiano e inglese, sfondi aggiornati per i popup."
+      },
+      "features": [
+        {
+          "icon": "apps",
+          "label": {
+            "en": "Customizable dock",
+            "it": "Dock personalizzabile"
+          },
+          "detail": {
+            "en": "Arrange six positions; All Apps is available in the final slot and Sources can be moved.",
+            "it": "Organizza sei posizioni: Tutte le app è disponibile nell’ultimo posto e Ingressi può essere spostato."
+          }
+        },
+        {
+          "icon": "inputs",
+          "label": {
+            "en": "HDMI shortcuts",
+            "it": "Scorciatoie HDMI"
+          },
+          "detail": {
+            "en": "Pin registered HDMI inputs and Live TV. Unsupported devices retain the system input-picker fallback.",
+            "it": "Aggiungi ingressi HDMI registrati e TV in diretta. Sui dispositivi non supportati resta il selettore ingressi di sistema."
+          }
+        },
+        {
+          "icon": "airplay",
+          "label": {
+            "en": "Integrated AirPlay",
+            "it": "AirPlay integrato"
+          },
+          "detail": {
+            "en": "The receiver starts with Home and may stay in the background; supported video and mirroring open fullscreen.",
+            "it": "Il ricevitore si avvia con la Home e può restare in background; video e duplicazione supportati si aprono a schermo intero."
+          }
+        }
+      ],
+      "compatibility": {
+        "en": "Direct Mac Music playback remains unresolved. Android TV hardware support varies by device.",
+        "it": "La riproduzione diretta da Musica sul Mac resta da risolvere. Il supporto hardware Android TV dipende dal dispositivo."
+      }
+    }
+  ]
+}
