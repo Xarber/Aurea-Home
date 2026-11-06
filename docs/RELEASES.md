@@ -73,3 +73,9 @@ publish a release or bypass the complete-release validation gate.
 ## iOS Expo framework coherence
 
 The 2.1.1 unsigned artifact contained ExpoFileSystem imports missing from its packaged ExpoModulesJSI framework. `ios.usePrecompiledModules=false` plus CI `EXPO_USE_PRECOMPILED_MODULES=0` rebuild Expo modules together using the installed SDK; React Native's existing build strategy is preserved. CI asserts the generated property before compilation. `scripts/phone/validate_expo_abi.py` compares actual bundled JSI imports/exports before IPA or Simulator packaging, rejecting this class of bad artifact. The checker reproduced the exact reported Slot.emplace import against the downloaded 2.1.1 IPA. This is a binary-interface check, not device launch validation. Source iOS builds may take longer; successful compilation is still required and is not claimed before CI completes.
+
+### Targeted manual Android builds
+
+`Build Aurea — all platforms` now offers `android_target` (`all`, `tv`, `remote`) and `include_ios` (default true). Default and automatically triggered builds retain the complete matrix. A manual partial selection never publishes a release; its summary requires the selected native jobs plus shared validations. Example: `gh workflow run build.yml --ref testing -f android_target=remote -f include_ios=false`. Successful packages from earlier runs remain downloadable with their original commit metadata; do not mix commits into a full release.
+
+Android phone builds pin Jitsi WebRTC 155.0.1 and apply only the documented optional Dav1d interface warning rule. See the [R8 investigation](reports/2026-11-06-android-phone-r8.md).
