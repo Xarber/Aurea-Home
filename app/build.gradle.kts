@@ -102,6 +102,7 @@ android {
         release {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            if (mobileRemote) proguardFiles("proguard-remote.pro")
             signingConfigs.findByName("release")?.let { signingConfig = it }
         }
         // debuggable build with HWASan (arm64) + UBSan in native code
@@ -251,4 +252,14 @@ react {
 dependencies {
     implementation("com.facebook.react:react-android")
     implementation("com.facebook.react:hermes-android")
+}
+
+// The native peer package requests 155.+; keep the inspected artifact reproducible.
+configurations.configureEach {
+    resolutionStrategy.eachDependency {
+        if (requested.group == "org.jitsi" && requested.name == "webrtc") {
+            useVersion("155.0.1")
+            because("Use the inspected native data-channel runtime")
+        }
+    }
 }
