@@ -9,7 +9,7 @@ test("developer ideas persist, preserve import conflicts and export portable rec
   await nav(page, "dock:inputs").waitFor();
   await page.keyboard.press("c");
   await nav(page, "panel-TV settings").click();
-  for (let i = 0; i < 3; i++) await nav(page, "panel-Version 2.2.0").click();
+  for (let i = 0; i < 3; i++) await nav(page, "panel-Version 2.2.1").click();
   await nav(page, "panel-Developer options").click();
   await nav(page, "panel-Ideas").click();
   await nav(page, "ideas-new").click();

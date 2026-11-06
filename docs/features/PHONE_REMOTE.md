@@ -181,3 +181,7 @@ TV pairings. Main controls have no layout/touchpad tab bars. Compact volume is
 horizontal; complete rockers have equal heights. Trackpad wheel and touch swipes
 inside the navigation surface do not scroll the page. See the transport document
 for the unresolved self-originating connection limit on the tested TV.
+
+### TV selector (2.2.1)
+
+The **TVs** main tab owns saved television selection and Add TV. Each television has a separate small system-controls button; selecting it targets that specific TV before pairing. Settings contains remote preferences, tools and app information. Native saved system controls can operate while Home is unavailable; catalogs/music remain launcher-dependent. Private app capture is temporarily hidden, with its implementation retained. See DIRECT_NATIVE_REMOTE.md and REMOTE_KEYBOARD.md for connection and typing details.

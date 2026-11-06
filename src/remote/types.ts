@@ -7,6 +7,6 @@ export interface RemoteState {schema:1;provenance?:'simulated'|'measured';id?:st
 export interface RemoteCatalog {apps:RemoteTarget[];inputs:RemoteTarget[];}
 export type ConnectionStatus='disconnected'|'connecting'|'pairing'|'connected'|'reconnecting'|'auth_required';
 export interface Session {address:string;token:string;id?:string;name?:string;}
-export interface RemoteSnapshot {status:ConnectionStatus;device?:RemoteState;catalog?:RemoteCatalog;artwork?:string;icons:Record<string,string>;error?:string;lastReceived?:number;systemPairing:boolean;systemBusy?:boolean;pairingSuccess?:'launcher'|'system';}
+export interface RemoteSnapshot {selected?:Session;system?:RemoteState['systemRemote'];status:ConnectionStatus;device?:RemoteState;catalog?:RemoteCatalog;artwork?:string;icons:Record<string,string>;error?:string;lastReceived?:number;systemPairing:boolean;systemBusy?:boolean;pairingSuccess?:'launcher'|'system';}
 export interface Transport {rpc(operation:string,payload:Record<string,unknown>,token:string|undefined,signal:AbortSignal):Promise<Record<string,unknown>>;close?():void;}
 export const commands:readonly RemoteKey[]=['power','menu','control','up','down','left','right','ok','back','home','volumeup','volumedown','playpause','next','previous','mute','channelup','channeldown','rewind','fastforward','stop','voice','red','green','yellow','blue'];

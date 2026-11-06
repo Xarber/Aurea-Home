@@ -33,3 +33,7 @@ The ticket is requested through the user's existing remote transport. A direct L
 ## Validation
 
 Host policy checks cover expired/revoked tickets, wrong origins/proofs, cleartext callers and capture lifetime. Viewer tests use isolated synthetic transports to verify invalid endpoint rejection, cancellation, TV denial, audio deduplication and pixel cleanup. Affected Java capture/server/relay classes compiled against the installed Android SDK with narrow host-service stubs. Browser tests cover the user interface and refusal to connect an invalid ticket; they are not real TV capture tests. Full native compilation runs in GitHub Actions. Physical TV approval/capture/eligible audio and iOS/Android viewer playback remain required runtime checks.
+
+## Temporarily hidden in 2.2.1
+
+The handset has no private app preview entry. Its panel is disabled by `privatePreviewEnabled=false`; backend, consent flow, capture code and transport are retained for later stabilization. The separate developer **Preview launcher** demo is unaffected. Browser regression coverage asserts that opening settings exposes no private preview action and sends no capture request.
