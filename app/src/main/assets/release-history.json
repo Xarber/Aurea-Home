@@ -2,6 +2,48 @@
   "schema": 1,
   "releases": [
     {
+      "version": "2.2.0",
+      "code": 38,
+      "date": "2026-11-05",
+      "critical": false,
+      "highlights": {
+        "en": "TV keyboard and a private, TV-approved app preview.",
+        "it": "Tastiera TV e anteprima privata delle app approvata dal televisore."
+      },
+      "fixes": {
+        "en": "Build iOS Expo modules coherently from source and reject incompatible bundled JSI symbols before packaging. Keep normal remote controls separate from preview media. Preserve app identity, pairing data and Recovery Home.",
+        "it": "Compila i moduli Expo iOS da sorgenti coerenti e rifiuta simboli JSI incompatibili prima della distribuzione. Mantiene separati telecomando e anteprima, preservando identità, abbinamenti e Home di ripristino."
+      },
+      "compatibility": {
+        "en": "Preview requires a new approval on the TV for each session; HDMI/protected video cannot be captured and apps can block audio. Capture is limited to two minutes. Physical native capture, playback and keyboard validation remains required.",
+        "it": "L’anteprima richiede una nuova approvazione sulla TV per ogni sessione; HDMI e video protetti non sono acquisibili e le app possono bloccare l’audio. Durata massima due minuti. Serve verifica fisica di acquisizione, riproduzione e tastiera."
+      },
+      "features": [
+        {
+          "icon": "controls",
+          "label": {
+            "en": "TV keyboard",
+            "it": "Tastiera TV"
+          },
+          "detail": {
+            "en": "Native system controls announce TV input fields and send entered text through the paired TLS connection without saving it.",
+            "it": "I controlli nativi rilevano i campi TV e inviano il testo tramite TLS abbinato senza salvarlo."
+          }
+        },
+        {
+          "icon": "remote",
+          "label": {
+            "en": "Private app preview",
+            "it": "Anteprima app privata"
+          },
+          "detail": {
+            "en": "Encrypted peer preview with on-TV approval, eligible app audio, an app picker, navigation controls and bounded capture lifetime.",
+            "it": "Anteprima peer cifrata con approvazione sulla TV, audio delle app consentite, selettore app, navigazione e durata limitata."
+          }
+        }
+      ]
+    },
+    {
       "version": "2.1.1",
       "code": 37,
       "date": "2026-11-05",

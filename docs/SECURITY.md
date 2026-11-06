@@ -80,3 +80,5 @@ shell endpoint, credentials in signaling, raw audio logging or command replay is
 permitted. Public hosting and repository rename were explicitly requested.
 
 Developer Ideas stay local and are excluded from remote/PeerServer traffic and automatic publication. Explicit exports may contain personal notes; review them before sharing or adding them to this public repository. Schema validation is bounded and imports preserve local records by default. Details: [Ideas](features/IDEAS.md).
+
+App preview adds runtime TV MediaProjection approval and optional playback-audio permission; these are requested interactively and never granted by ADB. Capture has an ongoing Stop notification, owner-bound ephemeral ticket, encrypted media channel, bounded memory and hard/idle expiry. HDMI/secure surfaces and capture-disallowed audio are not bypassed. The primary LAN HTTP bootstrap retains its existing trusted-LAN limitation; use the HTTPS hosted primary for a fully encrypted authorization path. See [preview security](features/PRIVATE_APP_PREVIEW.md).

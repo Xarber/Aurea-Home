@@ -25,10 +25,24 @@ class AureaMicrophoneModule : Module() {
   @Volatile private var recording = false
   private var recorder: AudioRecord? = null
   private var worker: Thread? = null
+  private var previewTrack: android.media.AudioTrack? = null
   @android.annotation.SuppressLint("MissingPermission") // Runtime permission is checked before AudioRecord creation.
   override fun definition() = ModuleDefinition {
     Name("AureaMicrophone")
     Events("chunk", "stopped")
+    AsyncFunction("playPreviewPCM") { encoded: String ->
+      synchronized(this@AureaMicrophoneModule) {
+        check(!recording) { "microphone_busy" }
+        check(encoded.length <= 44000) { "invalid_pcm" }
+        val bytes = Base64.decode(encoded, Base64.DEFAULT)
+        check(bytes.isNotEmpty() && bytes.size <= 32768 && bytes.size % 2 == 0) { "invalid_pcm" }
+        if (previewTrack == null) {
+          previewTrack = android.media.AudioTrack.Builder().setAudioAttributes(android.media.AudioAttributes.Builder().setUsage(android.media.AudioAttributes.USAGE_MEDIA).setContentType(android.media.AudioAttributes.CONTENT_TYPE_MOVIE).build()).setAudioFormat(AudioFormat.Builder().setSampleRate(16000).setChannelMask(AudioFormat.CHANNEL_OUT_MONO).setEncoding(AudioFormat.ENCODING_PCM_16BIT).build()).setBufferSizeInBytes(64000).setTransferMode(android.media.AudioTrack.MODE_STREAM).build().also { it.play() }
+        }
+        check(previewTrack!!.write(bytes, 0, bytes.size, android.media.AudioTrack.WRITE_NON_BLOCKING) >= 0) { "audio_playback_failed" }
+      }
+    }
+    AsyncFunction("stopPreviewAudio") { synchronized(this@AureaMicrophoneModule) { previewTrack?.stop(); previewTrack?.release(); previewTrack = null } }
     AsyncFunction("randomSeed") { android.util.Base64.encodeToString(ByteArray(64).also(java.security.SecureRandom()::nextBytes), android.util.Base64.NO_WRAP) }
     AsyncFunction("start") { id: String, publicKey: String, _: String ->
       synchronized(this@AureaMicrophoneModule) {
@@ -82,9 +96,10 @@ class AureaMicrophoneModule : Module() {
       }
     }
     AsyncFunction("stop") { stopCapture() }
-    OnActivityEntersBackground { stopCapture() }
-    OnDestroy { stopCapture() }
+    OnActivityEntersBackground { stopCapture(); stopPreview() }
+    OnDestroy { stopCapture(); stopPreview() }
   }
+  private fun stopPreview() { synchronized(this) { try { previewTrack?.stop() } catch (_: Exception) {} ; previewTrack?.release(); previewTrack = null } }
   private fun stopCapture() {
     synchronized(this) { recording = false; try { recorder?.stop() } catch (_: Exception) {} }
   }

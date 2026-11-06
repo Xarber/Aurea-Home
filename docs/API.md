@@ -110,3 +110,7 @@ returns local bridge status. `state.localAdb` reports enabled/ready/status;
 Music includes `dominance` (0.5–0.92), calculated from sampled cover area and shared
 by all wallpaper clients. Native phone system pairing/control/voice use their
 direct Remote Service connection instead of these TV relay routes.
+
+## Scoped app preview
+
+The authenticated primary connection can issue a short-lived preview ticket; that scoped peer connection can start/read/end its own preview. Image/audio routes accept only the scoped ticket through the server-owned WebRTC relay proof. No plain LAN media endpoint is exposed. See [private preview](features/PRIVATE_APP_PREVIEW.md) for schema, lifetime and transport boundaries. Native text entry stays on pinned Android TV Remote Service TLS; see [keyboard](features/REMOTE_KEYBOARD.md).

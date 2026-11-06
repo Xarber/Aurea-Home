@@ -6,6 +6,7 @@ import Security
 
 public class AureaMicrophoneModule: Module {
   private var capture: MicrophoneCapture?
+  private var previewSpeaker: PreviewSpeaker?
   public func definition() -> ModuleDefinition {
     Name("AureaMicrophone")
     Events("chunk", "stopped")
@@ -14,6 +15,12 @@ public class AureaMicrophoneModule: Module {
       guard SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes) == errSecSuccess else { throw CaptureError.encryption }
       return Data(bytes).base64EncodedString()
     }
+    AsyncFunction("playPreviewPCM") { (encoded: String) in
+      guard self.capture == nil else { throw CaptureError.busy }
+      if self.previewSpeaker == nil { self.previewSpeaker = try PreviewSpeaker() }
+      try self.previewSpeaker?.enqueue(encoded)
+    }.runOnQueue(.main)
+    AsyncFunction("stopPreviewAudio") { self.previewSpeaker?.stop(); self.previewSpeaker = nil }.runOnQueue(.main)
     AsyncFunction("requestPermission") { (promise: Promise) in
       if #available(iOS 17.0, *) {
         AVAudioApplication.requestRecordPermission { promise.resolve($0) }
@@ -22,7 +29,7 @@ public class AureaMicrophoneModule: Module {
       }
     }
     AsyncFunction("start") { (id: String, _: String, publicKey: String) in
-      guard self.capture == nil else { throw CaptureError.busy }
+      guard self.capture == nil, self.previewSpeaker == nil else { throw CaptureError.busy }
       let capture = try MicrophoneCapture(id: id, publicKey: publicKey) { [weak self] event, body in
         self?.sendEvent(event, body)
       }
@@ -30,8 +37,8 @@ public class AureaMicrophoneModule: Module {
       do { try capture.start() } catch { self.capture = nil; capture.stop(); throw error }
     }.runOnQueue(.main)
     AsyncFunction("stop") { self.capture?.stop(); self.capture = nil }.runOnQueue(.main)
-    OnAppEntersBackground { DispatchQueue.main.async { self.capture?.stop(); self.capture = nil } }
-    OnDestroy { DispatchQueue.main.async { self.capture?.stop(); self.capture = nil } }
+    OnAppEntersBackground { DispatchQueue.main.async { self.capture?.stop(); self.capture = nil; self.previewSpeaker?.stop(); self.previewSpeaker = nil } }
+    OnDestroy { DispatchQueue.main.async { self.capture?.stop(); self.capture = nil; self.previewSpeaker?.stop(); self.previewSpeaker = nil } }
   }
 }
 private enum CaptureError: Error { case busy, invalidSession, unavailable, encryption }

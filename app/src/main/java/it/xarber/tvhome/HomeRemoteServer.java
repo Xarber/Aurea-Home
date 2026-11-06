@@ -28,6 +28,11 @@ final class HomeRemoteServer implements Runnable {
     private String pairingOrigin="";
     private final ThreadLocal<String> responseOrigin=new ThreadLocal<>();
     private final String deviceId;
+    private final String peerProof=java.util.UUID.randomUUID().toString();
+    String peerProof(){return peerProof;}
+    private final java.util.Map<String,PreviewTicket> previewTickets=new java.util.HashMap<>();
+    private static final class PreviewTicket{String parent;long expires;PreviewTicket(String parent){this.parent=parent;expires=android.os.SystemClock.elapsedRealtime()+150000;}}
+
     private volatile boolean running = true;
     private final java.util.LinkedHashMap<String,String> tokens = new java.util.LinkedHashMap<>();
     private volatile long pairingDeadline = android.os.SystemClock.elapsedRealtime() + 5 * 60 * 1000L;
@@ -85,7 +90,7 @@ final class HomeRemoteServer implements Runnable {
         thread.start();
     }
 
-    synchronized void revokeAll() { commands.run("voice-cancel"); tokens.clear(); activeRemotes.clear(); trust.clear(); rotatePairing(); }
+    synchronized void revokeAll() { AppPreviewService.cancelAll(context); commands.run("voice-cancel"); tokens.clear(); activeRemotes.clear(); trust.clear(); rotatePairing(); }
     private void persistTrust() throws Exception {trust.save(new JSONObject().put("credentials",trustEntries().toString()).put("identifier","phone-remotes").put("name","Aurea Home"));}
 
     private org.json.JSONArray trustEntries() throws Exception {org.json.JSONArray entries=new org.json.JSONArray();for(java.util.Map.Entry<String,String> entry:tokens.entrySet())entries.put(new JSONObject().put("token",entry.getKey()).put("origin",entry.getValue()));return entries;}
@@ -174,9 +179,21 @@ final class HomeRemoteServer implements Runnable {
             JSONObject payload;
             try { payload = new JSONObject(json); } catch (org.json.JSONException error) { respond(client,400,"application/json","{\"error\":\"Invalid JSON\"}");return; }
             boolean authenticated;
-            synchronized (this) { authenticated = tokens.containsKey(payload.optString("token"))&&origin.equals(tokens.get(payload.optString("token"))); }
+            synchronized (this) { String supplied=payload.optString("token");authenticated = tokens.containsKey(supplied)&&origin.equals(tokens.get(supplied));
+                if(path.startsWith("/api/preview/")&&!path.endsWith("/ticket")){
+                    PreviewTicket ticket=previewTickets.get(supplied);
+                    authenticated=PreviewAccess.permits(ticket!=null&&ticket.expires>android.os.SystemClock.elapsedRealtime(),ticket!=null&&tokens.containsKey(ticket.parent),peer.isLoopbackAddress(),origin,peerProof,payload.optString("__peerProof"));
+                    if(authenticated)payload.put("owner",hexOwner(ticket.parent));
+                } }
             if (!authenticated) {
                 respond(client, 401, "application/json", "{\"error\":\"Pair this remote again\"}"); return;
+            }
+            if(path.equals("/api/preview/ticket")){
+                JSONObject info=HomeRemoteService.previewHost();long deadline=android.os.SystemClock.elapsedRealtime()+8000;
+                while(!info.optBoolean("ready")&&android.os.SystemClock.elapsedRealtime()<deadline){Thread.sleep(100);info=HomeRemoteService.previewHost();}
+                if(!info.optBoolean("ready")){respond(client,503,"application/json","{\"error\":\"preview_peer_unavailable\"}");return;}
+                String ticket=java.util.UUID.randomUUID().toString().replace("-","");synchronized(this){previewTickets.entrySet().removeIf(entry->entry.getValue().expires<android.os.SystemClock.elapsedRealtime());if(previewTickets.size()>=4){respond(client,429,"application/json","{\"error\":\"preview_busy\"}");return;}previewTickets.put(ticket,new PreviewTicket(payload.optString("token")));}
+                respond(client,200,"application/json",new JSONObject().put("url",info.optString("url")).put("token",ticket).put("expiresMs",150000).toString());return;
             }
             synchronized (this) {
                 String authenticatedToken=payload.optString("token");
@@ -184,7 +201,7 @@ final class HomeRemoteServer implements Runnable {
                 else activeRemotes.put(authenticatedToken,android.os.SystemClock.elapsedRealtime());
             }
             if(path.equals("/api/revoke")){
-                commands.request("voice_end",new JSONObject().put("owner",hexOwner(payload.optString("token"))));
+                commands.request("voice_end",new JSONObject().put("owner",hexOwner(payload.optString("token"))));AppPreviewService.end(context,hexOwner(payload.optString("token")));
                 synchronized(this){String token=payload.optString("token"),binding=tokens.remove(token);try{persistTrust();}catch(Exception unavailable){tokens.put(token,binding);respond(client,500,"application/json","{\"error\":\"storage_failed\"}");return;}activeRemotes.remove(token);}
                 respond(client,200,"application/json","{\"ok\":true}");return;
             }
@@ -196,7 +213,7 @@ final class HomeRemoteServer implements Runnable {
             if (path.equals("/api/presence")) { respond(client,200,"application/json","{\"ok\":true}"); return; }
             if(path.equals("/api/key")&&!RemoteKeys.supported(payload.optString("command"))){respond(client,400,"application/json","{\"error\":\"unsupported\"}");return;}
             java.util.Map<String,String> routes=new java.util.HashMap<>();
-            routes.put("/api/system/local-adb","local_adb");routes.put("/api/system/connect","system_connect");routes.put("/api/voice/start","voice_start");routes.put("/api/voice/chunk","voice_chunk");routes.put("/api/voice/end","voice_end");routes.put("/api/key","key");routes.put("/api/state","state");routes.put("/api/catalog","catalog");routes.put("/api/icon","icon");routes.put("/api/artwork","artwork");routes.put("/api/launch","launch");routes.put("/api/media","media");routes.put("/api/system/pair/start","system_pair_begin");routes.put("/api/system/pair/finish","system_pair_finish");
+            routes.put("/api/preview/start","preview_start");routes.put("/api/preview/frame","preview_frame");routes.put("/api/preview/end","preview_end");routes.put("/api/system/local-adb","local_adb");routes.put("/api/system/connect","system_connect");routes.put("/api/voice/start","voice_start");routes.put("/api/voice/chunk","voice_chunk");routes.put("/api/voice/end","voice_end");routes.put("/api/key","key");routes.put("/api/state","state");routes.put("/api/catalog","catalog");routes.put("/api/icon","icon");routes.put("/api/artwork","artwork");routes.put("/api/launch","launch");routes.put("/api/media","media");routes.put("/api/system/pair/start","system_pair_begin");routes.put("/api/system/pair/finish","system_pair_finish");
             String operation=routes.get(path);if(operation==null){respond(client,404,"application/json","{\"error\":\"not_found\"}");return;}
             JSONObject result;
             try{result=commands.request(operation,payload);if(operation.equals("state"))result.put("id",deviceId);}catch(Exception unavailable){result=SystemRemoteController.error("unavailable");}

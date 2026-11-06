@@ -2,6 +2,14 @@
 
 Generated from `app/src/main/assets/release-history.json`. Legacy versions reflect repository history; dates describe implementation, not a verified public release.
 
+## 2.2.0 — 2026-11-05
+
+TV keyboard and a private, TV-approved app preview.
+
+### Fixes & Improvements
+
+Build iOS Expo modules coherently from source and reject incompatible bundled JSI symbols before packaging. Keep normal remote controls separate from preview media. Preserve app identity, pairing data and Recovery Home.
+
 ## 2.1.1 — 2026-11-05
 
 Private developer ideas and clearer per-TV system pairing.

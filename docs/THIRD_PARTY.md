@@ -53,3 +53,7 @@ Phone materials use Expo Glass Effect 58.0.5 and preview rotation uses Expo Scre
 ### Developer Ideas native integration
 
 Expo FileSystem, DocumentPicker, Sharing and Clipboard use the installed Expo 58-compatible module versions selected by `expo/bundledNativeModules.json` (MIT). They provide local journal files, explicit user file selection and user-initiated export/copy. No new server, account, or automatic external upload is introduced.
+
+### Native preview peer runtime
+
+Phone companions use react-native-webrtc 155.0.1 (MIT) for data channels only, with its Jitsi WebRTC 155 native runtime (upstream WebRTC BSD notices apply). The TV host excludes this native dependency and retains its existing WebView peer host. No phone capture API is invoked. Sources: https://github.com/react-native-webrtc/react-native-webrtc and https://github.com/jitsi/webrtc.

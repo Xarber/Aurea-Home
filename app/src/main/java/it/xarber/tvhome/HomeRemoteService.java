@@ -30,12 +30,13 @@ public final class HomeRemoteService extends Service {
     private HomeRemoteServer server;
     private SystemRemoteController system;
     private LocalAdbController localAdb;
-    private HostedRemote hosted;
+    private volatile HostedRemote hosted;
+    private volatile long transientPeerUntil;
     private RemoteCatalog catalog;
     private volatile RemotePlayback playback;
     private volatile String pendingLaunch;
     private volatile long launchDeadline;
-    private final Runnable monitor=new Runnable(){public void run(){if(system!=null)system.recover();if(playback!=null){playback.clients(server!=null&&server.hasActiveRemote());playback.tickActivity();}main.postDelayed(this,5000);}};
+    private final Runnable monitor=new Runnable(){public void run(){if(transientPeerUntil>0&&SystemClock.elapsedRealtime()>transientPeerUntil){transientPeerUntil=0;if(hosted!=null&&!getSharedPreferences("hosted-remote",0).getBoolean("enabled",false)){hosted.close();hosted=new HostedRemote(HomeRemoteService.this,server);}}if(system!=null)system.recover();if(playback!=null){playback.clients(server!=null&&server.hasActiveRemote());playback.tickActivity();}main.postDelayed(this,5000);}};
 
     static synchronized void attach(LegacyHomeActivity home){visibleHome=new WeakReference<>(home);HomeRemoteService service=instance;if(service!=null&&service.pendingLaunch!=null&&SystemClock.elapsedRealtime()<service.launchDeadline){String target=service.pendingLaunch;service.pendingLaunch=null;service.main.post(()->{if(home.resumed)service.catalog.launch(home,target);});}}
     static synchronized void attachExpo(MainActivity home){HomeRemoteService service=instance;if(service!=null&&service.pendingLaunch!=null&&SystemClock.elapsedRealtime()<service.launchDeadline){String target=service.pendingLaunch;service.pendingLaunch=null;service.main.post(()->service.catalog.launch(home,target));}}
@@ -43,6 +44,7 @@ public final class HomeRemoteService extends Service {
     private static synchronized LegacyHomeActivity home(){LegacyHomeActivity activity=visibleHome.get();return activity!=null&&activity.resumed?activity:null;}
     static RemotePlayback sharedPlayback(){HomeRemoteService service=instance;return service==null?null:service.playback;}
     static HomeRemoteServer server(){HomeRemoteService value=instance;return value==null?null:value.server;}
+    static JSONObject previewHost()throws Exception{HomeRemoteService service=instance;if(service==null||service.hosted==null)return SystemRemoteController.error("remote_unavailable");service.transientPeerUntil=SystemClock.elapsedRealtime()+160000;service.hosted.start();return new JSONObject().put("url",service.hosted.url()).put("ready",service.hosted.ready());}
     static JSONObject hostedInfo(boolean enable)throws Exception{HomeRemoteService service=instance;if(service==null||service.hosted==null)return SystemRemoteController.error("remote_unavailable");if(enable){service.getSharedPreferences("hosted-remote",0).edit().putBoolean("enabled",true).apply();service.hosted.start();}return new JSONObject().put("url",service.hosted.url()).put("ready",service.hosted.ready());}
     static boolean enabled(Context context){return context.getSharedPreferences("phone_remote",MODE_PRIVATE).getBoolean("enabled",true);}
     static void ensure(Context context){if(!enabled(context))return;try{context.startForegroundService(new Intent(context,HomeRemoteService.class));}catch(Exception failure){android.util.Log.w("MiTVPairing","remote_service_start_failed "+failure.getClass().getSimpleName());}}
@@ -69,7 +71,7 @@ public final class HomeRemoteService extends Service {
         return START_STICKY;
     }
     @Override public IBinder onBind(Intent intent){return null;}
-    @Override public void onDestroy(){main.removeCallbacks(monitor);if(server!=null)server.stop();if(localAdb!=null)new Thread(localAdb::close,"AureaAdbClose").start();if(hosted!=null)hosted.close();if(playback!=null)playback.close();if(system!=null){SystemRemoteController closing=system;new Thread(closing::close,"AureaRemoteClose").start();}server=null;if(instance==this)instance=null;super.onDestroy();}
+    @Override public void onDestroy(){AppPreviewService.cancelAll(this);main.removeCallbacks(monitor);if(server!=null)server.stop();if(localAdb!=null)new Thread(localAdb::close,"AureaAdbClose").start();if(hosted!=null)hosted.close();if(playback!=null)playback.close();if(system!=null){SystemRemoteController closing=system;new Thread(closing::close,"AureaRemoteClose").start();}server=null;if(instance==this)instance=null;super.onDestroy();}
     private JSONObject handle(String operation,JSONObject payload)throws Exception{
         main.post(()->{if(playback!=null)playback.clients(server!=null&&server.hasActiveRemote());});
         if(operation.equals("state"))return new JSONObject().put("schema",1).put("name",DeviceName.read(this)).put("observedAt",System.currentTimeMillis()).put("homeActive",home()!=null||TVPlatform.foreground()).put("systemRemote",systemState()).put("localAdb",localAdb.state()).put("music",playback.state()).put("wallpaper",wallpaper());
@@ -81,6 +83,9 @@ public final class HomeRemoteService extends Service {
         if(operation.equals("system_pair_begin"))return system.request("pair_begin",new JSONObject());
         if(operation.equals("system_pair_finish"))return system.request("pair_finish",new JSONObject().put("pin",payload.optString("pin")));
         if(operation.equals("voice_start")||operation.equals("voice_chunk")||operation.equals("voice_end"))return system.request(operation,payload);
+        if(operation.equals("preview_start"))return AppPreviewService.request(this,payload.optString("owner"));
+        if(operation.equals("preview_frame"))return AppPreviewService.state(payload.optString("owner"),payload.optLong("imageAfter",-1),payload.optLong("audioAfter",-1));
+        if(operation.equals("preview_end"))return AppPreviewService.end(this,payload.optString("owner"));
         if(operation.equals("media"))return onMain(()->playback.command(payload));
         if(operation.equals("launch")){
             String id=payload.optString("id");if(id.length()>512||!catalog.contains(id))return SystemRemoteController.error("unknown_target");

@@ -47,3 +47,6 @@ See [phone remote](features/PHONE_REMOTE.md), [PWA](features/PWA.md), and [brand
 - [Hosted WebRTC remote and demo](features/HOSTED_REMOTE.md)
 - [Private developer Ideas and agent workflow](features/IDEAS.md).
 - [Pairing, voice and Ideas validation report](reports/2026-11-05-pairing-voice-and-ideas.md).
+- [Native remote keyboard](features/REMOTE_KEYBOARD.md).
+- [TV-approved private app preview](features/PRIVATE_APP_PREVIEW.md).
+- [iPhone launch, keyboard and private preview validation](reports/2026-11-06-ios-keyboard-preview.md).

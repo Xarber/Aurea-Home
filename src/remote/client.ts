@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import type {Transport,RemoteSnapshot,Session,RemoteKey,MediaAction} from './types';
 import {parseState,parseCatalog,safeImage,retryDelay,RemoteError} from './validation.ts';
-export interface DirectSystem {target(address:string):Promise<void>;state():{paired:boolean;ready:boolean;voiceReady:boolean;status:string;backend:'native-client'};subscribe(listener:()=>void):()=>void;connect():Promise<void>;pairBegin():Promise<Record<string,unknown>>;pairFinish(pin:string):Promise<Record<string,unknown>>;key(command:RemoteKey):Promise<Record<string,unknown>>;voice(operation:string,payload:Record<string,unknown>):Promise<Record<string,unknown>>;suspend():void;close():void;}
+export interface DirectSystem {target(address:string):Promise<void>;state():{paired:boolean;ready:boolean;voiceReady:boolean;keyboard?:{available:boolean;active:boolean;revision:number};status:string;backend:'native-client'};subscribe(listener:()=>void):()=>void;connect():Promise<void>;pairBegin():Promise<Record<string,unknown>>;pairFinish(pin:string):Promise<Record<string,unknown>>;key(command:RemoteKey):Promise<Record<string,unknown>>;text?(value:string):Promise<Record<string,unknown>>;voice(operation:string,payload:Record<string,unknown>):Promise<Record<string,unknown>>;suspend():void;close():void;}
 export interface TrustStore {save(session:Session):Promise<void>;forget(address?:string):Promise<void>;}
 /** Read-only polls reconnect; user commands are never automatically replayed. */
 export class RemoteClient {
@@ -106,6 +106,8 @@ export class RemoteClient {
   if(this.direct&&!this.fixture&&this.snapshot.status==='connected'&&command!=='control'&&command!=='home'&&(!this.snapshot.device?.homeActive||global.includes(command))){try{await this.direct.key(command);}catch(error){this.update({error:error instanceof Error?error.message:'system_connection_failed'});}return;}
   return this.action('key',{command});
  }
+ async previewTicket(){if(this.fixture||this.snapshot.status!=='connected')throw new RemoteError('preview_unavailable');return this.rpc('preview_ticket',{},12000);}
+ async sendText(value:string){if(!this.direct?.text||this.fixture||this.snapshot.status!=='connected')throw new RemoteError('keyboard_unavailable');await this.direct.text(value);}
  launch(id:string){return this.action('launch',{id});}
  media(action:MediaAction,value?:number){return this.action('media',{source:this.snapshot.device?.music.source,action,...(value===undefined?{}:{value})});}
  async localAdb(enabled:boolean){
