@@ -69,3 +69,7 @@ build still requests both packages. Both jobs use the standard Apple Silicon
 minutes of Expo/CocoaPods preparation; no signing operation was involved.
 Manual single-platform retries provide diagnostic artifacts only and do not
 publish a release or bypass the complete-release validation gate.
+
+## iOS Expo framework coherence
+
+The 2.1.1 unsigned artifact contained ExpoFileSystem imports missing from its packaged ExpoModulesJSI framework. `ios.usePrecompiledModules=false` plus CI `EXPO_USE_PRECOMPILED_MODULES=0` rebuild Expo modules together using the installed SDK; React Native's existing build strategy is preserved. CI asserts the generated property before compilation. `scripts/phone/validate_expo_abi.py` compares actual bundled JSI imports/exports before IPA or Simulator packaging, rejecting this class of bad artifact. The checker reproduced the exact reported Slot.emplace import against the downloaded 2.1.1 IPA. This is a binary-interface check, not device launch validation. Source iOS builds may take longer; successful compilation is still required and is not claimed before CI completes.

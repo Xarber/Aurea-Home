@@ -24,6 +24,7 @@ jobs:
       EXPO_PUBLIC_SOURCE_COMMIT: ${{ github.sha }}
       AUREA_TARGET: remote
       FORCE_BUNDLING: '1'
+      EXPO_USE_PRECOMPILED_MODULES: '0'
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -34,6 +35,8 @@ jobs:
       - run: npm ci && python3 scripts/phone/prepare.py
       - run: npx expo prebuild --platform ios --skip-dependency-update react-native,react
         working-directory: .phone-native
+      - name: Verify coherent Expo source build
+        run: python3 -c 'import json; p=json.load(open(".phone-native/ios/Podfile.properties.json")); assert p.get("EXPO_USE_PRECOMPILED_MODULES") == "false", p'
       - name: Compile without signing
         env:
           TARGET: ${{ matrix.target }}

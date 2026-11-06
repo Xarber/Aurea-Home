@@ -23,6 +23,7 @@ if platform=='android':
 else:
     sdk='iphonesimulator' if kind=='simulator' else 'iphoneos'
     app=Path(os.environ['RUNNER_TEMP'])/f'aurea-ios/Build/Products/Release-{sdk}/AureaRemote.app';assert app.is_dir()
+    subprocess.run([sys.executable,'scripts/phone/validate_expo_abi.py',str(app)],check=True)
     info=plistlib.loads((app/'Info.plist').read_bytes());assert info['CFBundleIdentifier']=='it.xarber.aurea.remote';assert info['CFBundleShortVersionString']==version;assert (app/'main.jsbundle').is_file()
     subprocess.run(['lipo',str(app/info['CFBundleExecutable']),'-verify_arch','arm64'],check=True)
     platform_info=subprocess.check_output(['xcrun','vtool','-show-build',str(app/info['CFBundleExecutable'])],text=True);assert ('IOSSIMULATOR' if kind=='simulator' else 'IOS') in platform_info
