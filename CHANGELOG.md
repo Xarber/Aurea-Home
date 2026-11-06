@@ -2,6 +2,14 @@
 
 Generated from `app/src/main/assets/release-history.json`. Legacy versions reflect repository history; dates describe implementation, not a verified public release.
 
+## 2.2.1 — 2026-11-06
+
+Saved TV controls and instant keyboard entry.
+
+### Fixes & Improvements
+
+Keep native buttons and microphone independent of the Home connection. Preserve recording during temporary iOS inactivity. Move television selection and system setup into TVs. Hide the unstable private app preview without removing it.
+
 ## 2.2.0 — 2026-11-05
 
 TV keyboard and a private, TV-approved app preview.

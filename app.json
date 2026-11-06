@@ -49,7 +49,7 @@
           "NSAllowsLocalNetworking": true
         }
       },
-      "buildNumber": "38"
+      "buildNumber": "39"
     },
     "icon": "./public/branding/icon-1024.png"
   }
