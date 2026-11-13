@@ -1,3 +1,4 @@
+import {ReceiverControls} from './ReceiverControls';
 // SPDX-License-Identifier: AGPL-3.0-only
 import {IdeasPage} from '../developer/ideas/IdeasPage';
 import React, { useEffect, useRef, useState } from 'react';
@@ -331,6 +332,7 @@ export function NativePanels({
         )}
         {panel === 'airplay' && (
           <>
+            <ReceiverControls demo={demo} t={t} row={row}/>
             {row('Receiver settings', 'airplay', () =>
               action('settings', { screen: 'airplay' }),
             )}

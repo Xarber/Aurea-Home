@@ -10,6 +10,7 @@ import concurrent.futures
 import json
 import logging
 import os
+import re
 import threading
 import time
 from receiver_discovery import eligible_apple_tv
@@ -94,6 +95,21 @@ class Client:
             self.pairing = await pyatv.pair(self.selected, Protocol.AirPlay, self.loop, name="Aurea Home")
             await self.pairing.begin()
             return {"status": "pin_required", "name": self.selected.name}
+        if operation == "companion_begin":
+            await self._disconnect()
+            found = await pyatv.scan(self.loop, timeout=5, identifier=data["identifier"],
+                                     protocol={Protocol.AirPlay, Protocol.Companion})
+            self.selected = next((item for item in found if self._eligible(item, data)
+                                  and item.get_service(Protocol.Companion)), None)
+            if self.selected is None:
+                return {"error": "device_unavailable"}
+            self.pairing = await pyatv.pair(self.selected, Protocol.Companion, self.loop, name="Aurea Home")
+            try:
+                await self.pairing.begin()
+            except (Exception, asyncio.CancelledError):
+                await self._cancel_pairing()
+                raise
+            return {"status": "pin_required", "name": self.selected.name}
         if operation == "pair_finish":
             pin = data.get("pin", "")
             if not self.pairing or len(pin) != 4 or not pin.isascii() or not pin.isdigit():
@@ -112,14 +128,22 @@ class Client:
             return {"status": "disconnected"}
         if operation == "connect":
             await self._disconnect()
-            found = await pyatv.scan(self.loop, timeout=5, identifier=data["identifier"], protocol=Protocol.AirPlay)
+            protocols = {Protocol.AirPlay, Protocol.Companion} if data.get("companion") else Protocol.AirPlay
+            found = await pyatv.scan(self.loop, timeout=5, identifier=data["identifier"], protocol=protocols)
             found = [item for item in found if self._eligible(item, data)]
             if not found:
                 return {"error": "device_unavailable"}
             config = found[0]
             if not config.set_credentials(Protocol.AirPlay, data["credentials"]):
                 return {"error": "pairing_required"}
-            self.device = await pyatv.connect(config, self.loop, protocol=Protocol.AirPlay)
+            if data.get("companion") and config.set_credentials(Protocol.Companion, data["companion"]):
+                try:
+                    self.device = await pyatv.connect(config, self.loop)
+                except Exception:
+                    config.get_service(Protocol.Companion).enabled = False
+                    self.device = await pyatv.connect(config, self.loop, protocol=Protocol.AirPlay)
+            else:
+                self.device = await pyatv.connect(config, self.loop, protocol=Protocol.AirPlay)
             self.snapshot = {"status": "connected", "name": config.name, "playing": False}
             self.monitor = self.loop.create_task(self._observe())
             return dict(self.snapshot)
@@ -132,6 +156,8 @@ class Client:
         if operation == "disconnect":
             await self._disconnect()
             return dict(self.snapshot)
+        if operation in ("apps", "launch_app", "navigation"):
+            return await self._remote(operation, data)
         if operation == "command":
             if self.device is None:
                 return {"error": "disconnected"}
@@ -156,6 +182,44 @@ class Client:
                 return {"error": "unsupported"}
             return {"status": "sent"}
         return {"error": "unsupported"}
+
+    async def _remote(self, operation, data):
+        from pyatv.const import FeatureName, FeatureState
+        if self.device is None or self.snapshot.get("status") != "connected":
+            return {"error": "disconnected"}
+
+        def available(feature):
+            return self.device.features.in_state(FeatureState.Available, feature)
+
+        if operation == "navigation":
+            controls = {
+                "up": (FeatureName.Up, "up"), "down": (FeatureName.Down, "down"),
+                "left": (FeatureName.Left, "left"), "right": (FeatureName.Right, "right"),
+                "select": (FeatureName.Select, "select"), "back": (FeatureName.Menu, "menu"),
+                "home": (FeatureName.Home, "home"), "playpause": (FeatureName.PlayPause, "play_pause"),
+                "volumeup": (FeatureName.VolumeUp, "volume_up"),
+                "volumedown": (FeatureName.VolumeDown, "volume_down"),
+            }
+            key = data.get("key")
+            control = controls.get(key) if isinstance(key, str) else None
+            if not control or not available(control[0]):
+                return {"error": "unsupported"}
+            await asyncio.wait_for(getattr(self.device.remote_control, control[1])(), 5)
+            return {"status": "sent"}
+
+        if not available(FeatureName.AppList):
+            return {"error": "apple_apps_pairing_required"}
+        apps = await asyncio.wait_for(self.device.apps.app_list(), 5)
+        listed = {app.identifier: app.name[:120] for app in apps
+                  if isinstance(app.identifier, str) and re.fullmatch(r"[A-Za-z0-9._-]{1,200}", app.identifier)
+                  and isinstance(app.name, str)}
+        if operation == "apps":
+            return {"apps": [{"id": key, "name": name or key} for key, name in list(listed.items())[:250]]}
+        target = data.get("id")
+        if not isinstance(target, str) or target not in listed or not available(FeatureName.LaunchApp):
+            return {"error": "unknown_target"}
+        await asyncio.wait_for(self.device.apps.launch_app(target), 5)
+        return {"status": "sent"}
 
     @staticmethod
     def _eligible(item, data):

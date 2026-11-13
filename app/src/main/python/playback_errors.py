@@ -2,7 +2,7 @@
 """Allowlisted failure metadata. Never serialize exception messages or payloads."""
 import asyncio
 
-OPERATIONS={"scan","pair_begin","pair_finish","connect","state","command","disconnect","cancel_pairing","shutdown"}
+OPERATIONS={"companion_begin","apps","launch_app","navigation","scan","pair_begin","pair_finish","connect","state","command","disconnect","cancel_pairing","shutdown"}
 
 def classify_failure(operation,error):
     result={"error":"connection_failed","stage":operation if operation in OPERATIONS else "unknown"}

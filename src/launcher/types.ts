@@ -24,7 +24,10 @@ export interface NativeSnapshot {
     title?: string;
     observedAt?: number;
   };
+  receiver?: {enabled:boolean;name:string;customName:string};
   paired: {
+    companion?:boolean;
+    connected?:boolean;
     paired: boolean;
     name: string;
     pending: boolean;

@@ -78,6 +78,28 @@ class AdapterChecks(unittest.IsolatedAsyncioTestCase):
         await self.client._dispatch("command", {"action": "volume", "value": 20})
         set_volume.assert_awaited_once_with(20)
 
+    async def test_apple_tv_apps_and_home_require_capabilities_and_listed_ids(self):
+        const = sys.modules["pyatv.const"]
+        for name in ("Up Down Left Right Select Menu Home VolumeUp VolumeDown AppList LaunchApp".split()):
+            setattr(const.FeatureName, name, name)
+        supported = {const.FeatureName.Home}
+        launch = AsyncMock()
+        home = AsyncMock()
+        music = types.SimpleNamespace(identifier="com.apple.TVMusic", name="Music")
+        self.client.device = types.SimpleNamespace(
+            features=types.SimpleNamespace(in_state=lambda state, feature: feature in supported),
+            remote_control=types.SimpleNamespace(home=home),
+            apps=types.SimpleNamespace(app_list=AsyncMock(return_value=[music]), launch_app=launch))
+        self.client.snapshot = {"status": "connected"}
+        self.assertEqual(await self.client._dispatch("apps", {}), {"error": "apple_apps_pairing_required"})
+        self.assertEqual(await self.client._dispatch("navigation", {"key": "home"}), {"status": "sent"})
+        home.assert_awaited_once()
+        supported.update((const.FeatureName.AppList, const.FeatureName.LaunchApp))
+        self.assertEqual(await self.client._dispatch("apps", {}), {"apps": [{"id": music.identifier, "name": "Music"}]})
+        self.assertEqual(await self.client._dispatch("launch_app", {"id": "https://example.test"}), {"error": "unknown_target"})
+        await self.client._dispatch("launch_app", {"id": music.identifier})
+        launch.assert_awaited_once_with(music.identifier)
+
     async def test_failed_observation_clears_stale_playback(self):
         self.client.snapshot = {"status": "connected", "playing": True, "title": "Old", "artwork": "old"}
         self.client.device = types.SimpleNamespace(metadata=types.SimpleNamespace(playing=AsyncMock(side_effect=ConnectionError())))

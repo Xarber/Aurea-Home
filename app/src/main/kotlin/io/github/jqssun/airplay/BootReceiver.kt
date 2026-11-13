@@ -12,11 +12,11 @@ class BootReceiver : BroadcastReceiver() {
             intent.action != "android.intent.action.QUICKBOOT_POWERON") return
 
         val prefs = context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
-        if (!prefs[Prefs.BOOT_AUTO_START]) return
-
-        val serviceIntent = Intent(context, AirPlayService::class.java)
-            .setAction(AirPlayService.ACTION_START_SERVER)
-        ContextCompat.startForegroundService(context, serviceIntent)
+        if (prefs[Prefs.BOOT_AUTO_START] && it.xarber.tvhome.ReceiverSettings.enabled(context)) {
+            val serviceIntent = Intent(context, AirPlayService::class.java)
+                .setAction(AirPlayService.ACTION_START_SERVER)
+            ContextCompat.startForegroundService(context, serviceIntent)
+        }
         if (!BuildConfig.MOBILE_REMOTE && context.getSharedPreferences("phone_remote", Context.MODE_PRIVATE).getBoolean("enabled", true)) {
             ContextCompat.startForegroundService(context, Intent(context, it.xarber.tvhome.HomeRemoteService::class.java))
         }

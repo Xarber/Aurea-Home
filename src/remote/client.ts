@@ -113,6 +113,14 @@ export class RemoteClient {
   if(this.direct&&!this.fixture&&this.direct.state().ready&&(this.snapshot.status!=='connected'||command!=='control'&&command!=='home'&&(!this.snapshot.device?.homeActive||global.includes(command)))){try{await this.direct.key(command);}catch(error){this.update({error:error instanceof Error?error.message:'system_connection_failed'});}return;}
   return this.action('key',{command});
  }
+ async appleTV(operation:'apps'|'launch_app'|'navigation',payload:Record<string,unknown>){
+  if(this.fixture||this.snapshot.status!=='connected'||!this.snapshot.device?.appleTV?.paired)throw new RemoteError('not_connected');
+  const generation=this.generation;
+  const route=operation==='apps'?'apple_apps':operation==='launch_app'?'apple_launch':'apple_key';
+  const result=await this.rpc(route,payload,16000);
+  if(generation!==this.generation)throw new RemoteError('disconnected');
+  return result;
+ }
  async previewTicket(){if(this.fixture||this.snapshot.status!=='connected')throw new RemoteError('preview_unavailable');return this.rpc('preview_ticket',{},12000);}
  async editText(previous:string,next:string){
   const generation=this.generation,revision=this.direct?.state().keyboard?.revision,direct=this.direct;

@@ -34,13 +34,16 @@ public final class PairingStore {
         String credentials=pairing.getString("credentials"),identifier=pairing.getString("identifier"),name=pairing.getString("name");
         if(credentials.isEmpty()||credentials.length()>8192||identifier.isEmpty()||identifier.length()>1024||name.length()>256)throw new IllegalArgumentException("Invalid pairing");
         JSONObject value=new JSONObject().put("credentials",credentials).put("identifier",identifier).put("name",name);
+        String companion=pairing.optString("companion");
+        if(companion.length()>8192)throw new IllegalArgumentException("Invalid Companion pairing");
+        if(!companion.isEmpty())value.put("companion",companion);
         Cipher cipher=Cipher.getInstance("AES/GCM/NoPadding");cipher.init(Cipher.ENCRYPT_MODE,key());cipher.updateAAD(context.getPackageName().getBytes(StandardCharsets.UTF_8));
         byte[] encrypted=cipher.doFinal(value.toString().getBytes(StandardCharsets.UTF_8));
         FileOutputStream stream=file.startWrite();try{stream.write(cipher.getIV());stream.write(encrypted);file.finishWrite(stream);}catch(Exception error){file.failWrite(stream);throw error;}
     }
     public synchronized JSONObject read() throws Exception {
         if(!file.getBaseFile().exists())return null;
-        if(file.getBaseFile().length()>16384)throw new IllegalStateException("Invalid encrypted pairing");
+        if(file.getBaseFile().length()>24576)throw new IllegalStateException("Invalid encrypted pairing");
         byte[] bytes=file.readFully();if(bytes.length<28)throw new IllegalStateException("Invalid encrypted pairing");
         Cipher cipher=Cipher.getInstance("AES/GCM/NoPadding");cipher.init(Cipher.DECRYPT_MODE,key(),new GCMParameterSpec(128,bytes,0,12));cipher.updateAAD(context.getPackageName().getBytes(StandardCharsets.UTF_8));
         return new JSONObject(new String(cipher.doFinal(bytes,12,bytes.length-12),StandardCharsets.UTF_8));

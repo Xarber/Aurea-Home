@@ -495,6 +495,7 @@ public final class LegacyHomeActivity extends Activity {
     @Override public boolean dispatchKeyEvent(KeyEvent event){if(event.getKeyCode()==KeyEvent.KEYCODE_BACK)return handleBack(event);return super.dispatchKeyEvent(event);}
     @Override public boolean onKeyDown(int code,android.view.KeyEvent event){if(code==android.view.KeyEvent.KEYCODE_MENU || code==android.view.KeyEvent.KEYCODE_SETTINGS){showControls();return true;}if(code==android.view.KeyEvent.KEYCODE_TV_INPUT || code==130){showInputs();return true;}return super.onKeyDown(code,event);}
     void ensureReceiver(){
+        if(!ReceiverSettings.enabled(this))return;
         getSharedPreferences("settings",0).edit().putBoolean("auto_start",true).putBoolean("boot_auto_start",true).putBoolean("run_in_background",true).putBoolean("launch_on_connect",true).putBoolean("auto_fullscreen",true).apply();
         Intent receiver=new Intent().setClassName(this,"io.github.jqssun.airplay.service.AirPlayService").setAction("io.github.jqssun.airplay.START_SERVER");
         try{startForegroundService(receiver);if(!receiverBound)receiverBound=bindService(receiver,receiverConnection,0);}catch(RuntimeException ex){android.util.Log.w("MiTVHome","Receiver startup pending",ex);}

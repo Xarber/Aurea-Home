@@ -2,6 +2,48 @@
   "schema": 1,
   "releases": [
     {
+      "version": "2.3.0",
+      "code": 40,
+      "date": "2026-11-13",
+      "critical": false,
+      "highlights": {
+        "en": "Navigate Apple TV and open its apps from Aurea.",
+        "it": "Controlla Apple TV e apri le sue app da Aurea."
+      },
+      "fixes": {
+        "en": "Choose whether to advertise the local AirPlay receiver and customize its name. The launcher previews its layout while it loads.",
+        "it": "Scegli se attivare il ricevitore AirPlay locale e personalizzane il nome. La Home mostra un’anteprima della disposizione durante il caricamento."
+      },
+      "compatibility": {
+        "en": "Apple TV app discovery and launch require separate Companion pairing. Navigation depends on the device’s available features.",
+        "it": "La ricerca e l’avvio delle app Apple TV richiedono un abbinamento Companion separato. La navigazione dipende dalle funzioni del dispositivo."
+      },
+      "features": [
+        {
+          "icon": "remote",
+          "label": {
+            "en": "Apple TV remote",
+            "it": "Telecomando Apple TV"
+          },
+          "detail": {
+            "en": "Browse launchable apps, open Music and navigate the paired Apple TV with separate Aurea Home and input controls.",
+            "it": "Sfoglia le app avviabili, apri Musica e controlla l’Apple TV abbinata con comandi separati per Home e ingressi Aurea."
+          }
+        },
+        {
+          "icon": "airplay",
+          "label": {
+            "en": "AirPlay receiver settings",
+            "it": "Impostazioni ricevitore AirPlay"
+          },
+          "detail": {
+            "en": "Rename or turn off the local receiver while keeping paired Apple TV controls available.",
+            "it": "Rinomina o disattiva il ricevitore locale mantenendo i controlli dell’Apple TV abbinata."
+          }
+        }
+      ]
+    },
+    {
       "version": "2.2.1",
       "code": 39,
       "date": "2026-11-06",

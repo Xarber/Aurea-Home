@@ -1,3 +1,4 @@
+import {LauncherSkeleton} from './src/components/LauncherSkeleton';
 // SPDX-License-Identifier: AGPL-3.0-only
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import {
@@ -367,30 +368,8 @@ function LauncherView({ demo,onTarget,onOpenRemote }: { demo: Launcher;onOpenRem
   );
   const nativeMusic = demo.snapshot?.music;
   if (demo.native && !demo.ready)
-    return (
-      <View
-        style={[
-          s.root,
-          {
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 40,
-            gap: 24,
-          },
-        ]}
-      >
-        <Text style={s.pageTitle}>Aurea Home</Text>
-        <Text style={s.tabLabel}>{t(demo.error ?? 'Connecting…')}</Text>
-        <FocusButton
-          id="loading-retry"
-          group="header"
-          label={t('Retry')}
-          onPress={demo.refresh}
-        >
-          <Text style={s.tabLabel}>{t('Retry')}</Text>
-        </FocusButton>
-      </View>
-    );
+    return <LauncherSkeleton error={demo.error} retry={demo.refresh} t={t}/>;
+
   return (
     <BlurEnabled.Provider value={demo.prefs.blur!==false}><GlassTarget.Provider value={target}>
       <View style={[s.root, { height: canvasHeight, maxHeight: canvasHeight }]}>

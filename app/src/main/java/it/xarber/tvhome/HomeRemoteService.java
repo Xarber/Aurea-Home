@@ -74,7 +74,17 @@ public final class HomeRemoteService extends Service {
     @Override public void onDestroy(){AppPreviewService.cancelAll(this);main.removeCallbacks(monitor);if(server!=null)server.stop();if(localAdb!=null)new Thread(localAdb::close,"AureaAdbClose").start();if(hosted!=null)hosted.close();if(playback!=null)playback.close();if(system!=null){SystemRemoteController closing=system;new Thread(closing::close,"AureaRemoteClose").start();}server=null;if(instance==this)instance=null;super.onDestroy();}
     private JSONObject handle(String operation,JSONObject payload)throws Exception{
         main.post(()->{if(playback!=null)playback.clients(server!=null&&server.hasActiveRemote());});
-        if(operation.equals("state"))return new JSONObject().put("schema",1).put("name",DeviceName.read(this)).put("observedAt",System.currentTimeMillis()).put("homeActive",home()!=null||TVPlatform.foreground()).put("systemRemote",systemState()).put("localAdb",localAdb.state()).put("music",playback.state()).put("wallpaper",wallpaper());
+        it.xarber.tvhome.playback.PairedPlayback apple = it.xarber.tvhome.playback.PairedPlayback.get(this);
+        if(operation.equals("apple_apps") || operation.equals("apple_launch") || operation.equals("apple_key")){
+            String action = operation.equals("apple_apps") ? "apps" : operation.equals("apple_launch") ? "launch_app" : "navigation";
+            JSONObject args = new JSONObject();
+            if(operation.equals("apple_launch"))args.put("id",payload.optString("id"));
+            if(operation.equals("apple_key"))args.put("key",payload.optString("key"));
+            java.util.concurrent.CompletableFuture<JSONObject> result = new java.util.concurrent.CompletableFuture<>();
+            apple.request(action,args,result::complete);
+            try{return result.get(15,TimeUnit.SECONDS);}catch(Exception failure){return SystemRemoteController.error("timeout");}
+        }
+        if(operation.equals("state"))return new JSONObject().put("schema",1).put("name",DeviceName.read(this)).put("observedAt",System.currentTimeMillis()).put("homeActive",home()!=null||TVPlatform.foreground()).put("systemRemote",systemState()).put("localAdb",localAdb.state()).put("appleTV",new JSONObject().put("paired",apple.paired()).put("name",apple.name()).put("connected",apple.connected()).put("appsPaired",apple.companionPaired())).put("music",playback.state()).put("wallpaper",wallpaper());
         if(operation.equals("catalog"))return catalog.read();
         if(operation.equals("icon"))return catalog.icon(payload.optString("id"));
         if(operation.equals("artwork")){playback.state();JSONObject art=playback.artwork();return payload.optString("id").equals(art.optString("id"))?art:SystemRemoteController.error("source_changed");}

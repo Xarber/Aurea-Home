@@ -222,7 +222,7 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
     private var advertisedDeviceName = ""
     private val refreshDeviceName = object : Runnable {
         override fun run() {
-            if (it.xarber.tvhome.DeviceName.read(this@AirPlayService) == advertisedDeviceName) return
+            if (it.xarber.tvhome.ReceiverSettings.name(this@AirPlayService) == advertisedDeviceName) return
             if (_connectionCount.value > 0) { _mainHandler.postDelayed(this, 5000); return }
             _restartServer()
         }
@@ -374,9 +374,17 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
+        if (!it.xarber.tvhome.ReceiverSettings.enabled(this)) {
+            stopServer()
+            return START_NOT_STICKY
+        }
         if (intent == null || intent.action == ACTION_START_SERVER) {
             promoteToForeground()
             _startServer(ensureServiceStarted = false)
+            if (_serverState.value == ServerState.RUNNING) {
+                _mainHandler.removeCallbacks(refreshDeviceName)
+                _mainHandler.post(refreshDeviceName)
+            }
             if (_serverState.value != ServerState.RUNNING) stopSelf(startId)
         }
         return START_STICKY
@@ -387,13 +395,14 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
     }
 
     private fun _startServer(ensureServiceStarted: Boolean) {
+        if (!it.xarber.tvhome.ReceiverSettings.enabled(this)) return
         if (_serverState.value == ServerState.RUNNING) return
         if (!hasLocalNetwork()) {
             log("Local network permission denied")
             _failStart()
             return
         }
-        val effectiveName = it.xarber.tvhome.DeviceName.read(this)
+        val effectiveName = it.xarber.tvhome.ReceiverSettings.name(this)
         advertisedDeviceName = effectiveName
         log("AirPlay device name configured")
 

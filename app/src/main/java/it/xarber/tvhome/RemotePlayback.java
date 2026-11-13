@@ -34,6 +34,7 @@ final class RemotePlayback {
     RemotePlayback(Context context){this(context,true);}
     RemotePlayback(Context context,boolean presenceOwner){this.presenceOwner=presenceOwner;this.context=context.getApplicationContext();paired=PairedPlayback.get(context);}
     void start(){new android.os.Handler(android.os.Looper.getMainLooper()).post(()->{if(bound)return;try{bound=context.bindService(new Intent(context,AirPlayService.class),connection,Context.BIND_AUTO_CREATE);}catch(Exception ignored){bound=false;}});}
+    void stopReceiver(){AirPlayService current=receiver;if(current!=null)current.stopServer();else context.stopService(new Intent(context,AirPlayService.class));}
     void tickActivity(){
         AirPlayService current=receiver;
         if(current!=null&&current.getAudioOnly().getValue())activityClock.visible(true,current.getPlaying().getValue(),android.os.SystemClock.elapsedRealtime());

@@ -1,3 +1,4 @@
+import {AppleTVControls} from '../components/AppleTVControls';
 import {PreviewPanel} from './preview/PreviewPanel';
 import {useDeveloperAccess} from '../hooks/useDeveloperAccess';
 import {SharedChangelog} from '../components/SharedChangelog';
@@ -46,6 +47,9 @@ export default function PhoneRemoteApp({preview=false}:{preview?:boolean}){
  const navigation=usePanelNavigation(),{panel,setPanel}=navigation;const phoneAnchor=usePhoneAnchor();const blurTarget=useRef<React.ComponentRef<typeof View>>(null);
  usePreviewOrientation(launcherPreview);
  const [tab,setTab]=useState<'remote'|'apps'|'inputs'|'tvs'>('remote');const developerAccess=useDeveloperAccess(tab==='remote'?0:tab==='apps'?1:tab==='inputs'?2:3),dev=developerAccess.enabled;const [retained,setRetained]=useState<string|null>(null);const [pin,setPin]=useState('');const [systemPin,setSystemPin]=useState('');const [hover,setHover]=useState(false);
+ const [showAppleTV,setShowAppleTV]=useState(false);
+ useEffect(()=>setShowAppleTV(false),[state.selected?.address]);
+ const appleTV=state.device?.appleTV;
  const [tvText,setTVText]=useState(''),[typingError,setTypingError]=useState('');
  useEffect(()=>{setTVText('');setTypingError('');if(panel==='keyboard')setPanel(null);},[state.selected?.address]);
  const seenKeyboard=useRef('');
@@ -68,10 +72,13 @@ export default function PhoneRemoteApp({preview=false}:{preview?:boolean}){
   const keys:Record<string,RemoteKey>={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',Enter:'ok',Backspace:'back',Escape:'back',' ':'playpause',Home:'home',ContextMenu:'menu',MediaPlayPause:'playpause',MediaTrackNext:'next',MediaTrackPrevious:'previous',AudioVolumeUp:'volumeup',AudioVolumeDown:'volumedown',AudioVolumeMute:'mute'};
   const desktop=()=>matchMedia('(hover: hover) and (pointer: fine)').matches;
   const editable=(target:EventTarget|null)=>{const element=target as HTMLElement;return element?.isContentEditable||['INPUT','TEXTAREA','SELECT'].includes(element?.tagName);};
-  const down=(event:KeyboardEvent)=>{if(!desktop()||editable(event.target)||event.ctrlKey||event.metaKey||event.altKey)return;if(panel){if(event.key==='Escape'){event.preventDefault();navigation.back();}return;}if(tab!=='remote'||!connected)return;const key=keys[event.key];if(key){event.preventDefault();event.stopImmediatePropagation();void client.key(key);}};
+  const down=(event:KeyboardEvent)=>{if(!desktop()||editable(event.target)||event.ctrlKey||event.metaKey||event.altKey)return;if(panel){if(event.key==='Escape'){event.preventDefault();navigation.back();}return;}if(tab!=='remote'||!connected)return;const key=keys[event.key];if(key){event.preventDefault();event.stopImmediatePropagation();if(showAppleTV&&launcherConnected&&appleTV?.paired&&key!=='home'){
+    const appleKey=key==='ok'?'select':key==='menu'?'back':key;
+    if(['up','down','left','right','select','back','playpause','volumeup','volumedown'].includes(appleKey))void client.appleTV('navigation',{key:appleKey}).catch(()=>{});
+   }else void client.key(key);}};
   const up=(event:KeyboardEvent)=>{if(desktop()&&!editable(event.target)&&!panel&&connected&&tab==='remote'&&keys[event.key]){event.preventDefault();event.stopImmediatePropagation();}};
   window.addEventListener('keydown',down,true);window.addEventListener('keyup',up,true);return()=>{window.removeEventListener('keydown',down,true);window.removeEventListener('keyup',up,true);};
- },[client,connected,panel,tab,launcherPreview]);
+ },[client,connected,panel,tab,launcherPreview,showAppleTV,launcherConnected,appleTV?.paired]);
 
  useEffect(()=>{if(!dev&&panel==='ideas')setPanel('settings');},[dev,panel]);
 
@@ -96,7 +103,19 @@ export default function PhoneRemoteApp({preview=false}:{preview?:boolean}){
  {state.status==='pairing'?<><TextInput testID="phone-pin" value={pin} onChangeText={setPin} keyboardType="number-pad" autoComplete="one-time-code" maxLength={6} placeholder="000000" placeholderTextColor="#737e92" style={[s.input,{letterSpacing:10,textAlign:'center'}]}/><FocusButton id="phone-pair" group="phone" label="Pair television" onPress={()=>{void client.pair(pin);}} style={s.primary}><Text style={s.primaryText}>Pair television</Text></FocusButton></>:<><TextInput testID="phone-address" value={remote.address} onChangeText={remote.setAddress} autoCapitalize="none" autoCorrect={false} keyboardType="url" placeholder="TV address or Aurea link" placeholderTextColor="#737e92" style={s.input}/><FocusButton id="phone-connect" group="phone" label="Connect television" onPress={()=>{void remote.connect();}} style={s.primary}>{state.status==='connecting'?<ActivityIndicator color="#182131"/>:<Text style={s.primaryText}>Connect television</Text>}</FocusButton><Text style={s.caption}>Only pair on trusted home Wi-Fi.</Text><FocusButton id="phone-preview" group="phone" label="Explore preview" onPress={()=>remote.setPreview(true)} style={{marginTop:5}}><Text style={s.secondary}>Explore preview</Text></FocusButton></>}
  {remote.formError&&<Text style={s.error}>{remote.formError}</Text>}{remote.storageError&&<Text style={s.error}>Saved TVs could not be opened. Your existing pairings have been preserved.</Text>}{state.error&&<Text style={s.error}>{errorText[state.error]??'The connection is unavailable. Try again.'}</Text>}
  </ScrollView></KeyboardAvoidingView>:<>
- {tab==='remote'&&<ScrollView testID="phone-handset-scroll" scrollEnabled={!touchActive} onLayout={e=>setRemoteHeight(e.nativeEvent.layout.height)} showsVerticalScrollIndicator={false} contentContainerStyle={{paddingBottom:20}}>
+ {tab==='remote'&&launcherConnected&&appleTV?.paired&&<View style={{paddingHorizontal:20,paddingBottom:8}}>
+   <FocusButton id="phone-apple-tv" group="phone" label={showAppleTV?'Show Aurea controls':'Show Apple TV controls'}
+     onPress={()=>setShowAppleTV(!showAppleTV)} style={[s.settingRow,{justifyContent:'center'}]}>
+     <Icon name={showAppleTV?'remote':'apple'} size={20}/><Text style={s.label}>{showAppleTV?'Aurea controls':appleTV.name||'Apple TV'}</Text>
+   </FocusButton>
+ </View>}
+ {tab==='remote'&&showAppleTV&&launcherConnected&&appleTV?.paired?
+   <ScrollView contentContainerStyle={{paddingHorizontal:20,paddingBottom:20}}><AppleTVControls
+     key={state.selected?.address} request={(operation,payload)=>client.appleTV(operation,payload)}
+     group="phone" connected={appleTV.connected} appsPaired={appleTV.appsPaired}/>
+     <FocusButton id="phone-aurea-home" group="phone" label="Aurea Home" onPress={()=>void client.key('home')}
+       style={[s.settingRow,{marginTop:12}]}><Icon name="home" size={20}/><Text style={s.label}>Aurea Home</Text></FocusButton>
+   </ScrollView>:tab==='remote'&&<ScrollView testID="phone-handset-scroll" scrollEnabled={!touchActive} onLayout={e=>setRemoteHeight(e.nativeEvent.layout.height)} showsVerticalScrollIndicator={false} contentContainerStyle={{paddingBottom:20}}>
  <RemoteHandset client={client} full={completeRemote||wide} wide={wide} touch={touchpad} touchActive={setTouchActive} availableHeight={remoteHeight} voiceError={setVoiceError} connected={connected} paired={!!system?.paired} ready={!!(system?.voiceReady??system?.ready)} command={command} pair={()=>openPanel('system')}/>
  </ScrollView>}
  {(tab==='apps'||tab==='inputs')&&<ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{paddingHorizontal:20,paddingBottom:24}}><Text style={s.sectionTitle}>{tab==='apps'?'Apps':'Inputs & Live TV'}</Text>{!launcherConnected?<Text style={s.description}>Open Home on the TV to load apps and inputs.</Text>:!state.catalog?<ActivityIndicator color="#b3bcca"/>:<View style={[s.grid,wide&&{columnGap:'2%'}]}>{(tab==='apps'?state.catalog.apps:state.catalog.inputs).map(target=><AppCard key={target.id} target={target} icon={state.icons[target.id]} connected={launcherConnected} load={()=>client.icon(target.id)} launch={()=>{void client.launch(target.id);}}/>)}</View>}</ScrollView>}

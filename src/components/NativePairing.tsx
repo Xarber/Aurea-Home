@@ -1,3 +1,4 @@
+import {AppleTVControls} from './AppleTVControls';
 // SPDX-License-Identifier: AGPL-3.0-only
 import React, { useRef, useState } from 'react';
 import { Text, TextInput } from 'react-native';
@@ -21,6 +22,7 @@ export function NativePairing({
   const [devices, setDevices] = useState<{ id: string; name: string }[]>([]),
     [status, setStatus] = useState(''),
     [pin, setPin] = useState('');
+  const [showRemote,setShowRemote]=useState(false);
   const [busy, setBusy] = useState(false);
   const paired = demo.snapshot!.paired;
   const request = async (
@@ -114,6 +116,12 @@ export function NativePairing({
         </>
       ) : (
         <>
+          {paired.paired&&row(showRemote?'Hide Apple TV controls':'Apple TV controls','remote',()=>setShowRemote(!showRemote))}
+          {paired.paired&&showRemote&&<AppleTVControls request={demo.pairedRequest} group="modal" appsPaired={!!paired.companion} connected={!!paired.connected} t={t}/>}
+          {paired.paired&&row(paired.companion?'Pair Apple TV apps again':'Enable Apple TV apps','apps',()=>{
+            if(!busy)void request('companion_begin');
+          })}
+          {paired.paired&&row('Change HDMI input','inputs',()=>demo.setPanel('input'))}
           {row('Find Apple TV', 'airplay', () => {
             if (!busy) void request('scan');
           })}

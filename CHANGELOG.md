@@ -2,6 +2,14 @@
 
 Generated from `app/src/main/assets/release-history.json`. Legacy versions reflect repository history; dates describe implementation, not a verified public release.
 
+## 2.3.0 — 2026-11-13
+
+Navigate Apple TV and open its apps from Aurea.
+
+### Fixes & Improvements
+
+Choose whether to advertise the local AirPlay receiver and customize its name. The launcher previews its layout while it loads.
+
 ## 2.2.1 — 2026-11-06
 
 Saved TV controls and instant keyboard entry.

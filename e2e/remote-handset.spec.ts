@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import {test,expect} from '@playwright/test';
 import type {Page} from '@playwright/test';
-async function mockTV(page:Page){
- let home=true;const keys:string[]=[];const id='11111111-1111-1111-1111-111111111111';
+async function mockTV(page:Page,apple=false){
+ let home=true;const keys:string[]=[];const appleCommands:string[]=[];const id='11111111-1111-1111-1111-111111111111';
  await page.route('**/hello',route=>route.fulfill({json:{id}}));await page.route('**/pair/start',route=>route.fulfill({json:{pairing:'pending'}}));await page.route('**/pair',route=>route.fulfill({json:{id,token:'b'.repeat(32)}}));
- await page.route('**/api/**',route=>{const path=new URL(route.request().url()).pathname;if(path==='/api/key')keys.push(route.request().postDataJSON().command);return route.fulfill({json:path==='/api/state'?{schema:1,id,name:'Test television',observedAt:Date.now(),homeActive:home,wallpaper:{id:'classic',motion:false,musicTint:false},systemRemote:{paired:true,ready:true,status:'ready'},music:{active:false}}:path==='/api/catalog'?{apps:[],inputs:[]}:{accepted:true}});});
+ await page.route('**/api/**',route=>{const path=new URL(route.request().url()).pathname;if(path==='/api/apple-tv/apps')return route.fulfill({json:{apps:[{id:'com.apple.TVMusic',name:'Music'},{id:'com.example.app',name:'Example'}]}});
+ if(path==='/api/apple-tv/launch'||path==='/api/apple-tv/key')appleCommands.push(route.request().postDataJSON().id??route.request().postDataJSON().key);
+ if(path==='/api/key')keys.push(route.request().postDataJSON().command);return route.fulfill({json:path==='/api/state'?{schema:1,id,name:'Test television',observedAt:Date.now(),homeActive:home,appleTV:apple?{name:'Living Room Apple TV',paired:true,connected:true,appsPaired:true}:undefined,wallpaper:{id:'classic',motion:false,musicTint:false},systemRemote:{paired:true,ready:true,status:'ready'},music:{active:false}}:path==='/api/catalog'?{apps:[],inputs:[]}:{accepted:true}});});
  await page.goto('/?remote=1');await page.getByTestId('phone-address').fill(new URL(page.url()).host);await page.locator('[data-nav="phone-connect"]').click();await page.getByTestId('phone-pin').fill('123456');await page.locator('[data-nav="phone-pair"]').click();await page.locator('[data-nav="phone-paired-done"]').click();
- return {keys,home:(value:boolean)=>{home=value;}};
+ return {keys,appleCommands,home:(value:boolean)=>{home=value;}};
 }
 test('remote automatically follows Home and permits explicit overrides',async({page})=>{
  await page.setViewportSize({width:390,height:844});const tv=await mockTV(page);await expect(page.getByTestId('home-remote')).toBeVisible();const bar=(await page.getByTestId('compact-volume').boundingBox())!;expect(bar.width).toBeGreaterThan(bar.height);tv.home(false);await expect(page.getByTestId('full-remote')).toBeVisible();await page.locator('[data-nav="phone-settings"]').click();await page.locator('[data-nav="phone-auto-remote"]').click();await page.locator('[data-nav="phone-panel-close"]').click();await expect(page.getByTestId('home-remote')).toBeVisible();tv.home(true);await page.locator('[data-nav="phone-settings"]').click();await page.locator('[data-nav="phone-complete-remote"]').click();await page.locator('[data-nav="phone-panel-close"]').click();await expect(page.getByTestId('full-remote')).toBeVisible();await page.locator('[data-nav="phone-settings"]').click();await page.locator('[data-nav="phone-auto-remote"]').click();await page.locator('[data-nav="phone-panel-close"]').click();await expect(page.getByTestId('home-remote')).toBeVisible();
@@ -53,4 +55,17 @@ test('tablet preview supports vertical page swipes and returning to actual pairi
 test('unstable private app preview remains hidden and makes no capture requests',async({page})=>{
  await mockTV(page);const requests:string[]=[];page.on('request',request=>{if(request.url().includes('/preview/'))requests.push(request.url());});
  await page.locator('[data-nav="phone-settings"]').click();await expect(page.locator('[data-nav="phone-preview-feed"]')).toHaveCount(0);expect(requests).toHaveLength(0);
+});
+
+test('paired Apple TV opens Music and keeps Aurea Home and Inputs separate',async({page})=>{
+ await page.setViewportSize({width:390,height:844});
+ const tv=await mockTV(page,true);
+ await page.locator('[data-nav="phone-apple-tv"]').click();
+ await page.getByRole('button',{name:'Open Music',exact:true}).click();
+ await page.getByRole('button',{name:'Apple TV Home',exact:true}).click();
+ await page.getByRole('button',{name:'Aurea Home',exact:true}).click();
+ expect(tv.appleCommands).toEqual(['com.apple.TVMusic','home']);
+ expect(tv.keys).toEqual(['home']);
+ await page.locator('[data-nav="phone-tab-inputs"]').click();
+ await expect(page.getByText('Inputs & Live TV',{exact:true})).toBeVisible();
 });
