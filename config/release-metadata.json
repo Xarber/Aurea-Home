@@ -1,0 +1,9 @@
+{
+  "history": "app/src/main/assets/release-history.json",
+  "workflow": ".github/workflows/build.yml",
+  "promotion": ["testing", "beta", "main"],
+  "metadataTag": "sources-v1.0",
+  "artifactValidator": "scripts/ci/release_collection.py",
+  "publishedVerifier": "scripts/check_published_update.py",
+  "distributionDirectory": "distribution"
+}

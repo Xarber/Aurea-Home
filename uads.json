@@ -1,0 +1,499 @@
+{
+  "uadsVersion": "sections-1-50",
+  "manifestVersion": 1,
+  "project": {
+    "name": "Aurea Home",
+    "repository": "Xarber/Aurea-Home",
+    "profiles": [
+      "hybrid",
+      "mobile-app",
+      "web-app",
+      "web-service"
+    ],
+    "framework": "Expo / React Native TV / Android / PeerServer",
+    "platforms": [
+      "android-tv",
+      "android",
+      "ios",
+      "web"
+    ],
+    "hosting": "X-Center"
+  },
+  "features": {
+    "pwa": "implemented",
+    "landingPage": "pending",
+    "onboarding": "pending",
+    "developerOptions": "implemented",
+    "ideas": "implemented",
+    "screenshotRendering": "partial",
+    "sampleData": "partial",
+    "animations": "implemented",
+    "plugins": "architecture-only",
+    "peerToPeer": "implemented",
+    "serverSwitcher": "pending"
+  },
+  "distribution": [
+    "github-releases",
+    "altsource",
+    "obtainium",
+    "x-center-web"
+  ],
+  "quality": {
+    "workflow": ".github/workflows/uads-quality.yml",
+    "performance": "config/performance-budgets.json",
+    "release": "config/release-metadata.json"
+  },
+  "requirements": [
+    {
+      "id": "UADS-GIT-001",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "LICENSE"
+      ],
+      "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    },
+    {
+      "id": "UADS-ARCH-001",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "docs/ARCHITECTURE.md"
+      ],
+      "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    },
+    {
+      "id": "UADS-QA-001",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "docs/TESTING.md"
+      ],
+      "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    },
+    {
+      "id": "UADS-DOC-001",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "docs/INDEX.md"
+      ],
+      "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    },
+    {
+      "id": "UADS-PLAT-001",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "package-lock.json"
+      ],
+      "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    },
+    {
+      "id": "UADS-GIT-002",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "AGENTS.md"
+      ],
+      "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    },
+    {
+      "id": "UADS-GIT-003",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "AGENTS.md"
+      ],
+      "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    },
+    {
+      "id": "UADS-CI-001",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        ".github/workflows/build.yml"
+      ],
+      "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    },
+    {
+      "id": "UADS-CI-002",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        ".github/workflows/phone.yml"
+      ],
+      "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    },
+    {
+      "id": "UADS-PLAT-002",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "app.config.js"
+      ],
+      "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    },
+    {
+      "id": "UADS-PLAT-003",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "docs/FEATURES.md"
+      ],
+      "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    },
+    {
+      "id": "UADS-DATA-001",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "docs/SYNC.md"
+      ],
+      "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    },
+    {
+      "id": "UADS-ARCH-002",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "docs/PLUGIN_SYSTEM.md"
+      ],
+      "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    },
+    {
+      "id": "UADS-DIST-001",
+      "applicability": "Conditional",
+      "state": "Pending",
+      "evidence": [
+        "docs/RELEASES.md"
+      ],
+      "notes": "Conditional on authorized store distribution or restricted plugin functionality. Current direct packages do not enable a general plugin runtime."
+    },
+    {
+      "id": "UADS-DEV-001",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "docs/FEATURES.md"
+      ],
+      "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    },
+    {
+      "id": "UADS-REL-001",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "CHANGELOG.md"
+      ],
+      "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    },
+    {
+      "id": "UADS-UI-001",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "src/components/NativePanels.tsx"
+      ],
+      "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    },
+    {
+      "id": "UADS-UI-002",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "docs/TESTING.md"
+      ],
+      "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    },
+    {
+      "id": "UADS-DATA-002",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "src/remote/types.ts"
+      ],
+      "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    },
+    {
+      "id": "UADS-DATA-003",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "scripts/expo/verify-demo-bridge.mjs"
+      ],
+      "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    },
+    {
+      "id": "UADS-SEC-001",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "docs/SECURITY.md"
+      ],
+      "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    },
+    {
+      "id": "UADS-QA-002",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "docs/TESTING.md"
+      ],
+      "notes": "Physical Apple TV pairing, receiver advertisement and native interaction checks remain open."
+    },
+    {
+      "id": "UADS-QA-003",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "scripts/check-host.sh"
+      ],
+      "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    },
+    {
+      "id": "UADS-OPS-001",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "docs/operations/DISASTER_RECOVERY.md"
+      ],
+      "notes": "Deployment and rollback procedures exist. No production rollback exercise was performed."
+    },
+    {
+      "id": "UADS-DIST-002",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "distribution"
+      ],
+      "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    },
+    {
+      "id": "UADS-QA-004",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "docs/TESTING.md"
+      ],
+      "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    },
+    {
+      "id": "UADS-SEC-002",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "AGENTS.md"
+      ],
+      "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    },
+    {
+      "id": "UADS-DOC-002",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "docs/reports"
+      ],
+      "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    },
+    {
+      "id": "UADS-ARCH-003",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "AGENTS.md"
+      ],
+      "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    },
+    {
+      "id": "UADS-ARCH-004",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "AGENTS.md"
+      ],
+      "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    },
+    {
+      "id": "UADS-REL-002",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "docs/features/UPDATES.md"
+      ],
+      "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    },
+    {
+      "id": "UADS-WEB-001",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "scripts/expo/verify-pwa-update.mjs"
+      ],
+      "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    },
+    {
+      "id": "UADS-UI-003",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "docs/BRANDING.md"
+      ],
+      "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    },
+    {
+      "id": "UADS-GIT-004",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "AGENTS.md"
+      ],
+      "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    },
+    {
+      "id": "UADS-DEV-002",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "docs/IDEAS.json"
+      ],
+      "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    },
+    {
+      "id": "UADS-WEB-002",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "deploy/aurea.nginx.conf"
+      ],
+      "notes": "Expo Web and X-Center configuration exist. Root first-visit landing and remembered-entry flow remain open."
+    },
+    {
+      "id": "UADS-UI-004",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "scripts/expo/capture.mjs"
+      ],
+      "notes": "Web demo capture exists. First-run onboarding, developer capture UI and platform-specific screenshots remain open."
+    },
+    {
+      "id": "UADS-DEV-003",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "server/peer.cjs"
+      ],
+      "notes": "Hosted signaling defaults exist. Deployment-configurable clients and the developer server switcher remain open. Local television selection is an essential product feature."
+    },
+    {
+      "id": "UADS-DIST-003",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "distribution"
+      ],
+      "notes": "Alternative metadata exists. Root landing downloads, badges and install entry need implementation and verification."
+    },
+    {
+      "id": "UADS-REL-003",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        ".github/workflows/build.yml"
+      ],
+      "notes": "Native validation and distribution jobs exist. Release screenshot refresh and commit-derived public notes need verification or implementation."
+    },
+    {
+      "id": "UADS-QA-005",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "uads.json"
+      ],
+      "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    },
+    {
+      "id": "UADS-QA-006",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "config/performance-budgets.json"
+      ],
+      "notes": "TypeScript, native lint and regression checks exist. Changed coverage, complete accessibility and native performance checks need measurements."
+    },
+    {
+      "id": "UADS-SEC-003",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "docs/SECURITY.md"
+      ],
+      "notes": "Trust-boundary checks exist. Security scans need CI results and dependency remediation where applicable."
+    },
+    {
+      "id": "UADS-REL-004",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "config/release-metadata.json"
+      ],
+      "notes": "Existing artifacts are checked and publication is separated from source builds. Full publication receipts and partial-release recovery automation remain open."
+    },
+    {
+      "id": "UADS-OPS-002",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "docs/operations/MONITORING.md"
+      ],
+      "notes": "Runbooks and health probes describe operations. Alert delivery and recovery objectives need production verification."
+    },
+    {
+      "id": "UADS-QA-007",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "config/uads-requirements.json"
+      ],
+      "notes": "The registry indexes all 50 sections. Individual checks will gain finer IDs as evidence and gates are added."
+    },
+    {
+      "id": "UADS-QA-008",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "docs/UADS_REQUIREMENTS.md"
+      ],
+      "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    },
+    {
+      "id": "UADS-QA-009",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "scripts/validate-uads.py"
+      ],
+      "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    },
+    {
+      "id": "UADS-CI-003",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        ".github/workflows/uads-quality.yml"
+      ],
+      "notes": "A source quality workflow is configured. Full release screenshot and distribution recovery orchestration remain open."
+    },
+    {
+      "id": "UADS-QA-010",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "docs/reports/compliance"
+      ],
+      "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    }
+  ],
+  "exceptions": []
+}

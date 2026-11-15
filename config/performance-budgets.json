@@ -1,0 +1,18 @@
+{
+  "web": {
+    "largestContentfulPaintMs": 2500,
+    "interactionToNextPaintMs": 200,
+    "cumulativeLayoutShift": 0.1,
+    "exportedJavaScriptBytes": 2200000
+  },
+  "androidTv": {
+    "coldStartToFocusableHomeMs": 6000,
+    "inputToFocusMs": 150
+  },
+  "phone": {
+    "coldStartToInteractiveMs": 4000
+  },
+  "signaling": {
+    "readinessResponseMs": 1000
+  }
+}

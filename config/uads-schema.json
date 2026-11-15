@@ -1,0 +1,349 @@
+{
+  "type": "object",
+  "required": [
+    "uadsVersion",
+    "manifestVersion",
+    "project",
+    "features",
+    "distribution",
+    "quality",
+    "requirements",
+    "exceptions"
+  ],
+  "properties": {
+    "uadsVersion": {
+      "enum": [
+        "sections-1-50"
+      ]
+    },
+    "manifestVersion": {
+      "enum": [
+        1
+      ]
+    },
+    "project": {
+      "type": "object",
+      "required": [
+        "name",
+        "repository",
+        "profiles",
+        "framework",
+        "platforms",
+        "hosting"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "repository": {
+          "type": "string",
+          "pattern": "^[\\w.-]+/[\\w.-]+$"
+        },
+        "profiles": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "mobile-app",
+              "desktop-app",
+              "web-app",
+              "web-service",
+              "backend-service",
+              "cli-tool",
+              "library",
+              "hybrid"
+            ]
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "framework": {
+          "type": "string",
+          "minLength": 1
+        },
+        "platforms": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "android-tv",
+              "android",
+              "ios",
+              "web",
+              "windows",
+              "macos",
+              "linux"
+            ]
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "hosting": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "features": {
+      "type": "object",
+      "required": [
+        "pwa",
+        "landingPage",
+        "onboarding",
+        "developerOptions",
+        "ideas",
+        "screenshotRendering",
+        "sampleData",
+        "animations",
+        "plugins",
+        "peerToPeer",
+        "serverSwitcher"
+      ],
+      "properties": {
+        "pwa": {
+          "enum": [
+            "pending",
+            "partial",
+            "implemented",
+            "architecture-only",
+            "not-applicable"
+          ]
+        },
+        "landingPage": {
+          "enum": [
+            "pending",
+            "partial",
+            "implemented",
+            "architecture-only",
+            "not-applicable"
+          ]
+        },
+        "onboarding": {
+          "enum": [
+            "pending",
+            "partial",
+            "implemented",
+            "architecture-only",
+            "not-applicable"
+          ]
+        },
+        "developerOptions": {
+          "enum": [
+            "pending",
+            "partial",
+            "implemented",
+            "architecture-only",
+            "not-applicable"
+          ]
+        },
+        "ideas": {
+          "enum": [
+            "pending",
+            "partial",
+            "implemented",
+            "architecture-only",
+            "not-applicable"
+          ]
+        },
+        "screenshotRendering": {
+          "enum": [
+            "pending",
+            "partial",
+            "implemented",
+            "architecture-only",
+            "not-applicable"
+          ]
+        },
+        "sampleData": {
+          "enum": [
+            "pending",
+            "partial",
+            "implemented",
+            "architecture-only",
+            "not-applicable"
+          ]
+        },
+        "animations": {
+          "enum": [
+            "pending",
+            "partial",
+            "implemented",
+            "architecture-only",
+            "not-applicable"
+          ]
+        },
+        "plugins": {
+          "enum": [
+            "pending",
+            "partial",
+            "implemented",
+            "architecture-only",
+            "not-applicable"
+          ]
+        },
+        "peerToPeer": {
+          "enum": [
+            "pending",
+            "partial",
+            "implemented",
+            "architecture-only",
+            "not-applicable"
+          ]
+        },
+        "serverSwitcher": {
+          "enum": [
+            "pending",
+            "partial",
+            "implemented",
+            "architecture-only",
+            "not-applicable"
+          ]
+        }
+      }
+    },
+    "distribution": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true,
+      "minItems": 1
+    },
+    "quality": {
+      "type": "object",
+      "required": [
+        "workflow",
+        "performance",
+        "release"
+      ],
+      "properties": {
+        "workflow": {
+          "type": "string",
+          "minLength": 1
+        },
+        "performance": {
+          "type": "string",
+          "minLength": 1
+        },
+        "release": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "applicability",
+          "state",
+          "evidence",
+          "notes"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^UADS-[A-Z]+-[0-9]{3}$"
+          },
+          "applicability": {
+            "enum": [
+              "Required",
+              "Conditional",
+              "Optional",
+              "Not Applicable",
+              "Approved Exception"
+            ]
+          },
+          "state": {
+            "enum": [
+              "Pending",
+              "Passed",
+              "Failed",
+              "Blocked",
+              "Not Applicable",
+              "Waived"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true,
+            "minItems": 1
+          },
+          "notes": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "uniqueItems": true,
+      "minItems": 1
+    },
+    "exceptions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "platforms",
+          "reason",
+          "risks",
+          "mitigations",
+          "approval",
+          "approvedOn",
+          "reviewOn",
+          "reconsiderWhen"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^UADS-[A-Z]+-[0-9]{3}$"
+          },
+          "platforms": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true,
+            "minItems": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "risks": {
+            "type": "string",
+            "minLength": 1
+          },
+          "mitigations": {
+            "type": "string",
+            "minLength": 1
+          },
+          "approval": {
+            "type": "string",
+            "minLength": 1
+          },
+          "approvedOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "reviewOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "reconsiderWhen": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

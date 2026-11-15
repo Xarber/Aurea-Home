@@ -23,6 +23,10 @@ concurrency:
   group: mitv-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 jobs:
+  uads:
+    if: github.event_name != 'pull_request'
+    uses: ./.github/workflows/uads-quality.yml
+
   ios:
     name: iOS companion
     if: github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || inputs.include_ios)
@@ -39,7 +43,7 @@ jobs:
           node-version: '24'
           cache: npm
           cache-dependency-path: package-lock.json
-      - run: npm ci && npm run build
+      - run: npm ci && npm run build && python3 scripts/ci/web_budget.py
         env:
           EXPO_PUBLIC_SOURCE_COMMIT: ${{ github.sha }}
       - uses: actions/upload-artifact@v5
@@ -305,7 +309,7 @@ jobs:
   publish:
     name: Publish validated channel
     if: github.event_name != 'pull_request' && (github.ref_name == 'main' || github.ref_name == 'beta') && (github.event_name != 'workflow_dispatch' || (inputs.android_target == 'all' && inputs.include_ios))
-    needs: [checks, web-validation, android, source, ios]
+    needs: [uads, checks, web-validation, android, source, ios]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
