@@ -68,3 +68,5 @@ The repository collection is public and initially empty. App collections are pri
 ## UADS compliance
 
 Before substantial changes, inspect `uads.json`, [the requirements registry](docs/UADS_REQUIREMENTS.md), existing evidence, and the scoped quality gates. Run `python scripts/validate-uads.py` with jsonschema 4.25.1. Record executed checks and evidence separately from declarations. Keep tests, deployment defaults and release evidence aligned with the actual project. Preserve user-selected TV addresses because connecting to local televisions is a core product feature.
+
+For substantial assignments, read and maintain [the active task queue](docs/ACTIVE_TASKS.md). Append new requests in order, record blocked verification separately from unfinished implementation, and reconcile the queue with the original request before reporting completion.

@@ -38,7 +38,7 @@ def validate():
     Draft202012Validator.check_schema(schema)
     Draft202012Validator(schema, format_checker=FormatChecker()).validate(manifest)
     registry = indexed(read("config/uads-requirements.json")["requirements"])
-    check({record["section"] for record in registry.values()} == set(range(1, 51)),
+    check({record["section"] for record in registry.values()} == set(range(1, 53)),
           "Registry must cover every section of this baseline")
     declarations = indexed(manifest["requirements"])
     check(declarations.keys() == registry.keys(), "Manifest and registry IDs differ")

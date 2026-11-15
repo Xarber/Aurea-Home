@@ -1,5 +1,5 @@
 {
-  "uadsVersion": "sections-1-50",
+  "uadsVersion": "sections-1-52",
   "manifestVersion": 1,
   "project": {
     "name": "Aurea Home",
@@ -456,7 +456,7 @@
       "evidence": [
         "config/uads-requirements.json"
       ],
-      "notes": "The registry indexes all 50 sections. Individual checks will gain finer IDs as evidence and gates are added."
+      "notes": "The registry indexes all 52 sections. Individual checks will gain finer IDs as evidence and gates are added."
     },
     {
       "id": "UADS-QA-008",
@@ -493,6 +493,24 @@
         "docs/reports/compliance"
       ],
       "notes": "Project reference for assessment. Record execution evidence before marking Passed."
+    },
+    {
+      "id": "UADS-QA-011",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "docs/ACTIVE_TASKS.md"
+      ],
+      "notes": "Reconcile the complete requested scope against implementation and validation before closing an assignment."
+    },
+    {
+      "id": "UADS-QA-012",
+      "applicability": "Required",
+      "state": "Pending",
+      "evidence": [
+        "docs/ACTIVE_TASKS.md"
+      ],
+      "notes": "Preserve requested work in creation order and continue through actionable items while tracking blockers."
     }
   ],
   "exceptions": []

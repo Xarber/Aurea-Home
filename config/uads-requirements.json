@@ -198,9 +198,9 @@
     },
     {
       "id": "UADS-REL-001",
-      "title": "What\u2019s New and changelog",
+      "title": "What’s New and changelog",
       "section": 16,
-      "description": "Trace the what\u2019s new and changelog obligations to the authoritative UADS section.",
+      "description": "Trace the what’s new and changelog obligations to the authoritative UADS section.",
       "condition": "Applies to Aurea Home, its companion or hosted web service as relevant to this section.",
       "priority": "required",
       "verification": "Verify implementation on applicable targets and record results.",
@@ -650,6 +650,36 @@
       "gate": "source-quality",
       "dependencies": [],
       "exceptionPolicy": "Explicit scoped approval and review date required."
+    },
+    {
+      "id": "UADS-QA-011",
+      "title": "Full-scope implementation",
+      "section": 51,
+      "description": "Reconcile the complete requested scope against implementation and validation before closing an assignment.",
+      "condition": "Substantial ongoing Aurea development assignments.",
+      "priority": "required",
+      "verification": "Compare the task ledger with requests, commits, checks and remaining dependencies.",
+      "requiredEvidence": "docs/ACTIVE_TASKS.md",
+      "gate": "review",
+      "dependencies": [
+        "UADS-QA-010"
+      ],
+      "exceptionPolicy": "Explicit scoped approval required."
+    },
+    {
+      "id": "UADS-QA-012",
+      "title": "Persistent task queue",
+      "section": 52,
+      "description": "Preserve requested work in creation order and continue through actionable items while tracking blockers.",
+      "condition": "Substantial ongoing Aurea development assignments.",
+      "priority": "required",
+      "verification": "Compare the task ledger with requests, commits, checks and remaining dependencies.",
+      "requiredEvidence": "docs/ACTIVE_TASKS.md",
+      "gate": "review",
+      "dependencies": [
+        "UADS-QA-011"
+      ],
+      "exceptionPolicy": "Explicit scoped approval required."
     }
   ]
 }

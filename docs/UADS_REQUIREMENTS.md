@@ -1,6 +1,6 @@
 # Aurea UADS baseline
 
-This repository labels the supplied sections 1–50 as `sections-1-50` because no standards version number was supplied. The user's UADS text remains authoritative. The registry assigns stable IDs to all 50 section groups. Add individual check IDs beneath these groups when finer enforcement is needed.
+This repository labels the supplied sections 1–52 as `sections-1-52` because no standards version number was supplied. The user's UADS text remains authoritative. The registry assigns stable IDs to all 52 section groups. Add individual check IDs beneath these groups when finer enforcement is needed.
 
 Read `uads.json` for scope, applicability and evidence pointers. Pending entries are assessments in progress. Passing structural validation does not verify the referenced product behavior.
 
