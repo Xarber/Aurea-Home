@@ -29,6 +29,22 @@ jobs:
       - name: PWA update and offline validation
         if: ${{ !cancelled() }}
         run: node scripts/expo/verify-pwa-update.mjs
+      - name: Capture browser demo screenshots
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory dist &
+          preview_pid=$!
+          trap 'kill "$preview_pid" 2>/dev/null' EXIT
+          for attempt in {1..20}; do
+            if curl --fail --silent http://127.0.0.1:8765/ >/dev/null; then break; fi
+            sleep 1
+          done
+          node scripts/expo/capture-web-screenshots.mjs
+      - name: Retain browser screenshot candidates
+        uses: actions/upload-artifact@v5
+        with:
+          name: Aurea-web-screenshots-${{ github.sha }}
+          path: build/web-screenshots/
+          if-no-files-found: error
       - name: Retain browser failure evidence
         if: failure()
         uses: actions/upload-artifact@v5

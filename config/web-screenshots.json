@@ -1,0 +1,22 @@
+[
+  {
+    "id": "home",
+    "route": "/?demo=1",
+    "ready": "[data-nav='dock:inputs']:focus",
+    "src": "/screenshots/home.png",
+    "width": 1440,
+    "height": 900,
+    "formFactor": "wide",
+    "label": "TV launcher preview"
+  },
+  {
+    "id": "remote",
+    "route": "/?remote=1&preview=1",
+    "ready": "[data-nav='phone-tab-remote']",
+    "src": "/screenshots/remote.png",
+    "width": 390,
+    "height": 844,
+    "formFactor": "narrow",
+    "label": "Phone remote preview"
+  }
+]

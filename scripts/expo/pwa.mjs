@@ -4,7 +4,15 @@ import {createHash} from 'node:crypto';
 const root='dist';
 async function files(dir){const result=[];for(const name of await readdir(dir)){if(name.startsWith('.'))continue;const path=dir+'/'+name;if((await stat(path)).isDirectory())result.push(...await files(path));else result.push(path);}return result;}
 const icons=[{src:'/branding/icon-192.png',sizes:'192x192',type:'image/png',purpose:'any'},{src:'/branding/icon-512.png',sizes:'512x512',type:'image/png',purpose:'any'},{src:'/branding/maskable-512.png',sizes:'512x512',type:'image/png',purpose:'maskable'}];
-for(const remote of [false,true]){const manifest={id:remote?'/aurea-remote':'/aurea-home',name:remote?'Aurea Remote':'Aurea Home',short_name:remote?'Aurea Remote':'Aurea Home',description:remote?'Your TVs, apps, inputs and music in one remote.':'A calm home for your television.',lang:'en',start_url:remote?'/?remote=1':'/',scope:'/',display:'standalone',background_color:'#0d111b',theme_color:'#0d111b',icons,screenshots:[remote?{src:'/screenshots/remote.png',sizes:'390x844',type:'image/png',form_factor:'narrow',label:'Phone remote'}:{src:'/screenshots/home.png',sizes:'1440x900',type:'image/png',form_factor:'wide',label:'Aurea Home preview'}],shortcuts:[{name:'Remote',url:'/?remote=1',icons:[icons[0]]},{name:'Home preview',url:'/?demo=1',icons:[icons[0]]}]};await writeFile(root+'/'+(remote?'remote.webmanifest':'manifest.webmanifest'),JSON.stringify(manifest));}
+const screenshots = JSON.parse(await readFile('config/web-screenshots.json', 'utf8'));
+for (const {src, width, height} of screenshots) {
+  const image = await readFile(root + src);
+  if (image.subarray(12, 16).toString() !== 'IHDR' ||
+      image.readUInt32BE(16) !== width || image.readUInt32BE(20) !== height) {
+    throw new Error(`Screenshot dimensions do not match the manifest: ${src}`);
+  }
+}
+for(const remote of [false,true]){const manifest={id:remote?'/aurea-remote':'/aurea-home',name:remote?'Aurea Remote':'Aurea Home',short_name:remote?'Aurea Remote':'Aurea Home',description:remote?'Your TVs, apps, inputs and music in one remote.':'A calm home for your television.',lang:'en',start_url:remote?'/?remote=1':'/',scope:'/',display:'standalone',background_color:'#0d111b',theme_color:'#0d111b',icons,screenshots:screenshots.filter(({id})=>id===(remote?'remote':'home')).map(({src,width,height,formFactor,label})=>({src,sizes:`${width}x${height}`,type:'image/png',form_factor:formFactor,label})),shortcuts:[{name:'Remote',url:'/?remote=1',icons:[icons[0]]},{name:'Home preview',url:'/?demo=1',icons:[icons[0]]}]};await writeFile(root+'/'+(remote?'remote.webmanifest':'manifest.webmanifest'),JSON.stringify(manifest));}
 const version=JSON.parse(await readFile('app.json','utf8')).expo.version;
 const currentRelease=JSON.parse(await readFile('app/src/main/assets/release-history.json','utf8')).releases[0];
 const release={version,commit:process.env.EXPO_PUBLIC_SOURCE_COMMIT??'local',highlights:currentRelease.features.map(feature=>({icon:feature.icon,text:feature.label.en+': '+feature.detail.en})),fixes:[currentRelease.fixes.en]};await writeFile(root+'/release.json',JSON.stringify(release));

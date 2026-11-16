@@ -7,3 +7,5 @@ The hosted shell only applies to the clean root at `aurea.xcenter.it`. The direc
 The page queries the public GitHub stable-release endpoint without credentials. It displays only uploaded APK and IPA files matching the release tag, expected package naming and exact GitHub asset URL. It excludes drafts, prereleases and metadata tags. The unsigned iOS download requires external signing. The browser install action depends on the browser's install event. Safari on iPhone and iPad also has a manual installation path.
 
 The introduction uses existing screenshots captured from the web demo. Native onboarding, current device-specific captures and installation through external clients still require verification.
+
+Browser screenshot routes and device dimensions are defined in `config/web-screenshots.json`. With the Expo export served locally, run `node scripts/expo/capture-web-screenshots.mjs all` to render isolated candidates into `build/web-screenshots`. Review images before replacing their public counterparts. The production export checks public image dimensions, and the browser workflow retains fresh candidates by commit.
