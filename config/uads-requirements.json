@@ -96,7 +96,7 @@
       "id": "UADS-CI-001",
       "title": "Remote reproducible builds",
       "section": 8,
-      "description": "Trace the remote reproducible builds obligations to the authoritative UADS section.",
+      "description": "Start application builds only after independent implementation and preparation are complete. Record the build dependency in the active queue and prefer the smallest sufficient verification build.",
       "condition": "Applies to Aurea Home, its companion or hosted web service as relevant to this section.",
       "priority": "required",
       "verification": "Verify implementation on applicable targets and record results.",

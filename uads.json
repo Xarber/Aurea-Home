@@ -22,7 +22,7 @@
   "features": {
     "pwa": "implemented",
     "landingPage": "implemented",
-    "onboarding": "pending",
+    "onboarding": "partial",
     "developerOptions": "implemented",
     "ideas": "implemented",
     "screenshotRendering": "partial",
@@ -30,7 +30,7 @@
     "animations": "implemented",
     "plugins": "architecture-only",
     "peerToPeer": "implemented",
-    "serverSwitcher": "pending"
+    "serverSwitcher": "partial"
   },
   "distribution": [
     "github-releases",
@@ -376,7 +376,7 @@
       "evidence": [
         "scripts/expo/capture.mjs"
       ],
-      "notes": "Hosted web first-run introduction and replay are implemented. Native onboarding, developer capture UI and matching platform screenshots remain open."
+      "notes": "Web, TV and phone introductions exist. Phone Developer Options can open isolated sample screens. Native runtime checks, in-app capture/export and matching platform screenshots remain open."
     },
     {
       "id": "UADS-DEV-003",
@@ -385,7 +385,7 @@
       "evidence": [
         "server/peer.cjs"
       ],
-      "notes": "Hosted signaling defaults exist. Deployment-configurable clients and the developer server switcher remain open. Local television selection is an essential product feature."
+      "notes": "Expo supports a deployment endpoint and an isolated temporary developer switcher. Native TV host configuration, persistent custom presets and end-to-end custom peer tests remain open."
     },
     {
       "id": "UADS-DIST-003",
@@ -394,7 +394,7 @@
       "evidence": [
         "distribution"
       ],
-      "notes": "Stable native downloads, PWA installation entry and alternative-store links are implemented. Official image badges, platform installation and production link verification remain open."
+      "notes": "Stable native downloads, PWA installation entry and alternative-store links are implemented. Official image badges are wired into the landing page and README. Platform installation and deployed link verification remain open."
     },
     {
       "id": "UADS-REL-003",

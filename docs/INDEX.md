@@ -1,4 +1,12 @@
-# Documentation map
+# Aurea Home project context
+
+Aurea Home is an Android TV launcher with an AirPlay receiver. Aurea Remote controls apps, inputs and playback from iOS, Android and the web. The hosted site also provides a browser demo.
+
+**Start here.** [App.tsx](../App.tsx) chooses the native launcher, companion or web demo. [TVHome.tsx](../TVHome.tsx) and [PhoneRemoteApp.tsx](../src/remote/PhoneRemoteApp.tsx) implement the shared Expo interfaces. The [TV platform bridge](../app/src/main/java/it/xarber/tvhome/TVPlatform.java) owns launcher operations. The [PeerServer](../server/peer.cjs) provides hosted signaling.
+
+**Run and verify.** Use the [development guide](DEVELOPMENT.md) to run the preview. `npm run typecheck` and `npm test` run focused source checks. The [testing guide](TESTING.md) covers browser, native and device checks. Consult the [active queue](ACTIVE_TASKS.md) before building and the [status page](STATUS.md) for implementation limits.
+
+## Documentation map
 
 - [Expo application base, preview and wallpapers](features/EXPO_DEMO.md).
 
@@ -53,3 +61,5 @@ See [phone remote](features/PHONE_REMOTE.md), [PWA](features/PWA.md), and [brand
 - [iPhone launch, keyboard and private preview validation](reports/2026-11-06-ios-keyboard-preview.md).
 
 - [Hosted web landing and introduction](features/WEB_ENTRY.md)
+
+- [Native introduction and screenshot previews](features/NATIVE_INTRODUCTION.md)
