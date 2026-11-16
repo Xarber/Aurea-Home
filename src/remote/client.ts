@@ -22,8 +22,21 @@ export class RemoteClient {
  private requests=new Set<AbortController>();
  private readonly trust:TrustStore;
  private direct?:DirectSystem;
- constructor(trust:TrustStore,direct?:DirectSystem){this.trust=trust;this.direct=direct;direct?.subscribe(()=>{if(!this.fixture)this.update({system:direct.state(),...(this.snapshot.device?{device:{...this.snapshot.device,systemRemote:direct.state()}}:{})});});}
- subscribe=(listener:()=>void)=>{this.listeners.add(listener);return()=>{this.listeners.delete(listener);};};
+ private unsubscribeDirect?:()=>void;
+ constructor(trust:TrustStore,direct?:DirectSystem){this.trust=trust;this.direct=direct;}
+ subscribe=(listener:()=>void)=>{
+  this.listeners.add(listener);
+  const direct=this.direct;
+  if(direct&&!this.unsubscribeDirect)this.unsubscribeDirect=direct.subscribe(()=>{
+   if(this.fixture)return;
+   const system=direct.state();
+   this.update({system,...(this.snapshot.device?{device:{...this.snapshot.device,systemRemote:system}}:{})});
+  });
+  return()=>{
+   this.listeners.delete(listener);
+   if(!this.listeners.size){this.unsubscribeDirect?.();this.unsubscribeDirect=undefined;}
+  };
+ };
  private update(value:Partial<RemoteSnapshot>){this.snapshot={...this.snapshot,...value};for(const listener of this.listeners)listener();}
  private cancel(){clearTimeout(this.timer);clearTimeout(this.systemTimer);for(const controller of this.requests)controller.abort();this.requests.clear();this.polling=false;this.generation++;this.iconQueue=[];this.iconsLoading.clear();this.lastArt=undefined;}
  connect(transport:Transport,session:Session,fixture=false){

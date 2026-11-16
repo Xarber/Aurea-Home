@@ -1,0 +1,9 @@
+# Native introduction and screenshot previews
+
+On a fresh Android TV install, Home opens a short D-pad introduction using the existing control panel. The first page explains the dock, inputs and app library. The second explains the held buttons and remote setup. The TV stores that it presented the introduction. Upgrades retain What's New behavior, and settings always offer Replay introduction.
+
+The iOS and Android phone remote offers a dismissible two-step introduction over the normal app. Completing or skipping it writes a device-local SecureStore flag. If storage is unavailable, the remote remains usable and the introduction can still be opened from Settings. Local television credentials and preferences have separate storage. The hosted web introduction has its own storage and navigation.
+
+Developer Options on the phone can enable Sample Data or open the Remote, Apps and Inputs screenshot previews. These use the existing in-memory preview transport. They do not issue commands to a paired TV or write sample records into the real TV vault. Use the operating system screenshot action to capture the selected screen. Native image capture/export inside Aurea and platform-specific introduction screenshots and frames remain outstanding. No production device data should be used for release captures.
+
+Native verification should cover first install, relaunch after dismissal, manual replay, large text, orientation, VoiceOver/TalkBack, reduced motion and TV D-pad navigation. Verify preview actions with a saved test television and confirm no commands reach that device.

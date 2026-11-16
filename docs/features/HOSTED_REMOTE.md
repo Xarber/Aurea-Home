@@ -31,3 +31,9 @@ direct system-control connection; browser WebRTC is a separate transport.
 `deploy/` contains reproducible nginx/systemd configuration. Preserve older static
 releases and the previous `current` symlink before activation. Existing Velunivo
 services, source edits and PeerServer must remain untouched.
+
+## Developer signaling configuration
+
+The Expo client and hosted demo peer use the HTTPS endpoint in `EXPO_PUBLIC_AUREA_PEER_ENDPOINT`, defaulting to `https://aurea.xcenter.it/peer`. The Android TV's embedded peer and public pairing links still use the project production domain. A custom environment must provide a matching host using the `aurea` PeerServer key. The production client keeps local TV pairing independent of signaling. A build configured with a custom endpoint uses an isolated hosted-only session, like the developer override, to avoid accidentally reusing credentials after an endpoint change.
+
+In the remote's Developer Options, open Signaling server to test an endpoint. Tests send a short HTTPS request for an anonymous PeerServer identity. They send no pairing credentials. Switching requires a successful test and an explicit action. It disconnects the current remote and opens a temporary developer session that accepts Aurea peer IDs, keeps its own temporary pairings in memory and does not open the production TV vault or direct Android system controls. Exit developer server to reconnect using the deployment defaults. Restarting restores the deployment defaults.

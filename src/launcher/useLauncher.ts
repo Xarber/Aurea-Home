@@ -57,7 +57,10 @@ export function useNativeLauncher(): Launcher {
     if(resumePairing.current){resumePairing.current=false;if(next.paired.pending)setPanel('pair');}
     if (first.current) {
       setSelected(next.preferences.dock[0]!);
-      if (next.releasePending&&!next.paired.pending) setPanel('whatsnew');
+      if (!next.paired.pending) {
+        if (next.releasePending) setPanel('whatsnew');
+        else if (next.introductionPending) setPanel('introduction');
+      }
       tv.ready();
       first.current = false;
     }

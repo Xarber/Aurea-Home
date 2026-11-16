@@ -54,6 +54,11 @@ export function NativePanels({
     developer = access.enabled,
     revealed = access.revealed;
   useEffect(()=>{if(!developer&&(demo.panel==='developer'||demo.panel==='diagnostics'||demo.panel==='ideas'))demo.setPanel('control');},[developer,demo.panel]);
+  useEffect(() => {
+    if (demo.panel !== 'introduction' || !demo.snapshot?.introductionPending) return;
+    const frame = requestAnimationFrame(() => {void demo.execute('introductionSeen').catch(() => {});});
+    return () => cancelAnimationFrame(frame);
+  }, [demo.panel, demo.snapshot?.introductionPending, demo.execute]);
   const panel = demo.panel ?? retained,
     snapshot = demo.snapshot;
   useEffect(() => {
@@ -113,6 +118,8 @@ export function NativePanels({
   const app = demo.entry(id);
   const titles: Record<string, string> = {
     control: 'Control Center',
+    introduction: 'Welcome to Aurea Home',
+    introductionControls: 'Explore Aurea Home',
     whatsnew: 'What’s New',
     wallpapers: 'Wallpapers',
     network: 'Network',
@@ -195,6 +202,17 @@ export function NativePanels({
             }
           />
         )}
+        {(panel === 'introduction' || panel === 'introductionControls') && <>
+          <Image source={require('../../public/branding/icon-180.png')} style={{width:52,height:52,borderRadius:12,alignSelf:'center',marginVertical:12}} accessibilityLabel="Aurea Home"/>
+          {panel === 'introduction' ? <>
+            {text('Use the dock to open your favorite apps. Press down to see inputs, then press down again for the app library.')}
+            {row('Next', 'apps', () => demo.setPanel('introductionControls'))}
+          </> : <>
+            {text('Hold OK for an app’s options. Hold Back to open Control Center and connect your phone remote.')}
+            {row('Get Started', 'check', demo.close)}
+          </>}
+          {row('Skip introduction', 'close', demo.close)}
+        </>}
         {panel === 'control' && (
           <>
             {row(
@@ -405,6 +423,7 @@ export function NativePanels({
               versionTap,
             )}
             {text(snapshot.build.commit + ' · ' + snapshot.build.channel)}
+            {row('Replay introduction', 'info', () => demo.setPanel('introduction'))}
             {revealed &&
               row(
                 'Developer options',

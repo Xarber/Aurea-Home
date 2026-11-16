@@ -1,4 +1,12 @@
 {
+  "Welcome to Aurea Home": "Ti diamo il benvenuto in Aurea Home",
+  "Explore Aurea Home": "Esplora Aurea Home",
+  "Use the dock to open your favorite apps. Press down to see inputs, then press down again for the app library.": "Usa il dock per aprire le tue app preferite. Premi Giù per vedere le sorgenti, poi premi di nuovo Giù per la libreria delle app.",
+  "Hold OK for an app’s options. Hold Back to open Control Center and connect your phone remote.": "Tieni premuto OK per le opzioni di un’app. Tieni premuto Indietro per aprire il Centro di controllo e collegare il telecomando sul telefono.",
+  "Replay introduction": "Rivedi l’introduzione",
+  "Skip introduction": "Salta l’introduzione",
+  "Get Started": "Inizia",
+  "Next": "Avanti",
   "Apple TV rejected pairing authorization (HTTP 470). The PIN alone may not resolve this tvOS issue.": "Apple TV ha rifiutato l’autorizzazione (HTTP 470). Il solo PIN potrebbe non risolvere questo problema di tvOS.",
   "Apple TV returned an error": "Apple TV ha restituito un errore",
   "Apple TV could not verify the pairing code. Start a new attempt.": "Apple TV non ha verificato il codice. Avvia un nuovo tentativo.",

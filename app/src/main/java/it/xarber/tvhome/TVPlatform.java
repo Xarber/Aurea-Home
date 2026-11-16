@@ -65,8 +65,18 @@ public final class TVPlatform {
         AudioManager audio=context.getSystemService(AudioManager.class);int maximum=audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC);int volume=Math.round(100f*audio.getStreamVolume(AudioManager.STREAM_MUSIC)/Math.max(1,maximum));
         JSONObject music=receiverPlayback().state();Bitmap cover=receiverPlayback().cover();if(cover!=paletteArtwork){paletteArtwork=cover;palette=new JSONArray();for(int color:WavePalette.from(cover))palette.put(String.format(java.util.Locale.US,"#%06x",color&0xffffff));}music.put("colors",palette).put("dominance",WavePalette.dominance(cover));HomeRemoteServer remote=HomeRemoteService.server();
         result.put("preferences",preferences).put("music",music).put("network",network()).put("volume",volume).put("remoteConnected",remote!=null&&remote.hasActiveRemote()).put("paired",pairedState()).put("receiver",ReceiverSettings.state(context)).put("updates",updateState())
-          .put("releasePending",ReleaseHistory.previousVersion(context)<BuildConfig.VERSION_CODE).put("build",new JSONObject().put("version",BuildConfig.VERSION_NAME).put("code",BuildConfig.VERSION_CODE).put("commit",BuildConfig.SOURCE_COMMIT).put("channel",BuildConfig.BUILD_CHANNEL));
+          .put("introductionPending",introductionPending()).put("releasePending",ReleaseHistory.previousVersion(context)<BuildConfig.VERSION_CODE).put("build",new JSONObject().put("version",BuildConfig.VERSION_NAME).put("code",BuildConfig.VERSION_CODE).put("commit",BuildConfig.SOURCE_COMMIT).put("channel",BuildConfig.BUILD_CHANNEL));
         return result;
+    }
+    private boolean introductionPending() {
+        if (prefs.getBoolean("introduction-seen", false)) return false;
+        try {
+            android.content.pm.PackageInfo info = context.getPackageManager()
+                .getPackageInfo(context.getPackageName(), 0);
+            return info.firstInstallTime == info.lastUpdateTime;
+        } catch (android.content.pm.PackageManager.NameNotFoundException unavailable) {
+            return false;
+        }
     }
     private JSONObject network(){JSONObject value=new JSONObject();try{
         ConnectivityManager manager=context.getSystemService(ConnectivityManager.class);NetworkCapabilities capabilities=manager.getNetworkCapabilities(manager.getActiveNetwork());boolean connected=capabilities!=null;boolean wifi=connected&&capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI);
@@ -116,6 +126,7 @@ public final class TVPlatform {
         case "unpairAppleTV":main.post(paired::unpair);return safe("accepted",true);
         case "cancelPairing":main.post(paired::cancelPairing);return safe("accepted",true);
         case "pairedInput":String input=catalog.inputId(data.getString("id"));context.getSharedPreferences("paired_device_ui",0).edit().putString("input_id",input).apply();return pairedState();
+        case "introductionSeen":prefs.edit().putBoolean("introduction-seen",true).apply();return safe("accepted",true);
         case "releaseSeen":ReleaseHistory.markSeen(context);return safe("accepted",true);
         case "backupPreferences":main.post(()->{Activity host=activity.get();if(host instanceof MainActivity)((MainActivity)host).exportPreferences();});return safe("accepted",true);
         case "importPreferences":main.post(()->{Activity host=activity.get();if(host instanceof MainActivity)((MainActivity)host).importPreferences();});return safe("accepted",true);
