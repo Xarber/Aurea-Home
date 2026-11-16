@@ -42,3 +42,32 @@ test('system pairing names the selected TV and shows progress before its code is
  await page.route('**/api/**',async route=>{if(route.request().url().endsWith('/system/pair/start')){await pending;await route.fulfill({json:{pairing:true}});return;}await route.fulfill({json:route.request().url().endsWith('/state')?{schema:1,id,name:'Study television',observedAt:Date.now(),homeActive:true,systemRemote:{paired:false,status:'not_paired'},music:{active:false}}:{apps:[],inputs:[]}});});
  try{await page.goto('/?remote=1');await page.getByTestId('phone-address').fill('192.168.1.20');await page.locator('[data-nav="phone-connect"]').click();await page.getByTestId('phone-pin').fill('123456');await page.locator('[data-nav="phone-pair"]').click();await page.locator('[data-nav="phone-paired-done"]').click();await page.locator('[data-nav="phone-tab-tvs"]').click();await page.locator('[data-nav^="tv-system-"]').click();await expect(page.getByText('SYSTEM CONTROLS · Study television')).toBeVisible();await page.locator('[data-nav="phone-start-system"]').click();await expect(page.getByText(/Preparing a secure connection to Study television/)).toBeVisible();await expect(page.getByTestId('phone-system-pin')).toHaveCount(0);release();await expect(page.getByTestId('phone-system-pin')).toBeVisible();}finally{release();}
 });
+
+test('developer signaling tests, remembers a preset and switches only on confirmation', async ({page}) => {
+ const endpoint='https://staging.example.org/peer';
+ await page.route(endpoint+'/aurea/id', async route => {
+  expect(route.request().headers().authorization).toBeUndefined();
+  await route.fulfill({headers:{'access-control-allow-origin':'*'}, body:'e3da5477-694c-4534-97cf-e0d5d493a0cc'});
+ });
+ const control=(id:string)=>page.locator(`[data-nav="${id}"]`);
+ const unlock=async()=>{
+  await control('phone-settings').click();
+  for(let tap=0;tap<3;tap++) await control('phone-version').click();
+  await control('phone-developer-toggle').click();
+  await control('phone-signaling').click();
+ };
+ await page.goto('/?remote=1');
+ await unlock();
+ await page.getByLabel('Signaling endpoint').fill(endpoint);
+ await control('test-signaling').click();
+ await expect(page.getByText('The signaling server responded.')).toBeVisible();
+ await control('save-signaling').click();
+ await expect(page.getByText('Server preset saved.')).toBeVisible();
+ await expect(page.getByText('Deployment default')).toBeVisible();
+ await control('switch-signaling').click();
+ await expect(page.getByText('Developer server ·', {exact:false})).toBeVisible();
+ await page.reload();
+ await expect(page.getByText('Developer server ·', {exact:false})).toHaveCount(0);
+ await unlock();
+ await expect(control('signaling-preset-0')).toBeVisible();
+});
