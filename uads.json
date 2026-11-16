@@ -376,7 +376,7 @@
       "evidence": [
         "scripts/expo/capture.mjs"
       ],
-      "notes": "Web, TV and phone introductions exist. Phone Developer Options can open isolated sample screens. Native runtime checks, in-app capture/export and matching platform screenshots remain open."
+      "notes": "Web, TV and phone introductions exist. Phone Developer Options can open isolated sample screens. The phone has sample-only capture and share. Native runtime checks and matching platform screenshots remain open."
     },
     {
       "id": "UADS-DEV-003",
@@ -385,7 +385,7 @@
       "evidence": [
         "server/peer.cjs"
       ],
-      "notes": "Expo supports a deployment endpoint and an isolated temporary developer switcher. Native TV host configuration, persistent custom presets and end-to-end custom peer tests remain open."
+      "notes": "Expo supports a deployment endpoint and an isolated temporary developer switcher. Native TV host configuration, end-to-end custom peer tests and native verification of saved presets remain open."
     },
     {
       "id": "UADS-DIST-003",

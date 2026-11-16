@@ -1,3 +1,4 @@
+import {canCaptureSample,shareSampleScreenshot} from './captureSample';
 import {SignalingDiagnostics} from './peer/SignalingDiagnostics';
 import {RemoteIntroduction,useRemoteIntroduction} from '../onboarding/RemoteIntroduction';
 import {AppleTVControls} from '../components/AppleTVControls';
@@ -46,6 +47,8 @@ function PhoneRemoteScreen({preview, developerEndpoint, setDeveloperEndpoint}:{
 }){
  const remote=useRemote(preview,developerEndpoint),{client,state}=remote;const insets=useSafeAreaInsets();const screen=useWindowDimensions();
  const introduction=useRemoteIntroduction();
+ const [captureStatus,setCaptureStatus]=useState('');
+ const capturing=useRef(false);
  const {view:remoteView,setView:setRemoteView,touchpad,toggleTouchpad}=useRemotePreferences();
  const [touchActive,setTouchActive]=useState(false),[remoteHeight,setRemoteHeight]=useState(600),[voiceError,setVoiceError]=useState<string>();
  const wide=screen.width>=760&&screen.height>=600;
@@ -72,6 +75,19 @@ function PhoneRemoteScreen({preview, developerEndpoint, setDeveloperEndpoint}:{
  const connected=launcherConnected||system?.ready===true,music=launcherConnected?state.device?.music:undefined;const musicVisible=useMusicActivity(!!music?.active,!!music?.playing,music?.activityVisible);const title=state.device?.name??state.selected?.name??'Your television';
  useEffect(()=>{if(!musicVisible&&panel==='music')setPanel(null);},[musicVisible,panel]);
  const status=system?.ready&&!launcherConnected?'System controls connected · Home unavailable':{connected:'Connected',connecting:'Connecting…',pairing:'Pair your TV',reconnecting:'Reconnecting…',auth_required:'Pairing required',disconnected:'Not connected'}[state.status];
+ const shareCapture=async()=>{
+  if(capturing.current||!remote.preview||state.device?.provenance!=='simulated')return;
+  capturing.current=true;
+  setCaptureStatus('Preparing screenshot…');
+  try {
+   await shareSampleScreenshot(blurTarget);
+   setCaptureStatus('');
+  } catch {
+   setCaptureStatus('Couldn’t share this screenshot.');
+  } finally {
+   capturing.current=false;
+  }
+ };
  const openPanel=(next:string)=>{phoneAnchor.measure(next==='music'?'phone-activity-music':'phone-settings',value=>{setAnchor(value);setPanel(next);},{left:Math.max(20,bounds.width-66),top:insets.top+12,width:46,height:46});};
  useEffect(()=>{if(panel){setRetained(panel);return;}const timer=setTimeout(()=>setRetained(null),300);return()=>clearTimeout(timer);},[panel]);
  useEffect(()=>{if(Platform.OS==='web')document.title='Aurea Remote';},[]);
@@ -105,7 +121,7 @@ function PhoneRemoteScreen({preview, developerEndpoint, setDeveloperEndpoint}:{
  const row=(id:string,label:string,icon:IconName,action:()=>void,value?:string,group='phone-modal')=><FocusButton key={id} id={id} group={group} label={label} onPress={action} style={s.settingRow}><Icon name={icon} size={21}/><Text style={[s.label,{flex:1}]}>{label}</Text>{value&&<Text style={s.secondary}>{value}</Text>}</FocusButton>;
  if(launcherPreview)return <View style={{flex:1}}><TVHomeDemo onOpenRemote={()=>setLauncherPreview(false)} wallpaper={state.device?.wallpaper} targets={connected?state.catalog:undefined} onTarget={id=>{void client.launch(id);}}/><View style={{position:'absolute',top:insets.top+8,right:12}}><FocusButton id="exit-launcher-preview" group="preview" label="Return to remote" onPress={()=>setLauncherPreview(false)} style={s.roundButton}><Icon name="remote" size={22}/></FocusButton></View></View>;
  return <GlassTarget.Provider value={blurTarget}><View ref={phoneAnchor.root} nativeID="phone-remote-root" onTouchStart={developerAccess.interact} onLayout={e=>setBounds(e.nativeEvent.layout)} style={s.outside}>
- <BlurTargetView ref={blurTarget} style={{flex:1}}><Wallpaper id={state.device?.wallpaper?.id??'ink'} motion={state.device?.wallpaper?.motion??false}/><MusicTint dominance={music?.dominance} enabled={state.device?.wallpaper?.musicTint===true} playing={!!music?.playing&&connected} colors={music?.colors??['#e6eaf0','#929aa8']}/><View style={[s.root,{paddingTop:insets.top+12}]}><View nativeID="phone-remote-content" style={{flex:1}}>
+ <BlurTargetView key={remote.preview?'sample':'live'} ref={blurTarget} collapsable={false} style={{flex:1}}><Wallpaper id={state.device?.wallpaper?.id??'ink'} motion={state.device?.wallpaper?.motion??false}/><MusicTint dominance={music?.dominance} enabled={state.device?.wallpaper?.musicTint===true} playing={!!music?.playing&&connected} colors={music?.colors??['#e6eaf0','#929aa8']}/><View style={[s.root,{paddingTop:insets.top+12}]}><View nativeID="phone-remote-content" style={{flex:1}}>
  <View style={s.header}><View style={{flex:1}}><Text style={s.deviceName}>{title}</Text><View style={s.connection}><View style={[s.dot,{backgroundColor:connected?'#a6c4b3':'#a8a3b4'}]}/><Text style={s.secondary}>{developerEndpoint?'Developer server · ':''}{status}</Text></View></View>{button('phone-settings','Settings','settings',()=>openPanel('settings'))}</View>
 
  {state.device&&<View style={s.activityStrip}>{musicVisible&&music&&<FocusButton id="phone-activity-music" group="phone" label="Music activity" onSelect={()=>setHover(true)} onDeselect={()=>setHover(false)} onPress={()=>openPanel('music')} style={s.activity}><Waveform playing={!!music.playing&&connected} track={0} small colors={music.colors} bands={music.bands}/><SlidingDetails expanded={hover} width={170}>{state.artwork&&<Image source={{uri:state.artwork}} style={{width:25,height:25,borderRadius:7}}/>}<Text style={[s.label,{fontSize:12,flexShrink:1}]} numberOfLines={1}>{music.title||'Music'}</Text></SlidingDetails></FocusButton>}<FocusButton id="phone-connection" group="phone" label="TV connection" onPress={()=>setTab('tvs')} style={s.activity}><Icon name="remote" size={20}/></FocusButton></View>}
@@ -170,7 +186,11 @@ function PhoneRemoteScreen({preview, developerEndpoint, setDeveloperEndpoint}:{
  {privatePreviewEnabled&&displayed==='preview-feed'&&<PreviewPanel key={state.device?.id} client={client}/>}
  {displayed==='keyboard'&&<><Text style={s.description}>Type on your TV. Changes are sent immediately and are never saved.</Text><TextInput testID="tv-keyboard" accessibilityLabel="Text for TV" value={tvText} onChangeText={editTVText} autoFocus={Platform.OS!=='web'} autoCorrect={false} autoCapitalize="none" autoComplete="off" maxLength={1024} onSubmitEditing={()=>{void client.key('ok');}} style={s.input}/>{typingError&&<Text accessibilityRole="alert" style={s.error}>{typingError}</Text>}</>}
  {displayed==='screenshots'&&dev&&<>
-   <Text style={s.description}>Open a screen with sample data, then capture it using your device’s screenshot controls.</Text>
+   <Text style={s.description}>Choose a sample screen, then reopen Render Screenshots to share it. On the web, use your device’s screenshot controls.</Text>
+   {canCaptureSample&&remote.preview&&state.device?.provenance==='simulated'&&row(
+     'phone-share-capture','Capture and share this screen','wallpaper',()=>void shareCapture(),
+   )}
+   {captureStatus&&<Text accessibilityLiveRegion="polite" style={s.caption}>{captureStatus}</Text>}
    {(['remote','apps','inputs'] as const).map(screen=>row(
      'phone-capture-'+screen, screen==='remote'?'Remote':screen==='apps'?'Apps':'Inputs',
      screen==='remote'?'remote':screen==='apps'?'apps':'inputs',
