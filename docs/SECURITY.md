@@ -82,3 +82,7 @@ permitted. Public hosting and repository rename were explicitly requested.
 Developer Ideas stay local and are excluded from remote/PeerServer traffic and automatic publication. Explicit exports may contain personal notes; review them before sharing or adding them to this public repository. Schema validation is bounded and imports preserve local records by default. Details: [Ideas](features/IDEAS.md).
 
 App preview adds runtime TV MediaProjection approval and optional playback-audio permission; these are requested interactively and never granted by ADB. Capture has an ongoing Stop notification, owner-bound ephemeral ticket, encrypted media channel, bounded memory and hard/idle expiry. HDMI/secure surfaces and capture-disallowed audio are not bypassed. The primary LAN HTTP bootstrap retains its existing trusted-LAN limitation; use the HTTPS hosted primary for a fully encrypted authorization path. See [preview security](features/PRIVATE_APP_PREVIEW.md).
+
+## Account and device trust
+
+Aurea operates without user accounts. Saved TVs and Apple TV connections are local device credentials scoped to pairing. Hosted signaling coordinates a connection and does not provide an account, identity provider, or account-scoped synchronization. UADS §43 passkey, FIDO2 and U2F sign-in requirements are conditional on user accounts and do not apply to the current product. Pairing authentication, per-device credential isolation and revocation remain required. Reassess this decision before adding any persistent user identity.

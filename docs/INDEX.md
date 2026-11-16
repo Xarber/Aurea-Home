@@ -51,3 +51,5 @@ See [phone remote](features/PHONE_REMOTE.md), [PWA](features/PWA.md), and [brand
 - [Native remote keyboard](features/REMOTE_KEYBOARD.md).
 - [TV-approved private app preview](features/PRIVATE_APP_PREVIEW.md).
 - [iPhone launch, keyboard and private preview validation](reports/2026-11-06-ios-keyboard-preview.md).
+
+- [Hosted web landing and introduction](features/WEB_ENTRY.md)

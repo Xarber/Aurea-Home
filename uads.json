@@ -21,7 +21,7 @@
   },
   "features": {
     "pwa": "implemented",
-    "landingPage": "pending",
+    "landingPage": "implemented",
     "onboarding": "pending",
     "developerOptions": "implemented",
     "ideas": "implemented",
@@ -364,9 +364,10 @@
       "applicability": "Required",
       "state": "Pending",
       "evidence": [
-        "deploy/aurea.nginx.conf"
+        "deploy/aurea.nginx.conf",
+        "e2e/landing.spec.ts"
       ],
-      "notes": "Expo Web and X-Center configuration exist. Root first-visit landing and remembered-entry flow remain open."
+      "notes": "Root landing and remembered entry are implemented and exercised in Chromium. Production deployment is pending."
     },
     {
       "id": "UADS-UI-004",
@@ -375,7 +376,7 @@
       "evidence": [
         "scripts/expo/capture.mjs"
       ],
-      "notes": "Web demo capture exists. First-run onboarding, developer capture UI and platform-specific screenshots remain open."
+      "notes": "Hosted web first-run introduction and replay are implemented. Native onboarding, developer capture UI and matching platform screenshots remain open."
     },
     {
       "id": "UADS-DEV-003",
@@ -393,7 +394,7 @@
       "evidence": [
         "distribution"
       ],
-      "notes": "Alternative metadata exists. Root landing downloads, badges and install entry need implementation and verification."
+      "notes": "Stable native downloads, PWA installation entry and alternative-store links are implemented. Official image badges, platform installation and production link verification remain open."
     },
     {
       "id": "UADS-REL-003",
@@ -511,6 +512,15 @@
         "docs/ACTIVE_TASKS.md"
       ],
       "notes": "Preserve requested work in creation order and continue through actionable items while tracking blockers."
+    },
+    {
+      "id": "UADS-SEC-004",
+      "applicability": "Not Applicable",
+      "state": "Not Applicable",
+      "evidence": [
+        "docs/SECURITY.md"
+      ],
+      "notes": "Aurea has no user accounts. Device pairing continues to be governed by UADS-SEC-003. Reassess before introducing persistent user identity."
     }
   ],
   "exceptions": []

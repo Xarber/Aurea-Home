@@ -198,9 +198,9 @@
     },
     {
       "id": "UADS-REL-001",
-      "title": "What’s New and changelog",
+      "title": "What\u2019s New and changelog",
       "section": 16,
-      "description": "Trace the what’s new and changelog obligations to the authoritative UADS section.",
+      "description": "Trace the what\u2019s new and changelog obligations to the authoritative UADS section.",
       "condition": "Applies to Aurea Home, its companion or hosted web service as relevant to this section.",
       "priority": "required",
       "verification": "Verify implementation on applicable targets and record results.",
@@ -680,6 +680,21 @@
         "UADS-QA-011"
       ],
       "exceptionPolicy": "Explicit scoped approval required."
+    },
+    {
+      "id": "UADS-SEC-004",
+      "title": "Account-free default and passwordless account sign-in",
+      "section": 43,
+      "description": "Keep the core product account-free unless persistent user identity is essential. If accounts are introduced, implement account-scoped sync where needed and verify passwordless sign-in using passkeys and external FIDO2 keys.",
+      "condition": "Account-specific requirements apply only if Aurea introduces user accounts.",
+      "priority": "conditional",
+      "verification": "Review authentication and storage architecture. If accounts exist, verify platform passkeys and real external keys, recovery and revocation.",
+      "requiredEvidence": "docs/SECURITY.md",
+      "gate": "review",
+      "dependencies": [
+        "UADS-SEC-003"
+      ],
+      "exceptionPolicy": "Explicit scoped approval and review date required."
     }
   ]
 }
