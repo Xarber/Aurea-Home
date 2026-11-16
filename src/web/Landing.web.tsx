@@ -61,6 +61,10 @@ export function WebEntry({children}: {children: React.ReactNode}) {
   </>;
 }
 
+function obtainiumLink(source: object) {
+  return 'https://apps.obtainium.imranr.dev/redirect?r='+encodeURIComponent('obtainium://app/'+encodeURIComponent(JSON.stringify(source)));
+}
+
 function Landing({open,enter}:{open:React.RefObject<HTMLButtonElement|null>;enter:()=>void}) {
   const [assets,setAssets] = useState<ReturnType<typeof downloads>>();
   const [failed,setFailed] = useState(false);
@@ -116,10 +120,10 @@ function Landing({open,enter}:{open:React.RefObject<HTMLButtonElement|null>;ente
         <a href={repository+'/releases'}>All releases</a>
       </div>
       {!installed && !prompt && /iPhone|iPad/.test(navigator.userAgent) && <p>In Safari, use Share → Add to Home Screen.</p>}
-      <div className="aurea-actions">
-        {assets?.some(asset=>asset.format==='Unsigned IPA') && <a href={'https://altdirect.app/?url='+encodeURIComponent(repository+'/releases/download/sources-v1.0/altsource.json')}>Add to AltStore</a>}
-        {assets?.some(asset=>asset.platform==='Android TV') && <a href={'obtainium://app/'+encodeURIComponent(JSON.stringify(tvSource))}>Add TV to Obtainium</a>}
-        {assets?.some(asset=>asset.platform==='Android phone') && <a href={'obtainium://app/'+encodeURIComponent(JSON.stringify(phoneSource))}>Add phone to Obtainium</a>}
+      <div className="aurea-actions aurea-badges">
+        {assets?.some(asset=>asset.format==='Unsigned IPA') && <a href={'https://altdirect.app/?url='+encodeURIComponent(repository+'/releases/download/sources-v1.0/altsource.json')}><img src="/installation/altsource.png" alt="Add to AltStore"/></a>}
+        {assets?.some(asset=>asset.platform==='Android TV') && <a href={obtainiumLink(tvSource)}><img src="/installation/obtainium.png" alt="Add TV to Obtainium"/><span>Android TV</span></a>}
+        {assets?.some(asset=>asset.platform==='Android phone') && <a href={obtainiumLink(phoneSource)}><img src="/installation/obtainium.png" alt="Add phone to Obtainium"/><span>Android phone</span></a>}
         <a href={repository+'/blob/main/distribution/README.md'}>Installation help</a>
       </div>
     </section>
@@ -165,6 +169,8 @@ const styles = `
 .aurea-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:12px}
 .aurea-cards a{display:grid;gap:8px;padding:18px;background:#20253b;border:1px solid #414867;border-radius:15px;text-decoration:none}
 .aurea-cards span,.aurea-cards small{color:#d3d6e9}
+.aurea-badges>a:has(img){display:inline-flex;flex-direction:column;align-items:center;min-height:44px;text-decoration:none;font-size:14px}
+.aurea-badges img{height:45px;width:auto;max-width:100%;object-fit:contain}
 .aurea-landing footer{padding-block:38px}
 @media(max-width:730px){.aurea-hero{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:no-preference){.aurea-landing{animation:aurea-in .18s ease-out}.aurea-landing button{transition:transform .12s ease-out}}

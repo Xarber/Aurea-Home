@@ -57,3 +57,7 @@ Expo FileSystem, DocumentPicker, Sharing and Clipboard use the installed Expo 58
 ### Native preview peer runtime
 
 Phone companions use react-native-webrtc 155.0.1 (MIT) for data channels only, with its Jitsi WebRTC 155 native runtime (upstream WebRTC BSD notices apply). The TV host excludes this native dependency and retains its existing WebView peer host. No phone capture API is invoked. Sources: https://github.com/react-native-webrtc/react-native-webrtc and https://github.com/jitsi/webrtc.
+
+## Installation artwork
+
+`public/installation/altsource.png` is the AltSource Blue badge from [AltDirect](https://github.com/StikDebug/altdirect) (AGPL-3.0). `public/installation/obtainium.png` is the Obtainium badge from [Obtainium](https://github.com/ImranR98/Obtainium/blob/main/assets/graphics/badge_obtainium.png) (GPL-3.0). Both are displayed to identify the respective installation methods. See [LICENSE](../LICENSE) and the [GPL-3.0 text](../LICENSES/GPL-3.0.txt).

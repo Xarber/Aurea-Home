@@ -10,6 +10,12 @@
 
 <p align="center"><a href="https://github.com/Xarber/Aurea-Home/releases/latest"><strong>Download APK</strong></a> · <a href="https://aurea.xcenter.it">Web remote</a> · <a href="https://aurea.xcenter.it/?demo=1">Launcher demo</a> · <a href="docs/INSTALL.md">Install & restore</a> · <a href="docs/BUILDING.md">Build it yourself</a> · <a href="https://github.com/Xarber/Aurea-Home/issues">Report an issue</a></p>
 
+<p align="center">
+<a href="https://altdirect.app/?url=https%3A%2F%2Fgithub.com%2FXarber%2FAurea-Home%2Freleases%2Fdownload%2Fsources-v1.0%2Faltsource.json"><img src="public/installation/altsource.png" height="45" alt="Add to AltStore"></a>
+<a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium%3A%2F%2Fapp%2F%257B%2522id%2522%253A%2522it.xarber.mitvhome%2522%252C%2522url%2522%253A%2522https%253A%252F%252Fgithub.com%252FXarber%252FAurea-Home%2522%252C%2522author%2522%253A%2522Xarber%2522%252C%2522name%2522%253A%2522Aurea%2520Home%2522%252C%2522additionalSettings%2522%253A%2522%257B%255C%2522includePrereleases%255C%2522%253Afalse%252C%255C%2522apkFilterRegEx%255C%2522%253A%255C%2522%255EAurea-Home-.%252A-android-universal-.%252A%255C%255C%255C%255C.apk%2524%255C%2522%252C%255C%2522filterReleaseTitlesByRegEx%255C%2522%253A%255C%2522%255E%2528Aurea%257CMiTV%2529%2520Home%2520%255B0-9%255D%255C%2522%257D%2522%257D"><img src="public/installation/obtainium.png" height="45" alt="Add TV to Obtainium"></a>
+<a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium%3A%2F%2Fapp%2F%257B%2522id%2522%253A%2522it.xarber.aurea.remote%2522%252C%2522url%2522%253A%2522https%253A%252F%252Fgithub.com%252FXarber%252FAurea-Home%2522%252C%2522author%2522%253A%2522Xarber%2522%252C%2522name%2522%253A%2522Aurea%2520Remote%2522%252C%2522additionalSettings%2522%253A%2522%257B%255C%2522includePrereleases%255C%2522%253Afalse%252C%255C%2522apkFilterRegEx%255C%2522%253A%255C%2522%255EAurea-Remote-.%252A-android-phone-universal%255C%255C%255C%255C.apk%2524%255C%2522%252C%255C%2522filterReleaseTitlesByRegEx%255C%2522%253A%255C%2522%255E%2528Aurea%257CMiTV%2529%2520Home%2520%255B0-9%255D%255C%2522%257D%2522%257D"><img src="public/installation/obtainium.png" height="45" alt="Add phone to Obtainium"></a>
+</p>
+
 ![Stable Android launcher screenshot](docs/assets/home.png)
 
 The screenshot above shows an earlier native release. Open the hosted launcher demo for the current shared Expo interface.

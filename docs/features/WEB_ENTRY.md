@@ -9,3 +9,5 @@ The page queries the public GitHub stable-release endpoint without credentials. 
 The introduction uses existing screenshots captured from the web demo. Native onboarding, current device-specific captures and installation through external clients still require verification.
 
 Browser screenshot routes and device dimensions are defined in `config/web-screenshots.json`. With the Expo export served locally, run `node scripts/expo/capture-web-screenshots.mjs all` to render isolated candidates into `build/web-screenshots`. Review images before replacing their public counterparts. The production export checks public image dimensions, and the browser workflow retains fresh candidates by commit.
+
+The landing and README use the upstream [AltDirect badge](https://altdirect.app/assets/png/AltSource_Blue.png) and [Obtainium badge](https://wiki.obtainium.imranr.dev/deep_links/#badging-your-project). Obtainium's HTTPS redirect provides an installation fallback. Each link encodes the matching TV or phone configuration, keeping the package filters distinct. These links still require a compatible installed client to verify imports end to end.
