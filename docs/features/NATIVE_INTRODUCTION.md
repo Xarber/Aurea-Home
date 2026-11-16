@@ -7,3 +7,15 @@ The iOS and Android phone remote offers a dismissible two-step introduction over
 Developer Options on the phone can enable Sample Data or open the Remote, Apps and Inputs screenshot previews. These use the existing in-memory preview transport. They do not issue commands to a paired TV or write sample records into the real TV vault. Reopen Render Screenshots and choose Capture and share this screen on iOS or Android. The remote captures only its sample surface, outside the developer panel, and removes the temporary PNG after the share sheet closes. Web uses the operating system screenshot action or the browser capture script. Native capture/export still needs runtime verification. Platform-specific introduction screenshots and frames still need genuine simulator, emulator or device captures. No production device data should be used for release captures.
 
 Native verification should cover first install, relaunch after dismissal, manual replay, large text, orientation, VoiceOver/TalkBack, reduced motion and TV D-pad navigation. Verify preview actions with a saved test television and confirm no commands reach that device.
+
+## Runtime acceptance
+
+| Target | Required checks | Capture source |
+|---|---|---|
+| iPhone | Finish, skip and replay. Verify a large text size, VoiceOver and PNG sharing. | Remote, Apps and Inputs sample screens on a matching iPhone runtime |
+| iPad | Rotation, safe areas, bounded panel sizing and share sheet anchoring. | iPad layout in both supported orientations |
+| Android phone | First launch, Back dismissal, relaunch, replay, TalkBack and sample-only PNG sharing. | Pixel phone or matching installed test hardware |
+| Android tablet | Larger layout, rotation, keyboard and sample capture. | Pixel Tablet emulator or matching installed test hardware |
+| Android TV | First-install D-pad focus, Back navigation, replay, existing-user update behavior and restoration of dock focus. | Launcher while paired devices and private playback information are absent |
+
+Record the build commit, platform, runtime, viewport, observed outcome and screenshot location. Only use screenshots from the matching runtime in onboarding assets. A production candidate requires visual review before those captures replace public assets.
