@@ -40,14 +40,14 @@ jobs:
           done
           node scripts/expo/capture-web-screenshots.mjs
       - name: Retain browser screenshot candidates
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: Aurea-web-screenshots-${{ github.sha }}
           path: build/web-screenshots/
           if-no-files-found: error
       - name: Retain browser failure evidence
         if: failure()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: Aurea-web-test-results-${{ github.sha }}
           path: |
