@@ -37,7 +37,7 @@ jobs:
           distribution: temurin
           java-version: '21'
       - run: npm ci
-      - run: npm run typecheck && npm test && scripts/check-host.sh
+      - run: npm run typecheck && npm test && npm --prefix server test && scripts/check-host.sh
   dependency-audit:
     runs-on: ubuntu-24.04
     timeout-minutes: 10

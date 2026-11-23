@@ -94,6 +94,11 @@ public final class TVPlatform {
         case "image":return catalog.image(data.getString("id"),data.optString("kind","icon"));
         case "artwork":return receiverPlayback().artwork();
         case "launch":catalog.launch(data.getString("id"));return safe("accepted",true);
+        case "accountChallenge":return accountChallenge();
+        case "accountQr":
+            String code=data.getString("code");
+            if(!code.matches("[A-Z0-9-]{6,10}"))throw new IllegalArgumentException("invalid_code");
+            return safe("qr",qrImage("https://id.xcenter.it/device?code="+code));
         case "preferences":savePreferences(data);return snapshot(false);
         case "wifiName":main.post(()->{Activity host=activity.get();if(host instanceof MainActivity)((MainActivity)host).requestWifiName();});return safe("accepted",true);
         case "navigationTrace":String direction=data.optString("direction"),from=data.optString("from"),to=data.optString("to");if(direction.matches("up|down|left|right")&&from.matches("none|header|modal|page-[0-2]")&&to.matches("none|header|modal|page-[0-2]"))android.util.Log.i("AureaHomeUI","direction="+direction+" from="+from+" to="+to+" moved="+data.optBoolean("moved"));return safe("accepted",true);
@@ -149,7 +154,35 @@ public final class TVPlatform {
     }
     private void openSettings(String screen)throws Exception{String action;switch(screen){case "network":action=Settings.ACTION_WIFI_SETTINGS;break;case "display":action=Settings.ACTION_DISPLAY_SETTINGS;break;case "location":action=Settings.ACTION_LOCATION_SOURCE_SETTINGS;break;case "sound":action=Settings.ACTION_SOUND_SETTINGS;break;case "inputs":action=Settings.ACTION_SETTINGS;break;case "airplay":context.startActivity(new Intent(context,io.github.jqssun.airplay.MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));return;default:action=Settings.ACTION_SETTINGS;}
         Intent intent=new Intent(action);if(screen.equals("display")){Intent picture=new Intent("com.mitv.settings.PICTURE_SETTINGS");if(context.getPackageManager().resolveActivity(picture,0)!=null)intent=picture;}if(context.getPackageManager().resolveActivity(intent,0)==null)intent=new Intent(Settings.ACTION_SETTINGS);context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));}
-    private JSONObject hostedRemoteInfo()throws Exception{JSONObject info=HomeRemoteService.hostedInfo(true);if(info.has("error"))return info;String url=info.getString("url");com.google.zxing.common.BitMatrix matrix=new com.google.zxing.qrcode.QRCodeWriter().encode(url,com.google.zxing.BarcodeFormat.QR_CODE,300,300);Bitmap bitmap=Bitmap.createBitmap(300,300,Bitmap.Config.ARGB_8888);for(int y=0;y<300;y++)for(int x=0;x<300;x++)bitmap.setPixel(x,y,matrix.get(x,y)?Color.BLACK:Color.WHITE);java.io.ByteArrayOutputStream bytes=new java.io.ByteArrayOutputStream();bitmap.compress(Bitmap.CompressFormat.PNG,100,bytes);bitmap.recycle();return info.put("qr","data:image/png;base64,"+android.util.Base64.encodeToString(bytes.toByteArray(),android.util.Base64.NO_WRAP));}
+    private static JSONObject accountChallenge() throws Exception {
+        byte[] random = new byte[32];
+        new java.security.SecureRandom().nextBytes(random);
+        int flags = android.util.Base64.URL_SAFE | android.util.Base64.NO_WRAP | android.util.Base64.NO_PADDING;
+        String proof = android.util.Base64.encodeToString(random, flags);
+        byte[] hash = java.security.MessageDigest.getInstance("SHA-256")
+            .digest(proof.getBytes(java.nio.charset.StandardCharsets.US_ASCII));
+        return new JSONObject().put("proof", proof)
+            .put("challenge", android.util.Base64.encodeToString(hash, flags));
+    }
+    private static String qrImage(String url) throws Exception {
+        com.google.zxing.common.BitMatrix matrix = new com.google.zxing.qrcode.QRCodeWriter()
+            .encode(url, com.google.zxing.BarcodeFormat.QR_CODE, 300, 300);
+        Bitmap bitmap = Bitmap.createBitmap(300, 300, Bitmap.Config.ARGB_8888);
+        try {
+            for (int y = 0; y < 300; y++) for (int x = 0; x < 300; x++)
+                bitmap.setPixel(x, y, matrix.get(x, y) ? Color.BLACK : Color.WHITE);
+            ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, bytes);
+            return "data:image/png;base64," + android.util.Base64.encodeToString(bytes.toByteArray(), android.util.Base64.NO_WRAP);
+        } finally {
+            bitmap.recycle();
+        }
+    }
+    private JSONObject hostedRemoteInfo() throws Exception {
+        JSONObject info = HomeRemoteService.hostedInfo(true);
+        if (info.has("error")) return info;
+        return info.put("qr", qrImage(info.getString("url")));
+    }
     private JSONObject remoteInfo()throws Exception{HomeRemoteServer server=HomeRemoteService.server();if(server==null){HomeRemoteService.enable(context);long deadline=android.os.SystemClock.elapsedRealtime()+2000;while(server==null&&android.os.SystemClock.elapsedRealtime()<deadline&&Looper.myLooper()!=Looper.getMainLooper()){Thread.sleep(25);server=HomeRemoteService.server();}}if(server==null)throw new IllegalStateException("remote_unavailable");server.rotatePairing();String address=null;for(NetworkInterface network:Collections.list(NetworkInterface.getNetworkInterfaces()))for(java.net.InetAddress candidate:Collections.list(network.getInetAddresses()))if(candidate instanceof Inet4Address&&!candidate.isLoopbackAddress()&&candidate.isSiteLocalAddress())address=candidate.getHostAddress();if(address==null)throw new IllegalStateException("network_unavailable");String url="http://"+address+(server.port()==80?"":":"+server.port())+"/";String pin=server.pin();com.google.zxing.common.BitMatrix matrix=new com.google.zxing.qrcode.QRCodeWriter().encode(url+"#pair="+pin,com.google.zxing.BarcodeFormat.QR_CODE,300,300);Bitmap bitmap=Bitmap.createBitmap(300,300,Bitmap.Config.ARGB_8888);for(int y=0;y<300;y++)for(int x=0;x<300;x++)bitmap.setPixel(x,y,matrix.get(x,y)?Color.BLACK:Color.WHITE);java.io.ByteArrayOutputStream bytes=new java.io.ByteArrayOutputStream();bitmap.compress(Bitmap.CompressFormat.PNG,100,bytes);bitmap.recycle();return new JSONObject().put("backgroundAccess",HomeForeground.accessGranted(context)).put("url",url).put("pin",pin).put("qr","data:image/png;base64,"+android.util.Base64.encodeToString(bytes.toByteArray(),android.util.Base64.NO_WRAP));}
     float[] waveform(){return receiverPlayback().waveform();}
     void pairedRequest(String operation,JSONObject data,java.util.function.Consumer<JSONObject> callback){if(!java.util.Arrays.asList("scan","pair_begin","companion_begin","pair_finish","cancel_pairing","apps","launch_app","navigation").contains(operation)){callback.accept(SystemRemoteController.error("unsupported"));return;}main.post(()->paired.request(operation,data,callback));}

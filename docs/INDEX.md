@@ -63,3 +63,6 @@ See [phone remote](features/PHONE_REMOTE.md), [PWA](features/PWA.md), and [brand
 - [Hosted web landing and introduction](features/WEB_ENTRY.md)
 
 - [Native introduction and screenshot previews](features/NATIVE_INTRODUCTION.md)
+
+- [Couch TV feature comparison](reports/COUCH_TV_COMPARISON.md)
+- [X-Center ID and Aurea settings](features/ACCOUNT_SYNC.md)

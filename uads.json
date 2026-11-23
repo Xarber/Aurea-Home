@@ -515,12 +515,12 @@
     },
     {
       "id": "UADS-SEC-004",
-      "applicability": "Not Applicable",
-      "state": "Not Applicable",
+      "applicability": "Required",
+      "state": "Pending",
       "evidence": [
         "docs/SECURITY.md"
       ],
-      "notes": "Aurea has no user accounts. Device pairing continues to be governed by UADS-SEC-003. Reassess before introducing persistent user identity."
+      "notes": "Optional X-Center ID settings backups are under development. Live passkey, FIDO, consent and revocation verification remains pending. Local pairing remains governed by UADS-SEC-003."
     }
   ],
   "exceptions": []

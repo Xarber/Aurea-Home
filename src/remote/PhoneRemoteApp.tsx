@@ -1,3 +1,4 @@
+import {AccountSettings} from './account/AccountSettings';
 import {canCaptureSample,shareSampleScreenshot} from './captureSample';
 import {SignalingDiagnostics} from './peer/SignalingDiagnostics';
 import {RemoteIntroduction,useRemoteIntroduction} from '../onboarding/RemoteIntroduction';
@@ -49,7 +50,7 @@ function PhoneRemoteScreen({preview, developerEndpoint, setDeveloperEndpoint}:{
  const introduction=useRemoteIntroduction();
  const [captureStatus,setCaptureStatus]=useState('');
  const capturing=useRef(false);
- const {view:remoteView,setView:setRemoteView,touchpad,toggleTouchpad}=useRemotePreferences();
+ const {view:remoteView,setView:setRemoteView,touchpad,toggleTouchpad,restore}=useRemotePreferences();
  const [touchActive,setTouchActive]=useState(false),[remoteHeight,setRemoteHeight]=useState(600),[voiceError,setVoiceError]=useState<string>();
  const wide=screen.width>=760&&screen.height>=600;
  const system=state.system??state.device?.systemRemote;
@@ -157,6 +158,7 @@ function PhoneRemoteScreen({preview, developerEndpoint, setDeveloperEndpoint}:{
  {displayed==='controls'&&<RemoteHandset full group="phone-modal" client={client} connected={connected} paired={!!system?.paired} ready={!!(system?.voiceReady??system?.ready)} command={command} pair={()=>setPanel('system')}/>}
  {displayed==='music'&&music&&<PhonePlayer music={music} artwork={state.artwork} connected={connected} action={(action,value)=>{void client.media(action,value);}}/>}
  {displayed==='settings'&&<>
+ {!remote.preview&&!developerEndpoint&&<AccountSettings layout={{view:remoteView,touchpad}} restore={restore}/>}
  <Text style={s.groupTitle}>REMOTE PREFERENCES</Text>
  {row('phone-auto-remote','Automatic remote layout','remote',()=>setRemoteView(remoteView==='auto'?'home':'auto'),remoteView==='auto'?'On':'Off')}
  {remoteView!=='auto'&&row('phone-complete-remote','Complete remote','remote',()=>setRemoteView(remoteView==='full'?'home':'full'),remoteView==='full'?'On':'Off')}

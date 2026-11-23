@@ -1,3 +1,4 @@
+import {TVAccountSettings} from '../remote/account/TVAccountSettings';
 import {ReceiverControls} from './ReceiverControls';
 // SPDX-License-Identifier: AGPL-3.0-only
 import {IdeasPage} from '../developer/ideas/IdeasPage';
@@ -30,6 +31,7 @@ export function NativePanels({
   musicAnchor: Anchor;
   settingsAnchor: Anchor;
 }) {
+  const [tvAccount,setTVAccount]=useState<{session:string;name?:string}>();
   const [retained, setRetained] = useState<string | null>(null),
     [remote, setRemote] = useState<Record<string, unknown>>({}),
     [details, setDetails] = useState(''),
@@ -127,6 +129,7 @@ export function NativePanels({
     sound: 'Sound',
     airplay: 'AirPlay',
     about: 'About Aurea Home',
+    account: 'X-Center ID',
     changelog: 'Changelog',
     developer: 'Developer settings',ideas:'Ideas',
     profiles: 'Input appearance',
@@ -415,6 +418,7 @@ export function NativePanels({
             )}
           </>
         )}
+        {demo.panel === 'account' && <TVAccountSettings demo={demo} account={tvAccount} setAccount={setTVAccount} t={t}/>}
         {panel === 'about' && (
           <>
             {row(
@@ -423,6 +427,7 @@ export function NativePanels({
               versionTap,
             )}
             {text(snapshot.build.commit + ' · ' + snapshot.build.channel)}
+            {process.env.EXPO_PUBLIC_AUREA_ACCOUNTS_ENABLED==='1'&&row('X-Center ID','settings',()=>demo.setPanel('account'))}
             {row('Replay introduction', 'info', () => demo.setPanel('introduction'))}
             {revealed &&
               row(

@@ -85,4 +85,4 @@ App preview adds runtime TV MediaProjection approval and optional playback-audio
 
 ## Account and device trust
 
-Aurea operates without user accounts. Saved TVs and Apple TV connections are local device credentials scoped to pairing. Hosted signaling coordinates a connection and does not provide an account, identity provider, or account-scoped synchronization. UADS §43 passkey, FIDO2 and U2F sign-in requirements are conditional on user accounts and do not apply to the current product. Pairing authentication, per-device credential isolation and revocation remain required. Reassess this decision before adding any persistent user identity.
+Aurea works without a user account. The optional X-Center ID integration in development introduces account-scoped preference backups and is gated separately. The account backend keeps the issuer access token server-side, uses single-use sign-in transactions and scopes each backup at the issuer. Existing TV pairing credentials remain local to their current trust paths. Live X-Center passkey/FIDO and revocation checks remain required before release. See [the account feature and trust boundaries](features/ACCOUNT_SYNC.md).
