@@ -27,7 +27,7 @@ jobs:
       FORCE_BUNDLING: '1'
       EXPO_USE_PRECOMPILED_MODULES: '0'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: actions/setup-node@v6
