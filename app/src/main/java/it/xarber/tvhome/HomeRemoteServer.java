@@ -25,6 +25,21 @@ final class HomeRemoteServer implements Runnable {
     private final Commands commands;
     private final it.xarber.tvhome.playback.PairingStore trust;
     private volatile String pin;
+    private final java.util.Map<String,Long> accountRemotes = new java.util.HashMap<>();
+    private final AccountInvitation invitation = new AccountInvitation(android.os.SystemClock::elapsedRealtime);
+
+    synchronized JSONObject openAccountInvitation() throws Exception {
+        byte[] random = new byte[32];
+        new SecureRandom().nextBytes(random);
+        String grant = android.util.Base64.encodeToString(random, android.util.Base64.NO_WRAP | android.util.Base64.NO_PADDING | android.util.Base64.URL_SAFE);
+        invitation.open(grant);
+        return new JSONObject().put("device", deviceId).put("grant", grant);
+    }
+
+    synchronized void closeAccountInvitation() {
+        invitation.close();
+    }
+
     private String pairingOrigin="";
     private final ThreadLocal<String> responseOrigin=new ThreadLocal<>();
     private final String deviceId;
@@ -54,7 +69,7 @@ final class HomeRemoteServer implements Runnable {
         String existing=identity.getString("id",null);if(existing==null){existing=java.util.UUID.randomUUID().toString();if(!identity.edit().putString("id",existing).commit())throw new IllegalStateException("Identity storage unavailable");}deviceId=existing;
         trust=new it.xarber.tvhome.playback.PairingStore(this.context,"phone-remotes");
         JSONObject stored=trust.read();
-        if(stored!=null){org.json.JSONArray values=new org.json.JSONArray(stored.getString("credentials"));if(values.length()>16)throw new IllegalStateException("Invalid trust store");for(int i=0;i<values.length();i++){Object entry=values.get(i);String token=entry instanceof JSONObject?((JSONObject)entry).getString("token"):(String)entry;String origin=entry instanceof JSONObject?((JSONObject)entry).optString("origin",""):"";if(!token.matches("[A-Za-z0-9_-]{32}")||(!origin.isEmpty()&&!RemoteRequest.safeOrigin(origin)))throw new IllegalStateException("Invalid trust store");tokens.put(token,origin);}}
+        if(stored!=null){org.json.JSONArray values=new org.json.JSONArray(stored.getString("credentials"));if(values.length()>16)throw new IllegalStateException("Invalid trust store");for(int i=0;i<values.length();i++){Object entry=values.get(i);String token=entry instanceof JSONObject?((JSONObject)entry).getString("token"):(String)entry;String origin=entry instanceof JSONObject?((JSONObject)entry).optString("origin",""):"";if(!token.matches("[A-Za-z0-9_-]{32}")||(!origin.isEmpty()&&!RemoteRequest.safeOrigin(origin)))throw new IllegalStateException("Invalid trust store");tokens.put(token,origin);if(entry instanceof JSONObject){long added=((JSONObject)entry).optLong("accountAdded",0);if(added>0)accountRemotes.put(token,added);}}}
         rotatePairing();
     }
 
@@ -68,6 +83,71 @@ final class HomeRemoteServer implements Runnable {
         // Preserve the global attempt window when an origin asks for a fresh PIN.
     }
     synchronized boolean pairingExpired() { return android.os.SystemClock.elapsedRealtime() > pairingDeadline; }
+    private synchronized String persistNewRemote(String origin, boolean accountPairing) throws Exception {
+        byte[] secret = new byte[24];
+        new SecureRandom().nextBytes(secret);
+        String token = android.util.Base64.encodeToString(secret, android.util.Base64.NO_WRAP | android.util.Base64.NO_PADDING | android.util.Base64.URL_SAFE);
+        java.util.LinkedHashMap<String,String> before = new java.util.LinkedHashMap<>(tokens);
+        java.util.Map<String,Long> previousAccounts = new java.util.HashMap<>(accountRemotes);
+        if (tokens.size() >= 16) {
+            String oldest = tokens.keySet().iterator().next();
+            tokens.remove(oldest);
+            accountRemotes.remove(oldest);
+        }
+        tokens.put(token, origin);
+        if (accountPairing) accountRemotes.put(token, System.currentTimeMillis());
+        try { persistTrust(); }
+        catch (Exception unavailable) {
+            tokens.clear();
+            tokens.putAll(before);
+            accountRemotes.clear();
+            accountRemotes.putAll(previousAccounts);
+            throw unavailable;
+        }
+        return token;
+    }
+
+    private void finishPairing(Socket client, String token) throws Exception {
+        respond(client, 200, "application/json", new JSONObject().put("token", token).put("id",deviceId).toString());
+        commands.run("paired");
+    }
+
+    synchronized org.json.JSONArray listAccountRemotes() throws Exception {
+        org.json.JSONArray remotes = new org.json.JSONArray();
+        for (String token : tokens.keySet()) {
+            Long added = accountRemotes.get(token);
+            if (added != null) remotes.put(new JSONObject().put("id", hexOwner(token)).put("added", added));
+        }
+        return remotes;
+    }
+
+    JSONObject revokeAccountRemote(String id) throws Exception {
+        synchronized (this) {
+            String match = null;
+            for (String token : accountRemotes.keySet()) {
+                if (hexOwner(token).equals(id)) { match = token; break; }
+            }
+            if (match == null) return SystemRemoteController.error("not_paired");
+            revokeRemote(match);
+        }
+        commands.request("voice_end", new JSONObject().put("owner", id));
+        AppPreviewService.end(context, id);
+        return new JSONObject().put("accepted", true);
+    }
+
+    private synchronized void revokeRemote(String token) throws Exception {
+        if (!tokens.containsKey(token)) return;
+        String binding = tokens.remove(token);
+        Long added = accountRemotes.remove(token);
+        try { persistTrust(); }
+        catch (Exception unavailable) {
+            tokens.put(token, binding);
+            if (added != null) accountRemotes.put(token, added);
+            throw unavailable;
+        }
+        activeRemotes.remove(token);
+    }
+
     private synchronized void announcePairRequest() {
         long now = android.os.SystemClock.elapsedRealtime();
         if (pairingExpired()) rotatePairing();
@@ -90,10 +170,20 @@ final class HomeRemoteServer implements Runnable {
         thread.start();
     }
 
-    synchronized void revokeAll() { AppPreviewService.cancelAll(context); commands.run("voice-cancel"); tokens.clear(); activeRemotes.clear(); trust.clear(); rotatePairing(); }
+    synchronized void revokeAll() { AppPreviewService.cancelAll(context); commands.run("voice-cancel"); tokens.clear(); accountRemotes.clear(); activeRemotes.clear(); trust.clear(); closeAccountInvitation(); rotatePairing(); }
     private void persistTrust() throws Exception {trust.save(new JSONObject().put("credentials",trustEntries().toString()).put("identifier","phone-remotes").put("name","Aurea Home"));}
 
-    private org.json.JSONArray trustEntries() throws Exception {org.json.JSONArray entries=new org.json.JSONArray();for(java.util.Map.Entry<String,String> entry:tokens.entrySet())entries.put(new JSONObject().put("token",entry.getKey()).put("origin",entry.getValue()));return entries;}
+    private org.json.JSONArray trustEntries() throws Exception {
+        org.json.JSONArray entries = new org.json.JSONArray();
+        for (java.util.Map.Entry<String,String> entry : tokens.entrySet()) {
+            JSONObject remote = new JSONObject().put("token",entry.getKey()).put("origin",entry.getValue());
+            Long added = accountRemotes.get(entry.getKey());
+            if (added != null) remote.put("accountAdded", added);
+            entries.put(remote);
+        }
+        return entries;
+    }
+
     void stop() {
         commands.run("voice-cancel");
         running = false;
@@ -149,10 +239,34 @@ final class HomeRemoteServer implements Runnable {
             respond(client, 200, "application/json", "{\"pairing\":\"pending\"}");
             return;
         }
+        if (method.equals("POST") && path.equals("/pair/account")) {
+            JSONObject payload;
+            try { payload = new JSONObject(json); }
+            catch (org.json.JSONException error) {
+                respond(client, 400, "application/json", SystemRemoteController.error("invalid_request").toString());
+                return;
+            }
+            String token;
+            synchronized (this) {
+                if (!invitation.claim(peer.isLoopbackAddress(), origin, peerProof,
+                    payload.optString("__peerProof"), payload.optString("grant"))) {
+                    respond(client, 403, "application/json", SystemRemoteController.error("invitation_unavailable").toString());
+                    return;
+                }
+                try { token = persistNewRemote(origin, true); }
+                catch (Exception unavailable) {
+                    respond(client, 500, "application/json", SystemRemoteController.error("storage_failed").toString());
+                    return;
+                }
+            }
+            finishPairing(client, token);
+            return;
+        }
         if (method.equals("POST") && path.equals("/pair")) {
             announcePairRequest();
             JSONObject payload;
             try { payload = new JSONObject(json); } catch (org.json.JSONException error) { respond(client,400,"application/json","{\"error\":\"Invalid JSON\"}");return; }
+            String token;
             synchronized (this) {
                 long now = android.os.SystemClock.elapsedRealtime();
                 if (now - pairWindowStart > 60_000) { pairWindowStart = now; failedPairAttempts = 0; }
@@ -161,18 +275,14 @@ final class HomeRemoteServer implements Runnable {
                 if (!MessageDigest.isEqual(pin.getBytes(StandardCharsets.UTF_8), payload.optString("pin").getBytes(StandardCharsets.UTF_8))) {
                     failedPairAttempts++; respond(client, 403, "application/json", "{\"error\":\"Pairing code is incorrect\"}"); return;
                 }
-            }
-            byte[] secret = new byte[24]; new SecureRandom().nextBytes(secret);
-            String token = android.util.Base64.encodeToString(secret, android.util.Base64.NO_WRAP | android.util.Base64.NO_PADDING | android.util.Base64.URL_SAFE);
-            synchronized (this) {
-                java.util.LinkedHashMap<String,String> before=new java.util.LinkedHashMap<>(tokens);
-                if (tokens.size() >= 16) tokens.remove(tokens.keySet().iterator().next());
-                tokens.put(token,origin);
-                try{persistTrust();}catch(Exception unavailable){tokens.clear();tokens.putAll(before);respond(client,500,"application/json","{\"error\":\"storage_failed\"}");return;}
+                try { token = persistNewRemote(origin, false); }
+                catch (Exception unavailable) {
+                    respond(client, 500, "application/json", SystemRemoteController.error("storage_failed").toString());
+                    return;
+                }
                 rotatePairing();
             }
-            respond(client, 200, "application/json", new JSONObject().put("token", token).put("id",deviceId).toString());
-            commands.run("paired");
+            finishPairing(client, token);
             return;
         }
         if (method.equals("POST") && path.startsWith("/api/")) {
@@ -202,7 +312,11 @@ final class HomeRemoteServer implements Runnable {
             }
             if(path.equals("/api/revoke")){
                 commands.request("voice_end",new JSONObject().put("owner",hexOwner(payload.optString("token"))));AppPreviewService.end(context,hexOwner(payload.optString("token")));
-                synchronized(this){String token=payload.optString("token"),binding=tokens.remove(token);try{persistTrust();}catch(Exception unavailable){tokens.put(token,binding);respond(client,500,"application/json","{\"error\":\"storage_failed\"}");return;}activeRemotes.remove(token);}
+                try { revokeRemote(payload.optString("token")); }
+                catch (Exception unavailable) {
+                    respond(client, 500, "application/json", SystemRemoteController.error("storage_failed").toString());
+                    return;
+                }
                 respond(client,200,"application/json","{\"ok\":true}");return;
             }
             if(path.startsWith("/api/voice/")||path.equals("/api/presence")&&payload.optBoolean("disconnect",false)){

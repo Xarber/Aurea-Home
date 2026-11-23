@@ -51,3 +51,29 @@ test('saved native controls and voice work without Home HTTP; queued edits never
   const pending=client.editText('a','wrong TV');client.connect(mock,{address:'http://192.168.1.5',id:second,token});await assert.rejects(pending);assert.equal(calls.includes('text:wrong TV'),false);
  }finally{await client.disconnect();}
 });
+
+test('account pairing verifies the approved TV before sending the grant and stores only TV-issued trust',async()=>{
+ const pairingGrant='g'.repeat(43);
+ const devices:Session[]=[];
+ const client=new RemoteClient({save:async session=>{devices.push(session);},forget:async()=>{}});
+ const operations:string[]=[];
+ const transport:Transport={async rpc(operation,payload,credential){
+  operations.push(operation);
+  if(operation==='hello'){assert.equal(credential,undefined);return {id:first};}
+  if(operation==='pair_account'){
+   assert.deepEqual(payload,{grant:pairingGrant});
+   assert.equal(credential,undefined);
+   return {id:first,token};
+  }
+  if(operation==='state')return state();
+  return {apps:[],inputs:[]};
+ }};
+ try{
+  await assert.rejects(client.beginPair(transport,'aurea://'+first,{device:second,grant:pairingGrant}),/device_changed/);
+  assert.deepEqual(operations,['hello']);
+  await client.beginPair(transport,'aurea://'+first,{device:first,grant:pairingGrant});
+  assert.deepEqual(operations.slice(1,3),['hello','pair_account']);
+  assert.equal(client.snapshot.pairingSuccess,'launcher');
+  assert.deepEqual(devices,[{address:'aurea://'+first,id:first,token}]);
+ }finally{await client.disconnect();}
+});

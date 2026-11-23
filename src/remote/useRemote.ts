@@ -39,6 +39,14 @@ export function useRemote(initialPreview:boolean, developerEndpoint?:string){
  const [formError,setFormError]=useState<string>();
  const changePreview=(value:boolean)=>{chosen.current=true;setPreview(value);if(value)client.connect(new PreviewTransport(),{address:'preview',token:'preview'},true);else{void client.disconnect();setAddress('');}};
  const connect=async()=>{chosen.current=true;setFormError(undefined);try{const target=localAddress(address);if(isolated&&!target.startsWith('aurea://'))throw new Error('developer_peer_required');setAddress(target);const existing=tvs.find(tv=>tv.address===target);if(existing)client.connect(transport(target),existing);else await client.beginPair(transport(target),target);}catch{setFormError(isolated?'Enter an Aurea hosted link for this signaling server.':'Enter the TV’s local IP address.');}};
+ const pairApproved=async(peer:string,device:string,grant:string)=>{
+  if(isolated||preview)throw new Error('invitation_unavailable');
+  const target='aurea://'+peer;
+  const existing=tvs.find(tv=>tv.address===target);
+  if(existing && existing.id===device){select(existing);return;}
+  chosen.current=true;setAddress(target);
+  await client.beginPair(transport(target),target,{device,grant});
+ };
  const select=(tv:PairedTV)=>{chosen.current=true;setAddress(tv.address);setPreview(false);client.connect(transport(tv.address),tv);};
- return {client,state,tvs,address,setAddress,preview,setPreview:changePreview,storageError,formError,connect,select};
+ return {client,state,tvs,address,setAddress,preview,setPreview:changePreview,storageError,formError,connect,select,pairApproved};
 }

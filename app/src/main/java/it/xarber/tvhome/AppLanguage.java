@@ -133,6 +133,16 @@ public final class AppLanguage {
   IT.put("Developer notification preview","Anteprima notifica sviluppatore");
   IT.put("Revoke phone remotes","Revoca telecomandi dal telefono");
   IT.put("Phone remotes revoked","Telecomandi dal telefono revocati");
+  IT.put("The hosted remote is starting. Try again in a moment.","Avvio del telecomando online. Riprova tra un momento.");
+  IT.put("On your remote, sign in to the same account and choose Find approved TVs.","Sul telecomando, accedi allo stesso account e scegli Trova TV autorizzate.");
+  IT.put("Allow one remote signed in to this account to pair for the next 90 seconds.","Consenti a un telecomando connesso a questo account di abbinarsi entro 90 secondi.");
+  IT.put("Close pairing invitation","Chiudi invito di abbinamento");
+  IT.put("Pairing invitation closed.","Invito di abbinamento chiuso.");
+  IT.put("Allow a remote to pair","Consenti abbinamento di un telecomando");
+  IT.put("Manage account-paired remotes","Gestisci telecomandi abbinati con account");
+  IT.put("Choose a remote to revoke its access to this TV.","Seleziona un telecomando per revocare l’accesso a questa TV.");
+  IT.put("Confirm revoke","Conferma revoca");
+  IT.put("Remote access revoked.","Accesso del telecomando revocato.");
   IT.put("Close developer options","Chiudi opzioni sviluppatore");
   IT.put("Export Home preferences","Esporta preferenze Home");
   IT.put("Import Home preferences","Importa preferenze Home");

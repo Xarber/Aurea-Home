@@ -21,6 +21,7 @@ jobs:
       matrix:
         target: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.target == 'unsigned' && '["unsigned"]' || github.event_name == 'workflow_dispatch' && inputs.target == 'simulator' && '["simulator"]' || '["unsigned","simulator"]') }}
     env:
+      EXPO_PUBLIC_AUREA_ACCOUNTS_ENABLED: ${{ vars.AUREA_ACCOUNTS_ENABLED }}
       EXPO_PUBLIC_SOURCE_COMMIT: ${{ github.sha }}
       AUREA_TARGET: remote
       FORCE_BUNDLING: '1'

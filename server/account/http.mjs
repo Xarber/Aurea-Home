@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import {randomBytes} from 'node:crypto';
+import {createHash, randomBytes, timingSafeEqual} from 'node:crypto';
 import {createDeviceLogins} from './devices.mjs';
+import {createInvitations} from './invitations.mjs';
 
+const validToken = value => typeof value === 'string' && /^[A-Za-z0-9_-]{43}$/.test(value);
 const sessionCookie = '__Host-aurea-session';
 const loginCookie = '__Host-aurea-login';
 const token = () => randomBytes(32).toString('base64url');
@@ -39,14 +41,16 @@ async function readBody(request) {
 export function accountHandler({identity, origin}) {
   const logins = new Map();
   const sessions = new Map();
+  const handoffs = new Map();
+  const invitations = createInvitations();
   const deviceLogins = createDeviceLogins(identity);
-  function issueSession(account, device) {
+  function issueSession(account, kind) {
     const ttl = Math.min(3600, Math.floor(Number(account.expiresIn)));
     if (!account.sub || !account.accessToken || !Number.isFinite(ttl) || ttl < 1 || sessions.size >= 1024) {
       throw new Error('invalid_session');
     }
     const id = token();
-    sessions.set(id, {...account, device, expiresAt:Date.now() + ttl * 1000});
+    sessions.set(id, {...account, kind, expiresAt:Date.now() + ttl * 1000});
     return {id, ttl};
   }
   async function route(request, response) {
@@ -60,11 +64,44 @@ export function accountHandler({identity, origin}) {
     response.setHeader('Referrer-Policy', 'no-referrer');
     response.setHeader('X-Content-Type-Options', 'nosniff');
     response.setHeader('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'");
-    for (const store of [logins, sessions]) {
+    for (const store of [logins, sessions, handoffs]) {
       for (const [key, value] of store) if (value.expiresAt <= now) store.delete(key);
     }
 
     const device = url.pathname.startsWith('/account/device/');
+    const phone = url.pathname.startsWith('/account/phone/');
+    if (phone && method === 'POST' && !request.headers.origin &&
+        ['/account/phone/start','/account/phone/pickup','/account/phone/cancel'].includes(url.pathname)) {
+      let payload;
+      try {payload = await readBody(request);} catch {return json(400,{error:'invalid_request'});}
+      if (url.pathname.endsWith('/start')) {
+        if (!validToken(payload?.challenge)) return json(400,{error:'invalid_challenge'});
+        if (handoffs.size >= 64) return json(429,{error:'try_again'});
+        const id = token();
+        handoffs.set(id,{challenge:payload.challenge, expiresAt:now+300000});
+        return json(200,{id, browser:origin+'/account/phone/browser?id='+id, expiresIn:300});
+      }
+      const entry = handoffs.get(payload?.id);
+      if (!entry || !validToken(payload?.proof) || !timingSafeEqual(
+        Buffer.from(entry.challenge), Buffer.from(createHash('sha256').update(payload.proof).digest('base64url')),
+      )) return json(403,{error:'invalid_login'});
+      if (url.pathname.endsWith('/cancel')) {
+        handoffs.delete(payload.id);
+        return json(200,{canceled:true});
+      }
+      if (!entry.account && !entry.failed) return json(202,{});
+      handoffs.delete(payload.id);
+      if (entry.failed) return json(403,{error:'invalid_login'});
+      const {id,ttl} = issueSession(entry.account,'phone');
+      return json(200,{session:id, expiresIn:ttl, signedIn:true, name:entry.account.name});
+    }
+    if (url.pathname === '/account/phone/browser' && method === 'GET') {
+      const phoneId = url.searchParams.get('id');
+      const handoff = handoffs.get(phoneId);
+      if (!handoff || handoff.opened) return body('Return to Aurea and start a new sign-in.');
+      handoff.opened = true;
+      return beginBrowserLogin(phoneId, handoff.expiresAt);
+    }
     if (device && !request.headers.origin && method === 'POST' && [
       '/account/device/start', '/account/device/pickup', '/account/device/cancel',
     ].includes(url.pathname)) {
@@ -76,20 +113,23 @@ export function accountHandler({identity, origin}) {
       }
       const {status, account, ...result} = deviceLogins.pickup(payload?.id,payload?.proof,url.pathname.endsWith('/cancel'));
       if (!account) return json(status,result);
-      const {id, ttl} = issueSession(account,true);
+      const {id, ttl} = issueSession(account,'tv');
       return json(200,{session:id, expiresIn:ttl, name:account.name});
     }
-    const sessionId = device ? request.headers.authorization?.match(/^Bearer ([A-Za-z0-9_-]{43})$/)?.[1] : readCookie(request, sessionCookie);
+    const native = device || phone;
+    const kind = device ? 'tv' : phone ? 'phone' : 'web';
+    const sessionId = native ? request.headers.authorization?.match(/^Bearer ([A-Za-z0-9_-]{43})$/)?.[1] : readCookie(request, sessionCookie);
     const candidate = sessions.get(sessionId);
-    const session = candidate?.device === device ? candidate : undefined;
-    if (method !== 'GET' && (device ? !!request.headers.origin : request.headers.origin !== origin)) return json(403, {error:'invalid_origin'});
-    if (url.pathname === '/account/session' && method === 'GET') return json(200, {
+    const session = candidate?.kind === kind ? candidate : undefined;
+    if (method !== 'GET' && (native ? !!request.headers.origin : request.headers.origin !== origin)) return json(403, {error:'invalid_origin'});
+    if (['/account/session','/account/phone/session'].includes(url.pathname) && method === 'GET') return json(200, {
       available:true, signedIn:!!session, name:session?.name,
     });
-    if (url.pathname === '/account/start' && method === 'POST') {
+    if (url.pathname === '/account/start' && method === 'POST') return beginBrowserLogin(undefined, now+300000);
+    async function beginBrowserLogin(phoneId, expiresAt) {
       if (logins.size >= 128) return json(429, {error:'try_again'});
       const handle = token();
-      const transaction = {expiresAt:now + 300000};
+      const transaction = {expiresAt, phoneId};
       logins.set(handle, transaction);
       try {
         const {url, ...details} = await identity.begin();
@@ -110,16 +150,27 @@ export function accountHandler({identity, origin}) {
       response.setHeader('Set-Cookie', cookie(loginCookie, '', 0));
       try {
         const account = await identity.complete(url.search, transaction);
+        if (transaction.phoneId) {
+          const handoff = handoffs.get(transaction.phoneId);
+          if (!handoff || handoff.expiresAt <= Date.now()) return body('Return to Aurea and start a new sign-in.');
+          handoff.account = account;
+          return body('Signed in to Aurea. You can return to the app.');
+        }
         if (session) sessions.delete(sessionId);
-        const {id:next,ttl} = issueSession(account,false);
+        const {id:next,ttl} = issueSession(account,'web');
         response.setHeader('Set-Cookie', [cookie(loginCookie, '', 0), cookie(sessionCookie, next, ttl)]);
         return redirect('/?remote=1');
       } catch {
+        const handoff = handoffs.get(transaction.phoneId);
+        if (handoff) handoff.failed = true;
         return body('Aurea sign-in did not finish. Return to Aurea and try again.');
       }
     }
-    if (url.pathname === '/account/device/logout' && method === 'POST') {
-      if (session) sessions.delete(sessionId);
+    if (url.pathname === (device ? '/account/device/logout' : '/account/phone/logout') && method === 'POST') {
+      if (session) {
+        if (device) invitations(sessionId,session,'DELETE');
+        sessions.delete(sessionId);
+      }
       return json(200, {signedIn:false});
     }
     if (url.pathname === '/account/logout' && method === 'POST') {
@@ -128,7 +179,22 @@ export function accountHandler({identity, origin}) {
       response.setHeader('Set-Cookie', [cookie(loginCookie, '', 0), cookie(sessionCookie, '', 0)]);
       return json(200, {signedIn:false});
     }
-    if (url.pathname !== (device ? '/account/device/preferences' : '/account/preferences') || !['GET','PUT','DELETE'].includes(method)) return json(404, {error:'not_found'});
+    if (url.pathname === '/account/'+(device ? 'device/' : phone ? 'phone/' : '')+'invitations') {
+      if (!session) return json(401,{error:'sign_in_required'});
+      if (method !== 'DELETE' && !await identity.validateSession(session)) {
+        if (device) invitations(sessionId,session,'DELETE');
+        sessions.delete(sessionId);
+        return json(401,{error:'sign_in_required'});
+      }
+      if (sessions.get(sessionId) !== session || session.expiresAt <= Date.now()) return json(401,{error:'sign_in_required'});
+      let payload;
+      if (method === 'POST') {
+        try {payload = await readBody(request);} catch {return json(400,{error:'invalid_request'});}
+      }
+      const {status, ...result} = invitations(sessionId,session,method,payload);
+      return json(status,result);
+    }
+    if (url.pathname !== (device ? '/account/device/preferences' : phone ? '/account/phone/preferences' : '/account/preferences') || !['GET','PUT','DELETE'].includes(method)) return json(404, {error:'not_found'});
     if (!session) return json(401, {error:'sign_in_required'});
     const profile = device ? 'tv-appearance' : 'remote-layout';
     let revision;

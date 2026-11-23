@@ -30,6 +30,14 @@ export function TVAccountSettings({demo, account, setAccount, t}: {
   const [busy,setBusy]=useState(false);
   const [remove,setRemove]=useState(false);
   const active=useRef(true);
+  const [invitation,setInvitation]=useState(0);
+  const [remotes,setRemotes]=useState<{id:string;added:number}[]>([]);
+  const [revoke,setRevoke]=useState<string>();
+  const refreshRemotes=async()=>{
+    const result=await demo.execute('accountRemotes');
+    if(!Array.isArray(result.remotes))throw new Error('remote_unavailable');
+    setRemotes(result.remotes.filter(remote=>typeof remote?.id==='string'&&Number.isFinite(remote.added)));
+  };
 
   useEffect(()=>{
     active.current=true;
@@ -92,6 +100,34 @@ export function TVAccountSettings({demo, account, setAccount, t}: {
   });
 
   const auth=()=>({Authorization:'Bearer '+account?.session});
+  const cancelInvitation=async()=>{
+    await demo.execute('accountInviteCancel');
+    setInvitation(0);
+    await request('device/invitations',{method:'DELETE',headers:auth()});
+  };
+  useEffect(()=>{
+    if(!invitation)return;
+    const timer=setTimeout(()=>setInvitation(0),Math.max(0,invitation-Date.now()));
+    return()=>clearTimeout(timer);
+  },[invitation]);
+  const shareInvitation=()=>run(async()=>{
+    const pending=await demo.execute('accountInvite');
+    if(pending.error==='remote_unavailable'){
+      setStatus('The hosted remote is starting. Try again in a moment.');
+      return;
+    }
+    if(typeof pending.grant!=='string')throw new Error('invitation_unavailable');
+    try{
+      const result=await request('device/invitations',{method:'POST',
+        headers:{...auth(),'Content-Type':'application/json'},
+        body:JSON.stringify({peer:pending.peer,label:pending.label,device:pending.device,grant:pending.grant})});
+      setInvitation(Date.now()+Math.min(90,Number(result.expiresIn))*1000);
+      setStatus('On your remote, sign in to the same account and choose Find approved TVs.');
+    }catch(error){
+      await demo.execute('accountInviteCancel');
+      throw error;
+    }
+  });
   const load=async()=>{
     const next:Backup=await request('device/preferences',{headers:auth()});
     setBackup(next);
@@ -137,10 +173,32 @@ export function TVAccountSettings({demo, account, setAccount, t}: {
             setBackup(undefined);setRemove(false);setStatus('Backup deleted.');
           });
         })}
+        {text('Allow one remote signed in to this account to pair for the next 90 seconds.')}
+        {invitation ? row('cancel-invite','Close pairing invitation',()=>void run(async()=>{
+          await cancelInvitation();setStatus('Pairing invitation closed.');
+        })) : row('open-invite','Allow a remote to pair',()=>void shareInvitation())}
         {row('logout','Sign out of Aurea',()=>void run(async()=>{
+          await demo.execute('accountInviteCancel');
+          setInvitation(0);
           await request('device/logout',{method:'POST',headers:auth()});setAccount();setBackup(undefined);
         }))}
       </> : row('link','Sign in with X-Center ID',()=>void start())}
+    {row('list-remotes','Manage account-paired remotes',()=>void run(async()=>{
+      await refreshRemotes();
+      setStatus('Choose a remote to revoke its access to this TV.');
+    }))}
+    {remotes.map((remote,index)=>{
+      const label=t('Remote')+' '+(index+1)+' · '+new Date(remote.added).toLocaleString(demo.prefs.language);
+      return <React.Fragment key={remote.id}>{row('revoke-'+remote.id,
+        revoke===remote.id?t('Confirm revoke')+' · '+label:label,()=>{
+          if(revoke!==remote.id){setRevoke(remote.id);return;}
+          void run(async()=>{
+            const result=await demo.execute('accountRemoteRevoke',{id:remote.id});
+            if(result.accepted!==true)throw new Error('revocation_failed');
+            await refreshRemotes();setRevoke(undefined);setStatus('Remote access revoked.');
+          });
+        })}</React.Fragment>;
+    })}
     {!!status&&<View accessibilityLiveRegion="polite">{text(status)}</View>}
   </View>;
 }

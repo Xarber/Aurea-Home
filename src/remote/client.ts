@@ -46,23 +46,31 @@ export class RemoteClient {
   void this.poll();
  }
  private startSystem(address:string){const generation=this.generation;this.targetReady=this.direct?.target(address).catch(()=>{})??Promise.resolve();const check=async()=>{if(generation!==this.generation||!this.active||!this.direct||this.fixture)return;await this.targetReady;if(generation!==this.generation)return;const state=this.direct.state();this.update({system:state});if(state.paired&&!state.ready&&!this.snapshot.systemBusy)void this.direct.connect().catch(()=>{});this.systemTimer=setTimeout(()=>{void check();},5000);};void check();}
- async beginPair(transport:Transport,address:string){
-  this.cancel();this.transport?.close?.();this.transport=transport;this.session={address,token:''};this.fixture=false;this.active=true;
+ async beginPair(transport:Transport,address:string,invitation?:{grant:string;device:string}){
+  this.cancel();this.transport?.close?.();this.transport=transport;this.session={address,token:'',id:invitation?.device};this.fixture=false;this.active=true;
   this.update({status:'connecting',selected:this.session,system:undefined,device:undefined,catalog:undefined,icons:{},error:undefined,systemPairing:false,systemBusy:false,pairingSuccess:undefined});
   this.startSystem(address);
   const generation=this.generation;
-  try{await this.verifyIdentity();if(generation!==this.generation)return;await this.rpc('pair_start',{});if(generation===this.generation)this.update({status:'pairing'});}catch(error){if(generation===this.generation)this.update({status:'disconnected',error:this.code(error)});}
+  try{await this.verifyIdentity();if(generation!==this.generation){if(invitation)throw new RemoteError('disconnected');return;}
+   if(invitation){
+    await this.finishPair('pair_account',{grant:invitation.grant},generation);
+    return;
+   }
+   await this.rpc('pair_start',{});if(generation===this.generation)this.update({status:'pairing'});}catch(error){if(generation===this.generation)this.update({status:'disconnected',error:this.code(error)});if(invitation)throw error;}
  }
  async pair(pin:string){
   if(!/^\d{6}$/.test(pin)){this.update({error:'invalid_pin'});return;}
   const generation=this.generation;
   try{
-   const result=await this.rpc('pair',{pin});if(generation!==this.generation)return;
+   await this.finishPair('pair',{pin},generation);
+  }catch(error){if(generation===this.generation)this.update({status:'pairing',error:this.code(error)});}
+ }
+ private async finishPair(operation:'pair'|'pair_account',payload:Record<string,string>,generation:number){
+   const result=await this.rpc(operation,payload);if(generation!==this.generation)throw new RemoteError('disconnected');
    if(typeof result.token!=='string'||! /^[A-Za-z0-9_-]{32}$/.test(result.token))throw new RemoteError('invalid_response');
    if(!this.fixture&&result.id!==this.session?.id)throw new RemoteError('device_changed');
    this.session={...this.session!,token:result.token};await this.trust.save(this.session);if(!this.fixture)await this.direct?.target(this.session.address);
-   if(generation!==this.generation)return;this.update({status:'connecting',error:undefined,pairingSuccess:'launcher'});void this.poll();
-  }catch(error){if(generation===this.generation)this.update({status:'pairing',error:this.code(error)});}
+   if(generation!==this.generation)throw new RemoteError('disconnected');this.update({status:'connecting',error:undefined,pairingSuccess:'launcher'});void this.poll();
  }
  private async rpc(operation:string,payload:Record<string,unknown>,timeout=8000){
   if(!this.transport)throw new RemoteError('disconnected');

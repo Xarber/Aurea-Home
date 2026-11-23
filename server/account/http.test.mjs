@@ -72,3 +72,66 @@ test('web account verifies callback ownership and scopes settings to the signed-
   assert.equal((await call('logout',{method:'POST',headers})).status,200);
   assert.equal((await call('preferences',{headers:{cookie:alice}})).status,401);
 });
+
+test('phone handoff binds the browser and native proof and isolates the phone session', async context => {
+  const {createHash, randomBytes} = await import('node:crypto');
+  const proof = randomBytes(32).toString('base64url');
+  const challenge = createHash('sha256').update(proof).digest('base64url');
+  const origin = 'https://aurea.xcenter.it';
+  let state = 0;
+  let providerActive = true;
+  const identity = {
+    async validateSession() {return providerActive;},
+    async begin() {return {state:String(++state),url:'https://id.xcenter.it/authorize'};},
+    async complete() {return {sub:'alice',name:'Alice',expiresIn:60,accessToken:'fixture-token'};},
+    async preferences(_session,_method,_revision,_data,profile) {
+      assert.equal(profile,'remote-layout');
+      return {status:404};
+    },
+  };
+  const server = createServer(accountHandler({identity,origin}));
+  server.listen(0,'127.0.0.1');
+  await once(server,'listening');
+  context.after(()=>server.close());
+  const base = 'http://127.0.0.1:'+server.address().port;
+  const fetchPath = (path,init) => fetch(base+path,{redirect:'manual',...init});
+  const post = (path,payload,headers) => fetchPath('/account/phone/'+path,{
+    method:'POST',headers:{'Content-Type':'application/json',...headers},body:JSON.stringify(payload),
+  });
+  assert.equal((await post('start',{challenge},{Origin:origin})).status,403);
+  const opened = await (await post('start',{challenge})).json();
+  const url = new URL(opened.browser);
+  assert.equal(url.origin,origin);
+  assert.equal(url.pathname,'/account/phone/browser');
+  assert.deepEqual([...url.searchParams],[['id',opened.id]]);
+  const claim = {id:opened.id,proof};
+  assert.equal((await post('pickup',claim)).status,202);
+  assert.equal((await post('pickup',{...claim,proof:'A'.repeat(43)})).status,403);
+  const browser = await fetchPath(url.pathname+url.search);
+  assert.equal(browser.status,303);
+  assert.equal((await fetchPath(url.pathname+url.search)).status,200);
+  const cookie = browser.headers.getSetCookie().at(0).split(';')[0];
+  assert.equal((await fetchPath('/account/callback?state=1&code=fixture')).status,403);
+  const finish = await fetchPath('/account/callback?state=1&code=fixture',{headers:{cookie}});
+  assert.equal(finish.status,200);
+  assert.equal(finish.headers.getSetCookie().length,1);
+  assert.match(await finish.text(),/return to the app/i);
+  const [a,b] = await Promise.all([post('pickup',claim),post('pickup',claim)]);
+  assert.deepEqual([a.status,b.status].sort(),[200,403]);
+  const account = await (a.ok ? a : b).json();
+  assert.equal(account.name,'Alice');
+  assert.equal(account.accessToken,undefined);
+  const auth = {Authorization:'Bearer '+account.session};
+  assert.equal((await fetchPath('/account/device/preferences',{headers:auth})).status,401);
+  assert.equal((await fetchPath('/account/preferences',{headers:auth})).status,401);
+  assert.equal((await fetchPath('/account/phone/preferences',{headers:auth})).status,200);
+  assert.deepEqual(await (await fetchPath('/account/phone/invitations',{headers:auth})).json(),{televisions:[]});
+  providerActive = false;
+  assert.equal((await fetchPath('/account/phone/invitations',{headers:auth})).status,401);
+  assert.equal((await fetchPath('/account/phone/preferences',{headers:auth})).status,401);
+  assert.equal((await post('logout',{},auth)).status,200);
+  assert.equal((await fetchPath('/account/phone/preferences',{headers:auth})).status,401);
+  const canceled = await (await post('start',{challenge})).json();
+  assert.equal((await post('cancel',{id:canceled.id,proof})).status,200);
+  assert.equal((await post('pickup',{id:canceled.id,proof})).status,403);
+});

@@ -1,0 +1,21 @@
+[Unit]
+Description=Aurea Home account service
+Wants=network-online.target
+After=network-online.target xcenter-appliance-storage.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/srv/xcenter/apps/aurea/account/current
+EnvironmentFile=/srv/xcenter/secrets/aurea/account.env
+ExecStart=/opt/homebridge/bin/node /srv/xcenter/apps/aurea/account/current/account/start.mjs
+Restart=on-failure
+RestartSec=10
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

@@ -9,6 +9,7 @@ export async function connectIdentity({clientId, secret, callback}) {
   for (const endpoint of [metadata.authorization_endpoint, metadata.token_endpoint, metadata.jwks_uri, metadata.userinfo_endpoint, metadata.device_authorization_endpoint]) {
     if (new URL(endpoint).origin !== issuer) throw new Error('Unexpected identity endpoint');
   }
+  configuration.timeout = 6;
   oidc.enableNonRepudiationChecks(configuration);
 
   async function account(tokens) {
@@ -20,6 +21,15 @@ export async function connectIdentity({clientId, secret, callback}) {
   }
 
   return {
+    async validateSession(session) {
+      try {
+        await oidc.fetchUserInfo(configuration, session.accessToken, session.sub);
+        return true;
+      } catch (error) {
+        if (error?.response?.status === 401 || error?.response?.status === 403 || error?.error === 'invalid_token') return false;
+        throw error;
+      }
+    },
     async beginDevice() {
       const nonce = oidc.randomNonce();
       const details = await oidc.initiateDeviceAuthorization(configuration, {scope:'openid profile app_data', nonce});

@@ -158,7 +158,7 @@ function PhoneRemoteScreen({preview, developerEndpoint, setDeveloperEndpoint}:{
  {displayed==='controls'&&<RemoteHandset full group="phone-modal" client={client} connected={connected} paired={!!system?.paired} ready={!!(system?.voiceReady??system?.ready)} command={command} pair={()=>setPanel('system')}/>}
  {displayed==='music'&&music&&<PhonePlayer music={music} artwork={state.artwork} connected={connected} action={(action,value)=>{void client.media(action,value);}}/>}
  {displayed==='settings'&&<>
- {!remote.preview&&!developerEndpoint&&<AccountSettings layout={{view:remoteView,touchpad}} restore={restore}/>}
+ {!remote.preview&&!developerEndpoint&&<AccountSettings layout={{view:remoteView,touchpad}} restore={restore} pairApproved={remote.pairApproved}/>}
  <Text style={s.groupTitle}>REMOTE PREFERENCES</Text>
  {row('phone-auto-remote','Automatic remote layout','remote',()=>setRemoteView(remoteView==='auto'?'home':'auto'),remoteView==='auto'?'On':'Off')}
  {remoteView!=='auto'&&row('phone-complete-remote','Complete remote','remote',()=>setRemoteView(remoteView==='full'?'home':'full'),remoteView==='full'?'On':'Off')}

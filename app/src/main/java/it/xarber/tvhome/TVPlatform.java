@@ -95,6 +95,29 @@ public final class TVPlatform {
         case "artwork":return receiverPlayback().artwork();
         case "launch":catalog.launch(data.getString("id"));return safe("accepted",true);
         case "accountChallenge":return accountChallenge();
+        case "accountInvite":
+            if(!foreground())return SystemRemoteController.error("launcher_not_active");
+            JSONObject hosted=HomeRemoteService.hostedInfo(true);
+            HomeRemoteServer inviteServer=HomeRemoteService.server();
+            String peerId=android.net.Uri.parse(hosted.optString("url")).getFragment();
+            if(inviteServer==null||!hosted.optBoolean("ready")||peerId==null||!peerId.matches("tv=[a-f0-9-]{36}"))
+                return SystemRemoteController.error("remote_unavailable");
+            String label=Settings.Global.getString(context.getContentResolver(),"device_name");
+            return inviteServer.openAccountInvitation().put("peer",peerId.substring(3))
+                .put("label",label==null||label.trim().isEmpty()?"Aurea Home":label);
+        case "accountInviteCancel":
+            HomeRemoteServer invitation=HomeRemoteService.server();
+            if(invitation!=null)invitation.closeAccountInvitation();
+            return safe("accepted",true);
+        case "accountRemotes":
+            HomeRemoteServer accountRemoteServer = HomeRemoteService.server();
+            return new JSONObject().put("remotes", accountRemoteServer == null ?
+                new org.json.JSONArray() : accountRemoteServer.listAccountRemotes());
+        case "accountRemoteRevoke":
+            if(!foreground())return SystemRemoteController.error("launcher_not_active");
+            HomeRemoteServer revokeServer = HomeRemoteService.server();
+            return revokeServer == null ? SystemRemoteController.error("remote_unavailable") :
+                revokeServer.revokeAccountRemote(data.optString("id"));
         case "accountQr":
             String code=data.getString("code");
             if(!code.matches("[A-Z0-9-]{6,10}"))throw new IllegalArgumentException("invalid_code");

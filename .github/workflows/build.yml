@@ -152,6 +152,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     env:
+      EXPO_PUBLIC_AUREA_ACCOUNTS_ENABLED: ${{ vars.AUREA_ACCOUNTS_ENABLED }}
       MITV_BUILD_CHANNEL: ${{ github.ref_name }}
       EXPO_PUBLIC_SOURCE_COMMIT: ${{ github.sha }}
       AUREA_TARGET: ${{ matrix.target }}

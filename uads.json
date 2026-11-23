@@ -518,9 +518,10 @@
       "applicability": "Required",
       "state": "Pending",
       "evidence": [
-        "docs/SECURITY.md"
+        "docs/SECURITY.md",
+        "docs/reports/2026-11-23-account-integration.md"
       ],
-      "notes": "Optional X-Center ID settings backups are under development. Live passkey, FIDO, consent and revocation verification remains pending. Local pairing remains governed by UADS-SEC-003."
+      "notes": "Optional X-Center ID backups and TV-approved pairing have source and staging evidence. Live passkey, FIDO, consent and revocation verification remains pending. Local pairing is governed by UADS-SEC-003."
     }
   ],
   "exceptions": []
