@@ -20,6 +20,7 @@ import it.xarber.tvhome.playback.PairedPlayback;
 import it.xarber.tvhome.updates.UpdateController;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import java.io.ByteArrayOutputStream;
 import java.lang.ref.WeakReference;
 import java.net.NetworkInterface;
 import java.net.Inet4Address;
