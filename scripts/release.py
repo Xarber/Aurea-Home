@@ -187,8 +187,9 @@ def main():
     elif args.action == 'notes':
         release = dict(current, record='development')
         release.pop('publications', None)
-        print(public_notes(release).replace(f'Development · {current["date"]}', '', 1).rstrip())
-        print('\n[Full changelog](https://aurea.xcenter.it/?changelog='+current['version']+')')
+        print(public_notes(release).replace(f'\n\nDevelopment · {current["date"]}', '', 1).rstrip())
+        anchor = current['version'].replace('.', '')
+        print(f'\n[Full changelog](https://github.com/Xarber/Aurea-Home/blob/{git("rev-parse","HEAD")}/CHANGELOG.md#{anchor})')
     elif args.action == 'validate': validate_archive(args.file, args.kind, args.commit, args.channel)
 
 if __name__ == '__main__': main()

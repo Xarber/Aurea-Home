@@ -1,0 +1,43 @@
+{
+  "version": "2.3.0",
+  "sourceCommit": "356da3a10950336fbb0452be99204fdc33b1f445",
+  "captureDate": "2026-11-23",
+  "receipt": [
+    {
+      "file": "onboarding-desktop.png",
+      "platform": "web",
+      "captureKind": "browser",
+      "deviceClass": "desktop",
+      "width": 1440,
+      "height": 900,
+      "sha256": "e15b476d08738d39a2bf9fde1b1a2e12f0ebba6faa1542faaa72d2dd5ababa85"
+    },
+    {
+      "file": "historical-release-desktop.png",
+      "platform": "web",
+      "captureKind": "browser",
+      "deviceClass": "desktop",
+      "width": 1440,
+      "height": 900,
+      "sha256": "0a9fade7d0f5ecccf0e02f3cd59fb7a68666c065f7777a52656b00138794985c"
+    },
+    {
+      "file": "onboarding-mobile.png",
+      "platform": "web",
+      "captureKind": "browser",
+      "deviceClass": "mobile",
+      "width": 390,
+      "height": 844,
+      "sha256": "1c02051a68ca22fe3a5ce0d89b1537d0ccad23da042451c25d91c315361b9bdf"
+    },
+    {
+      "file": "historical-release-mobile.png",
+      "platform": "web",
+      "captureKind": "browser",
+      "deviceClass": "mobile",
+      "width": 390,
+      "height": 844,
+      "sha256": "11b70b34f0b62c1a21c5670116070727516ad8519f1d6dd2ed922df11384a8f0"
+    }
+  ]
+}

@@ -15,34 +15,60 @@ final class ReleasePanels {
         for (int i = 0; i < releases.length(); i++) {
             JSONObject release = releases.optJSONObject(i);
             if (release == null || release.optInt("code") > io.github.jqssun.airplay.BuildConfig.VERSION_CODE) continue;
-            host.addControlIcon(rows, "Aurea Home " + release.optString("version"), release.optString("date"), "history", () -> {
+            label(host,rows,release.optString("version")+" · "+provenance(host,release));
+            int shown = overviewFeatures(host,rows,release,3);
+            if (shown<3) overviewFixes(host,rows,release);
+            host.addControlIcon(rows, "Full changelog", release.optString("version"), "history", () -> {
                 host.closePanel(); host.showRelease(release);
             });
         }
     }
+
     static void appendUpdate(LegacyHomeActivity host, LinearLayout rows, int previous) {
         JSONArray releases = ReleaseHistory.entries(host);
         JSONObject latest = releases.optJSONObject(0);
         if (latest == null) return;
         label(host, rows, latest.optString("version"));
-        features(host, rows, latest);
-        disclosure(host, rows, host.tr("Fixes & Improvements"), "bug", ReleaseHistory.localized(host, latest, "fixes"));
-        LinearLayout earlier=new LinearLayout(host);earlier.setOrientation(LinearLayout.VERTICAL);earlier.setVisibility(View.GONE);
-        String firstSummary="";int count=0;
-        for(int i=1;i<releases.length();i++){
-            JSONObject release=releases.optJSONObject(i);if(release==null||release.optInt("code")<=previous)continue;
-            JSONArray changes=release.optJSONArray("features");JSONObject first=changes==null?null:changes.optJSONObject(0);if(first==null)continue;
-            String title=ReleaseHistory.localized(host,first,"label");if(firstSummary.isEmpty())firstSummary=title;count++;
-            host.addControlIcon(earlier,title,release.optString("version"),first.optString("icon","history"),()->{host.closePanel();host.showRelease(release);});
+        int shown = overviewFeatures(host,rows,latest,3);
+        for (int index=1; index<releases.length() && shown<3; index++) {
+            JSONObject earlier = releases.optJSONObject(index);
+            if (earlier != null && previous>0 && earlier.optInt("code")>previous) {
+                shown += overviewFeatures(host,rows,earlier,3-shown);
+            }
         }
-        if(count>0){
-            final TextView[] trigger=new TextView[1];
-            host.addControlIcon(rows,"Earlier updates",firstSummary,"history",()->{boolean expanded=earlier.getVisibility()!=View.VISIBLE;earlier.setVisibility(expanded?View.VISIBLE:View.GONE);trigger[0].setContentDescription(host.tr("Earlier updates")+", "+host.tr(expanded?"Expanded":"Collapsed"));trigger[0].requestFocus();});
-            trigger[0]=(TextView)rows.getChildAt(rows.getChildCount()-1);trigger[0].setContentDescription(host.tr("Earlier updates")+", "+host.tr("Collapsed"));rows.addView(earlier,host.lp(-1,-2));
-        }
+        if (shown<3) overviewFixes(host,rows,latest);
     }
+
+    private static String provenance(LegacyHomeActivity host, JSONObject release) {
+        JSONArray publications = release.optJSONArray("publications");
+        JSONObject published = publications == null ? null : publications.optJSONObject(0);
+        if (published != null) {
+            return published.optString("date")+" · "+host.tr("stable".equals(published.optString("channel"))?"Stable":"Beta");
+        }
+        return release.optString("date")+" · "+host.tr("development".equals(release.optString("record"))?"Development":"Reconstructed history");
+    }
+
+    private static int overviewFeatures(LegacyHomeActivity host, LinearLayout rows, JSONObject release, int limit) {
+        JSONArray features = release.optJSONArray("features");
+        if (features == null) return 0;
+        int shown=0;
+        for (int i=0; i<features.length() && shown<limit; i++) {
+            JSONObject feature=features.optJSONObject(i);
+            if (feature == null) continue;
+            label(host, rows, ReleaseHistory.localized(host,feature,"label"));
+            label(host, rows, ReleaseHistory.localized(host,feature,"detail"));
+            shown++;
+        }
+        return shown;
+    }
+
+    private static void overviewFixes(LegacyHomeActivity host, LinearLayout rows, JSONObject release) {
+        String fixes = ReleaseHistory.localized(host,release,"fixes");
+        if (!fixes.isEmpty()) label(host,rows,host.tr("Fixes & Improvements")+"\n"+fixes);
+    }
+
     static void appendRelease(LegacyHomeActivity host, LinearLayout rows, JSONObject release) {
-        label(host, rows, release.optString("date"));
+        label(host, rows, provenance(host,release));
         features(host, rows, release);
         disclosure(host, rows, host.tr("Fixes & Improvements"), "bug", ReleaseHistory.localized(host, release, "fixes"));
         // Compatibility is visible, never hidden behind optional help.

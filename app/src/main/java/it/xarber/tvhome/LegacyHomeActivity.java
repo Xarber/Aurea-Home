@@ -437,10 +437,15 @@ public final class LegacyHomeActivity extends Activity {
         if(!resumed||isFinishing()||isDestroyed()||updatePresented||panel!=null&&panel.isShowing())return;
         if(!ReleaseHistory.pending(this))return;int previous=ReleaseHistory.previousVersion(this);
         LinearLayout rows=dialog("What’s New");ReleasePanels.appendUpdate(this,rows,previous);
-        addControlIcon(rows,"Full changelog","","history",()->{closePanel();showChangelog(false);});
+        addControlIcon(rows,"Full changelog","","history",this::showCurrentRelease);
         addControl(rows,"Done","",this::closePanel);panel.setOnDismissListener(dismissed->{if(panel==dismissed)popupBackdrop=null;ReleaseHistory.markSeen(this);});panel.show();focusFirst(rows);updatePresented=true;
     }
-    void showWhatsNew(){LinearLayout rows=dialog("What’s New");ReleasePanels.appendUpdate(this,rows,io.github.jqssun.airplay.BuildConfig.VERSION_CODE-1);addControlIcon(rows,"Full changelog","","history",()->{closePanel();showChangelog(false);});addControl(rows,"Done","",this::closePanel);panel.show();focusFirst(rows);}
+    private void showCurrentRelease(){
+        JSONObject latest=ReleaseHistory.entries(this).optJSONObject(0);
+        closePanel();
+        if(latest!=null)showRelease(latest);
+    }
+    void showWhatsNew(){LinearLayout rows=dialog("What’s New");ReleasePanels.appendUpdate(this,rows,io.github.jqssun.airplay.BuildConfig.VERSION_CODE-1);addControlIcon(rows,"Full changelog","","history",this::showCurrentRelease);addControl(rows,"Done","",this::closePanel);panel.show();focusFirst(rows);}
     void showChangelog(boolean developer){
         if(developer&&!developerEnabled())return;
         LinearLayout rows=dialog(developer?"Developer changelog":"Changelog");
@@ -448,7 +453,7 @@ public final class LegacyHomeActivity extends Activity {
         else ReleasePanels.appendHistory(this,rows);
         addControl(rows,"Done","",this::closePanel);panel.show();focusFirst(rows);
     }
-    void showRelease(org.json.JSONObject release){LinearLayout rows=dialog("Aurea Home "+release.optString("version"));ReleasePanels.appendRelease(this,rows,release);addControlIcon(rows,"Full changelog","","history",()->{closePanel();showChangelog(false);});addControl(rows,"Done","",this::closePanel);panel.show();focusFirst(rows);}
+    void showRelease(org.json.JSONObject release){LinearLayout rows=dialog("Aurea Home "+release.optString("version"));ReleasePanels.appendRelease(this,rows,release);addControlIcon(rows,"Full changelog","","history",this::showCurrentRelease);addControl(rows,"Done","",this::closePanel);panel.show();focusFirst(rows);}
     String diagnosticReport(){return it.xarber.tvhome.diagnostics.Diagnostics.report(this,nativeReceiver!=null,remoteServer!=null)+(pairedPlayback==null?"":pairedPlayback.diagnosticHistory());}
     void showDeveloperDetails(){if(!developerEnabled())return;LinearLayout rows=dialog("Diagnostic details");developerPanel=panel;TextView details=text(diagnosticReport(),11,MUTED);details.setTextIsSelectable(true);rows.addView(details,lp(-1,-2));addControl(rows,"Done","",this::closePanel);panel.show();focusFirst(rows);}
     void showDeveloperOptions(){
