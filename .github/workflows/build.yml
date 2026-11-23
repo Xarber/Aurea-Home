@@ -38,12 +38,14 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
           cache: npm
           cache-dependency-path: package-lock.json
-      - run: npm ci && npm run build && python3 scripts/ci/web_budget.py
+      - run: python3 scripts/release.py developer-notes --channel "${GITHUB_REF_NAME}" && npm ci && npm run build && python3 scripts/ci/web_budget.py
         env:
           EXPO_PUBLIC_SOURCE_COMMIT: ${{ github.sha }}
       - uses: actions/upload-artifact@v5

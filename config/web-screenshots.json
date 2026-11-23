@@ -7,7 +7,15 @@
     "width": 1440,
     "height": 900,
     "formFactor": "wide",
-    "label": "TV launcher preview"
+    "label": "TV launcher preview",
+    "platform": "web",
+    "deviceClass": "desktop",
+    "captureKind": "browser",
+    "version": "2.3.0",
+    "sourceCommit": null,
+    "assetCommit": "193ed033d0c64833711fe63f05d04e6b099f3b09",
+    "captureDate": "2026-11-16",
+    "retainedReason": "The launcher and remote preview controls shown in this capture are outside the onboarding and release-history changes."
   },
   {
     "id": "remote",
@@ -17,6 +25,14 @@
     "width": 390,
     "height": 844,
     "formFactor": "narrow",
-    "label": "Phone remote preview"
+    "label": "Phone remote preview",
+    "platform": "web",
+    "deviceClass": "mobile",
+    "captureKind": "browser",
+    "version": "2.3.0",
+    "sourceCommit": null,
+    "assetCommit": "193ed033d0c64833711fe63f05d04e6b099f3b09",
+    "captureDate": "2026-11-16",
+    "retainedReason": "The launcher and remote preview controls shown in this capture are outside the onboarding and release-history changes."
   }
 ]

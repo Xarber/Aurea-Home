@@ -1,7 +1,10 @@
+import * as Clipboard from 'expo-clipboard';
+import developerNotes from '../../assets/developer-changelog.json';
+import {useReleaseAnnouncement} from '../releases/useReleaseAnnouncement';
 import {AccountSettings} from './account/AccountSettings';
 import {canCaptureSample,shareSampleScreenshot} from './captureSample';
 import {SignalingDiagnostics} from './peer/SignalingDiagnostics';
-import {RemoteIntroduction,useRemoteIntroduction} from '../onboarding/RemoteIntroduction';
+import {RemoteIntroduction,useRemoteIntroduction,remoteIntroductionKey} from '../onboarding/RemoteIntroduction';
 import {AppleTVControls} from '../components/AppleTVControls';
 import {PreviewPanel} from './preview/PreviewPanel';
 import {useDeveloperAccess} from '../hooks/useDeveloperAccess';
@@ -61,7 +64,41 @@ function PhoneRemoteScreen({preview, developerEndpoint, setDeveloperEndpoint}:{
  const navigation=usePanelNavigation(),{panel,setPanel}=navigation;const phoneAnchor=usePhoneAnchor();const blurTarget=useRef<React.ComponentRef<typeof View>>(null);
  usePreviewOrientation(launcherPreview);
  const [tab,setTab]=useState<'remote'|'apps'|'inputs'|'tvs'>('remote');const developerAccess=useDeveloperAccess(tab==='remote'?0:tab==='apps'?1:tab==='inputs'?2:3),dev=developerAccess.enabled;const [retained,setRetained]=useState<string|null>(null);const [pin,setPin]=useState('');const [systemPin,setSystemPin]=useState('');const [hover,setHover]=useState(false);
+ const releasePanel=useRef(false);
+ const showNotes=useReleaseAnnouncement(!preview&&!developerEndpoint&&(Platform.OS!=='web'||
+  location.hostname==='aurea.xcenter.it'&&!location.search),
+  Platform.OS==='web'?'aurea-web-introduction':remoteIntroductionKey,
+  !!panel||introduction.visible||!!state.systemPairing||!!state.systemBusy||state.status==='pairing',
+  ()=>setPanel('whatsnew'));
+ useEffect(()=>{
+  if(releasePanel.current&&panel!=='whatsnew')showNotes.dismiss();
+  releasePanel.current=panel==='whatsnew';
+ },[panel,showNotes.dismiss]);
  const [showAppleTV,setShowAppleTV]=useState(false);
+ const versionRoute=useRef(false);
+ const openRelease=(version:string)=>{
+  setPanel('release:'+version);
+  if(Platform.OS==='web'){
+   const url=new URL(location.href);
+   url.searchParams.set('changelog',version);
+   history.replaceState(history.state,'',url);
+  }
+ };
+ useEffect(()=>{
+  if(Platform.OS!=='web')return;
+  const version=new URLSearchParams(location.search).get('changelog');
+  if(version&&/^\d+\.\d+(?:\.\d+)?$/.test(version))setPanel('release:'+version);
+ },[setPanel]);
+ useEffect(()=>{
+  if(Platform.OS!=='web')return;
+  if(panel?.startsWith('release:')){versionRoute.current=true;return;}
+  const url=new URL(location.href);
+  if(url.searchParams.has('changelog')&&versionRoute.current){
+   versionRoute.current=false;
+   url.searchParams.delete('changelog');
+   history.replaceState(history.state,'',url);
+  }
+ },[panel]);
  useEffect(()=>setShowAppleTV(false),[state.selected?.address]);
  const appleTV=state.device?.appleTV;
  const [tvText,setTVText]=useState(''),[typingError,setTypingError]=useState('');
@@ -107,7 +144,7 @@ function PhoneRemoteScreen({preview, developerEndpoint, setDeveloperEndpoint}:{
   window.addEventListener('keydown',down,true);window.addEventListener('keyup',up,true);return()=>{window.removeEventListener('keydown',down,true);window.removeEventListener('keyup',up,true);};
  },[client,connected,panel,tab,launcherPreview,showAppleTV,launcherConnected,appleTV?.paired]);
 
- useEffect(()=>{if(!dev&&(panel==='ideas'||panel==='signaling'||panel==='screenshots'))setPanel('settings');},[dev,panel]);
+ useEffect(()=>{if(!dev&&(panel==='ideas'||panel==='signaling'||panel==='screenshots'||panel==='developer-notes'))setPanel('settings');},[dev,panel]);
 
  useEffect(()=>{if(wasPairing.current&&!state.systemPairing&&!state.error&&state.status==='connected'){setPairSuccess(true);setSystemPin('');}wasPairing.current=state.systemPairing;},[state.systemPairing,state.error,state.status]);
  useEffect(()=>{tv.ready();},[]);
@@ -153,7 +190,7 @@ function PhoneRemoteScreen({preview, developerEndpoint, setDeveloperEndpoint}:{
  <View style={[s.tabs,{paddingBottom:Math.max(14,insets.bottom)}]}>{(['remote','apps','inputs','tvs'] as const).map(item=><FocusButton key={item} id={'phone-tab-'+item} group="phone" label={item==='remote'?'Remote':item==='apps'?'Apps':item==='tvs'?'TVs':'Inputs'} selected={tab===item} onPress={()=>setTab(item)} style={{flex:1,gap:5,borderRadius:18,padding:10,backgroundColor:tab===item?'#ffffff12':'transparent'}}><Icon name={item==='remote'?'remote':item==='apps'?'apps':item==='tvs'?'tv':'inputs'} size={21}/><Text style={s.tabText}>{item==='remote'?'Remote':item==='apps'?'Apps':item==='tvs'?'TVs':'Inputs'}</Text></FocusButton>)}</View>
  </View></View></BlurTargetView>
  {displayed&&<AnchoredPanel key={displayed==='music'?'music':'settings'} kind={displayed==='music'?'music':'settings'} phone safeInsets={{...insets,bottom:Math.max(insets.bottom,keyboardHeight)}} anchor={anchor} bounds={bounds} visible={!!panel} close={()=>setPanel(null)}>
- {displayed!=='music'&&<View style={s.panelHeader}><Text style={[s.sectionTitle,{flex:1,marginVertical:0}]}>{displayed==='preview-feed'?'Private app preview':displayed==='keyboard'?'TV keyboard':displayed==='ideas'?'Ideas':displayed==='signaling'?'Signaling server':displayed==='screenshots'?'Render Screenshots':displayed==='changelog'?'What’s new':displayed==='controls'?'TV controls':displayed==='system'?'System controls':displayed==='paired'?'Connected':'Your televisions'}</Text><FocusButton id="phone-panel-close" group="phone-modal" label={navigation.canGoBack?"Back":"Close"} onPress={navigation.canGoBack?navigation.back:navigation.close} style={s.roundButton}><Icon name={navigation.canGoBack?"back":"close"} size={20}/></FocusButton></View>}
+ {displayed!=='music'&&<View style={s.panelHeader}><Text style={[s.sectionTitle,{flex:1,marginVertical:0}]}>{displayed==='preview-feed'?'Private app preview':displayed==='keyboard'?'TV keyboard':displayed==='ideas'?'Ideas':displayed==='developer-notes'?'Developer changelog':displayed==='signaling'?'Signaling server':displayed==='screenshots'?'Render Screenshots':displayed==='whatsnew'?'What’s New':displayed==='changelog'?'Release history':displayed.startsWith('release:')?'Full changelog':displayed==='controls'?'TV controls':displayed==='system'?'System controls':displayed==='paired'?'Connected':'Your televisions'}</Text><FocusButton id="phone-panel-close" group="phone-modal" label={navigation.canGoBack?"Back":"Close"} onPress={navigation.canGoBack?navigation.back:navigation.close} style={s.roundButton}><Icon name={navigation.canGoBack?"back":"close"} size={20}/></FocusButton></View>}
  <FadedScroll>
  {displayed==='controls'&&<RemoteHandset full group="phone-modal" client={client} connected={connected} paired={!!system?.paired} ready={!!(system?.voiceReady??system?.ready)} command={command} pair={()=>setPanel('system')}/>}
  {displayed==='music'&&music&&<PhonePlayer music={music} artwork={state.artwork} connected={connected} action={(action,value)=>{void client.media(action,value);}}/>}
@@ -178,6 +215,7 @@ function PhoneRemoteScreen({preview, developerEndpoint, setDeveloperEndpoint}:{
  {developerAccess.revealed&&row('phone-developer-toggle','Developer options','code',developerAccess.toggle,dev?'On':'Off')}
  {dev&&row('phone-sample-data','Sample Data','tv',()=>{remote.setPreview(!remote.preview);setPanel(null);},remote.preview?'On':'Off')}
  {dev&&row('phone-screenshots','Render Screenshots','wallpaper',()=>setPanel('screenshots'))}
+ {dev&&row('phone-developer-notes','Developer changelog','code',()=>setPanel('developer-notes'))}
  {dev&&row('phone-signaling','Signaling server','wifi',()=>setPanel('signaling'))}
  {dev&&row('phone-ideas','Ideas','apps',()=>setPanel('ideas'))}
  {dev&&row('phone-launcher-preview','Preview launcher','apps',()=>{setPanel(null);setLauncherPreview(true);})}
@@ -199,9 +237,15 @@ function PhoneRemoteScreen({preview, developerEndpoint, setDeveloperEndpoint}:{
      ()=>{remote.setPreview(true);setPanel(null);setTab(screen);},
    ))}
  </>}
+ {displayed==='developer-notes'&&dev&&<>
+  <Text selectable style={s.description}>{developerNotes.text}</Text>
+  {row('phone-copy-developer-notes','Copy developer changelog','code',()=>{void Clipboard.setStringAsync(developerNotes.text).catch(()=>{});})}
+ </>}
  {displayed==='signaling'&&dev&&<SignalingDiagnostics active={developerEndpoint} change={setDeveloperEndpoint}/>}
- {displayed==='ideas'&&dev&&<IdeasPage group="phone-modal" onChangelog={()=>setPanel('changelog')}/>}
- {displayed==='changelog'&&<SharedChangelog/>}
+ {displayed==='ideas'&&dev&&<IdeasPage group="phone-modal" onChangelog={openRelease}/>}
+ {displayed==='whatsnew'&&showNotes.release&&<SharedChangelog announcement={showNotes.release} since={showNotes.seen} onVersion={openRelease}/>}
+ {displayed==='changelog'&&<SharedChangelog onVersion={openRelease}/>}
+ {displayed?.startsWith('release:')&&<SharedChangelog version={displayed.slice(8)}/>}
  {displayed==='system'&&<>{Platform.OS==='web'&&<><Text style={s.groupTitle}>BROWSER SYSTEM BUTTONS</Text><Text style={s.description}>Optional local debugging control. Enable USB/network debugging on the TV, then approve Aurea’s new Android debugging authorization on the television. This controls buttons inside other apps; it does not send microphone audio. No PC is needed. Disabling disconnects this bridge.</Text>{row('phone-local-adb',state.systemBusy?'Connecting…':state.device?.localAdb?.enabled?'Retry local control':'Enable local control','remote',()=>{void client.localAdb(true);},state.device?.localAdb?.status)}{state.device?.localAdb?.enabled&&row('phone-local-adb-off','Disable local control','close',()=>{void client.localAdb(false);})}</>}{Platform.OS!=='web'&&<Text style={s.description}>This phone connects directly to Android TV Remote Service for system buttons and microphone audio. The launcher connection supplies apps, inputs and music; system commands are not relayed through it.</Text>}<Text style={s.groupTitle}>SYSTEM CONTROLS · {title}</Text>{system?.paired&&!system.ready&&row('phone-reconnect-system','Reconnect saved controls','remote',()=>{void client.systemConnect();})}<Text style={s.caption}>Pairing is saved separately for each television on this phone.</Text>{state.systemBusy&&!state.systemPairing&&<View accessibilityLiveRegion="polite" style={{gap:10,paddingVertical:12}}><ActivityIndicator color="#c3d2e8"/><Text style={s.description}>Preparing a secure connection to {title}… The first request can take up to 40 seconds. The code will appear on this TV when it is ready.</Text></View>}{pairSuccess&&<Text accessibilityRole="alert" style={[s.description,{color:'#a6d6b4'}]}>System remote paired successfully. Home and navigation are ready.</Text>}<Text style={s.description}>Pair with Android TV Remote Service for navigation inside other apps and the phone microphone. Home, apps and inputs use the launcher connection.</Text>{state.systemPairing?<><TextInput testID="phone-system-pin" value={systemPin} onChangeText={setSystemPin} autoCapitalize="characters" autoCorrect={false} maxLength={6} placeholder="TV code" placeholderTextColor="#737e92" style={s.input}/>{state.systemBusy&&<ActivityIndicator accessibilityLabel="Verifying system controls" color="#c3d2e8"/>}{row('phone-finish-system',state.systemBusy?'Verifying…':'Confirm code','check',()=>{void client.systemPair(systemPin);})}{row('phone-restart-system','Show a new code','remote',()=>{setSystemPin('');void client.systemPair();})}</>:row('phone-start-system',state.systemBusy?'Requesting TV code…':'Show code on TV','remote',()=>{setPairSuccess(false);void client.systemPair();})}</>}
  </FadedScroll>
  </AnchoredPanel>}

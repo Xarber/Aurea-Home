@@ -1,3 +1,5 @@
+import {SharedChangelog} from './SharedChangelog';
+import {releaseFor} from '../releases/history';
 import {TVAccountSettings} from '../remote/account/TVAccountSettings';
 import {ReceiverControls} from './ReceiverControls';
 // SPDX-License-Identifier: AGPL-3.0-only
@@ -34,33 +36,21 @@ export function NativePanels({
   const [tvAccount,setTVAccount]=useState<{session:string;name?:string}>();
   const [retained, setRetained] = useState<string | null>(null),
     [remote, setRemote] = useState<Record<string, unknown>>({}),
-    [details, setDetails] = useState(''),
-    [history, setHistory] = useState<unknown>();
-  useEffect(() => {
-    if (demo.panel !== 'changelog' && demo.panel !== 'whatsnew') return;
-    let active = true;
-    void demo
-      .execute('changelog')
-      .then((value) => {
-        if (!active) return;
-        setHistory(value.releases);
-
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, [demo.panel]);
-  useEffect(()=>{if(demo.panel!=='whatsnew'||!history)return;const frame=requestAnimationFrame(()=>{void demo.execute('releaseSeen').catch(()=>{});});return()=>cancelAnimationFrame(frame);},[demo.panel,history]);
+    [details, setDetails] = useState('');
+  const previousPanel = React.useRef<string|null>(null);
+  useEffect(()=>{
+    if(previousPanel.current==='whatsnew' && demo.panel!=='whatsnew') {
+      void demo.execute('releaseSeen').catch(()=>{});
+    }
+    if(previousPanel.current?.startsWith('introduction') && !demo.panel?.startsWith('introduction')) {
+      void demo.execute('introductionSeen').catch(()=>{});
+    }
+    previousPanel.current=demo.panel;
+  },[demo.panel,demo.execute]);
   const access = useDeveloperAccess(demo.page),
     developer = access.enabled,
     revealed = access.revealed;
   useEffect(()=>{if(!developer&&(demo.panel==='developer'||demo.panel==='diagnostics'||demo.panel==='ideas'))demo.setPanel('control');},[developer,demo.panel]);
-  useEffect(() => {
-    if (demo.panel !== 'introduction' || !demo.snapshot?.introductionPending) return;
-    const frame = requestAnimationFrame(() => {void demo.execute('introductionSeen').catch(() => {});});
-    return () => cancelAnimationFrame(frame);
-  }, [demo.panel, demo.snapshot?.introductionPending, demo.execute]);
   const panel = demo.panel ?? retained,
     snapshot = demo.snapshot;
   useEffect(() => {
@@ -137,7 +127,7 @@ export function NativePanels({
     input: 'Choose HDMI input',
     notes: 'Release notes',
   };
-  const title = id
+  const title = panel?.startsWith('release:') ? 'Full changelog' : id
     ? panel.startsWith('pin:')
       ? 'Choose a slot'
       : app.name
@@ -159,6 +149,26 @@ export function NativePanels({
       })
       .catch(() => {});
   };
+  if (panel === 'introduction' || panel === 'introductionControls') {
+    const firstStep = panel==='introduction';
+    return <View accessibilityViewIsModal style={[StyleSheet.absoluteFill,{backgroundColor:'#111625',padding:'5%',zIndex:10}]}>
+      <FadedScroll>
+        <View style={{alignSelf:'center',width:'100%',maxWidth:720,gap:16}}>
+          <Image source={require('../../public/branding/icon-180.png')} style={{width:64,height:64,borderRadius:16}}
+            accessibilityLabel="Aurea Home"/>
+          <Text accessibilityLiveRegion="polite" style={{color:'#c4cede'}}>{t(firstStep?'Step 1 of 2':'Step 2 of 2')}</Text>
+          <Text accessibilityRole="header" style={s.title}>{t(firstStep?'Welcome to Aurea Home':'Explore Aurea Home')}</Text>
+          <Icon name={firstStep?'apps':'remote'} size={40}/>
+          {text(firstStep
+            ? 'Use the dock to open your favorite apps. Press down to see inputs, then press down again for the app library.'
+            : 'Hold OK for an app’s options. Hold Back to open Control Center and connect your phone remote.')}
+          {!firstStep && row('Back','back',demo.back)}
+          {firstStep ? row('Continue','apps',()=>demo.setPanel('introductionControls')) : row('Get Started','check',demo.close)}
+          {row('Skip introduction','close',demo.close)}
+        </View>
+      </FadedScroll>
+    </View>;
+  }
   return (
     <AnchoredPanel
       kind={panel === 'music' ? 'music' : 'settings'}
@@ -205,17 +215,6 @@ export function NativePanels({
             }
           />
         )}
-        {(panel === 'introduction' || panel === 'introductionControls') && <>
-          <Image source={require('../../public/branding/icon-180.png')} style={{width:52,height:52,borderRadius:12,alignSelf:'center',marginVertical:12}} accessibilityLabel="Aurea Home"/>
-          {panel === 'introduction' ? <>
-            {text('Use the dock to open your favorite apps. Press down to see inputs, then press down again for the app library.')}
-            {row('Next', 'apps', () => demo.setPanel('introductionControls'))}
-          </> : <>
-            {text('Hold OK for an app’s options. Hold Back to open Control Center and connect your phone remote.')}
-            {row('Get Started', 'check', demo.close)}
-          </>}
-          {row('Skip introduction', 'close', demo.close)}
-        </>}
         {panel === 'control' && (
           <>
             {row(
@@ -464,13 +463,9 @@ export function NativePanels({
                   compact
                 />
                 {row('Release notes', 'info', () => {
-                  setDetails(
-                    JSON.stringify(
-                      candidate.changes ?? candidate.notes ?? candidate,
-                      null,
-                      2,
-                    ),
-                  );
+                  const version=String(candidate.version??'');
+                  if(releaseFor(version)){demo.setPanel('release:'+version);return;}
+                  setDetails(typeof candidate.notes==='string'?candidate.notes:'Release notes unavailable.');
                   demo.setPanel('notes');
                 })}
                 {row(
@@ -499,16 +494,14 @@ export function NativePanels({
         {(panel === 'notes' || panel === 'diagnostics') && (
           <ReadableDetails text={details} />
         )}
-        {(panel === 'changelog' || panel === 'whatsnew') && (
-          <NativeReleaseHistory
-            releases={history}
-            language={demo.prefs.language}
-            compact={panel === 'whatsnew'}
-          />
-        )}
-        {panel === 'whatsnew' &&
-          row('Full changelog', 'info', () => demo.setPanel('changelog'))}
-        {panel === 'ideas' && developer && <IdeasPage onChangelog={()=>demo.setPanel('changelog')}/>}
+        {panel === 'changelog' && <SharedChangelog group="modal" language={demo.prefs.language}
+          onVersion={version=>demo.setPanel('release:'+version)}/>}
+        {panel?.startsWith('release:') && <SharedChangelog group="modal" language={demo.prefs.language}
+          version={panel.slice(8)}/>}
+        {panel === 'whatsnew' && <SharedChangelog group="modal" language={demo.prefs.language}
+          announcement={releaseFor(snapshot?.build?.version)} since={snapshot?.lastSeenRelease}
+          onVersion={version=>demo.setPanel('release:'+version)}/>}
+        {panel === 'ideas' && developer && <IdeasPage onChangelog={version=>demo.setPanel('release:'+version)}/>}
         {panel === 'developer' && (
           <>
             {row('Ideas','apps',()=>demo.setPanel('ideas'))}

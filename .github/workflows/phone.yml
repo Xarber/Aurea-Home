@@ -28,12 +28,14 @@ jobs:
       EXPO_USE_PRECOMPILED_MODULES: '0'
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
           cache: npm
           cache-dependency-path: package-lock.json
-      - run: npm ci && python3 scripts/phone/prepare.py
+      - run: python3 scripts/release.py developer-notes --channel "${GITHUB_REF_NAME}" && npm ci && python3 scripts/phone/prepare.py
       - run: npx expo prebuild --platform ios --skip-dependency-update react-native,react
         working-directory: .phone-native
       - name: Verify coherent Expo source build

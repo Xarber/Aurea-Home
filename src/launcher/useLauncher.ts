@@ -35,6 +35,7 @@ export function useNativeLauncher(): Launcher {
     generation = useRef(0),
     artworkId = useRef<string | undefined>(undefined);
   const first = useRef(true);
+  const startupNotice = useRef(false);
   const resumePairing=useRef(true);
   const accept = useCallback((value: Record<string, unknown>) => {
     const next = nativeSnapshot(value);
@@ -57,15 +58,18 @@ export function useNativeLauncher(): Launcher {
     if(resumePairing.current){resumePairing.current=false;if(next.paired.pending)setPanel('pair');}
     if (first.current) {
       setSelected(next.preferences.dock[0]!);
-      if (!next.paired.pending) {
-        if (next.releasePending) setPanel('whatsnew');
-        else if (next.introductionPending) setPanel('introduction');
-      }
       tv.ready();
       first.current = false;
     }
     return next;
   }, []);
+  useEffect(()=>{
+    if (!snapshot || panel || snapshot.paired.pending || snapshot.paired.busy || snapshot.music.active || startupNotice.current) return;
+    if (snapshot.introductionPending || snapshot.releasePending) {
+      startupNotice.current=true;
+      setPanel(snapshot.introductionPending?'introduction':'whatsnew');
+    }
+  },[snapshot,panel,setPanel]);
   const refresh = useCallback(() => {
     if (busy.current) return;
     busy.current = true;

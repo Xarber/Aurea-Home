@@ -14,3 +14,10 @@ This report covers AUREA-011 and UADS-SEC-003 and UADS-SEC-004. The checked sour
 GitHub [source quality](https://github.com/Xarber/Aurea-Home/actions/runs/45228089238) passed governance, dependency audit and source checks. The [native verification build](https://github.com/Xarber/Aurea-Home/actions/runs/45228170005) was running at the checkpoint. It cannot publish from `testing`.
 
 Live credential provisioning, provider consent, passkeys and physical security keys, camera/QR, phone browser handoff, production settings, physical-TV pairing and per-remote revocation still need validation. The protected Aurea credential was absent on X-Center during staging. UADS §27 requires authorization to rotate the previously shared client secret. The public Nginx route and running services were left as observed.
+
+
+## Live backend follow-up
+
+At the user's direction the original client secret was provisioned in the root-only configuration on X-Center. The account implementation at `ac1382b` is active, with its previous Nginx configuration retained separately for rollback. Discovery, the issuer-authenticated TV device-code request, the public session endpoint, the browser authorization redirect with S256 PKCE and the exact registered callback, and unauthenticated preferences rejection were verified. The first proxy probe reached an old Nginx worker and restored the previous config. A retry waited for the new worker and verified the endpoint. The peer service remained active. The hosted frontend still serves `7171ca61a1e8e7472638240ac30c7859a91e3523`.
+
+The previous native workflow completed with both iOS builds successful. All Android variants failed at `TVPlatform.java` on the missing `ByteArrayOutputStream` import, since corrected in source. User sign-in, consent, settings writes and physical-device verification remain open.

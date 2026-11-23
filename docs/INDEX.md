@@ -66,3 +66,5 @@ See [phone remote](features/PHONE_REMOTE.md), [PWA](features/PWA.md), and [brand
 
 - [Couch TV feature comparison](reports/COUCH_TV_COMPARISON.md)
 - [X-Center ID and Aurea settings](features/ACCOUNT_SYNC.md)
+
+- [What’s New and the release archive](features/RELEASE_HISTORY.md)

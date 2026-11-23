@@ -5,6 +5,7 @@ import type { RemoteMusic } from '../remote/types';
 export interface NativeSnapshot {
   schema: 1;
   releasePending?: boolean;
+  lastSeenRelease?: string;
   introductionPending?: boolean;
   catalog: (AppEntry & {
     kind: string;

@@ -24,20 +24,47 @@ final class ReleaseHistory {
         JSONObject value = object.optJSONObject(key);
         return value == null ? "" : value.optString(AppLanguage.code(context), value.optString("en"));
     }
-    /** Never marks an upgrade seen before its popup has actually been presented. */
-    static int previousVersion(Context context) {
+    static String lastSeenRelease(Context context) {
         SharedPreferences state = context.getSharedPreferences("release_history", 0);
-        if (!state.contains("seen")) {
-            int baseline = BuildConfig.VERSION_CODE;
+        String seen = state.getString("seen-release", "");
+        if (!seen.isEmpty()) return seen;
+        int legacy = state.getInt("seen", -1);
+        JSONArray available = entries(context);
+        for (int index = 0; index < available.length(); index++) {
+            JSONObject item = available.optJSONObject(index);
+            if (item != null && item.optInt("code") <= legacy) return item.optString("version");
+        }
+        return "";
+    }
+
+    static boolean pending(Context context) {
+        String seen = lastSeenRelease(context);
+        if (BuildConfig.VERSION_NAME.equals(seen)) return false;
+        if (seen.isEmpty()) {
             try {
                 android.content.pm.PackageInfo info = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
-                // Existing users upgrading from versions without this module still see this update.
-                if (info.lastUpdateTime > info.firstInstallTime) baseline = 0;
-            } catch (android.content.pm.PackageManager.NameNotFoundException error) { baseline = BuildConfig.VERSION_CODE; }
-            state.edit().putInt("seen", baseline).apply();
+                if (info.lastUpdateTime <= info.firstInstallTime) return false;
+            } catch (android.content.pm.PackageManager.NameNotFoundException unavailable) { return false; }
         }
-        return state.getInt("seen", BuildConfig.VERSION_CODE);
+        JSONObject current=entries(context).optJSONObject(0);
+        if (current == null || !BuildConfig.VERSION_NAME.equals(current.optString("version")) ||
+            current.optJSONArray("features") == null || current.optJSONArray("features").length() == 0) return false;
+        return previousVersion(context) < current.optInt("code");
     }
-    static void markSeen(Context context) { context.getSharedPreferences("release_history", 0).edit().putInt("seen", BuildConfig.VERSION_CODE).apply(); }
+
+    static int previousVersion(Context context) {
+        String version = lastSeenRelease(context);
+        JSONArray available = entries(context);
+        for (int index = 0; index < available.length(); index++) {
+            JSONObject item = available.optJSONObject(index);
+            if (item != null && version.equals(item.optString("version"))) return item.optInt("code");
+        }
+        return 0;
+    }
+
+    static void markSeen(Context context) {
+        context.getSharedPreferences("release_history", 0).edit()
+            .putInt("seen", BuildConfig.VERSION_CODE).putString("seen-release", BuildConfig.VERSION_NAME).apply();
+    }
     private ReleaseHistory() {}
 }

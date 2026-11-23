@@ -1,3 +1,5 @@
+import {acknowledgeRelease} from '../releases/useReleaseAnnouncement';
+import {currentRelease} from '../releases/history';
 // SPDX-License-Identifier: AGPL-3.0-only
 import React, {useEffect, useRef, useState} from 'react';
 import tvSource from '../../distribution/obtainium.json';
@@ -34,6 +36,7 @@ export function WebEntry({children}: {children: React.ReactNode}) {
   }
   function finishIntroduction() {
     try { localStorage.setItem(introductionKey, '1'); } catch { /* Optional persistence. */ }
+    void acknowledgeRelease(currentRelease.version).catch(()=>{});
     setIntroduction(false);
     if (landing) enter();
     else requestAnimationFrame(() => information.current?.focus());
@@ -136,17 +139,17 @@ function Introduction({finish}:{finish:()=>void}) {
   useEffect(()=>title.current?.focus(),[step]);
   return <main className="aurea-landing">
     <header><img src="/branding/aurea.svg" width="46" height="46" alt="Aurea"/>
-      <button style={{marginLeft:'auto'}} aria-label="Skip introduction" onClick={finish}>×</button></header>
-    <section className="aurea-hero" key={step}>
-      <div><p>Step {step+1} of 2</p>
+      <button style={{marginLeft:'auto'}} aria-label="Skip introduction" onClick={finish}>Skip</button></header>
+    <section className="aurea-hero aurea-tour" key={step}>
+      <div><p role="status">Step {step+1} of 2</p>
         <h1 tabIndex={-1} ref={title}>{step===0?'Make the TV yours.':'Keep the remote nearby.'}</h1>
         <p>{step===0?'Use the launcher to put your favorite apps and inputs together.':'Open Remote on your TV and pair this browser using the link and code on screen.'}</p>
         <div className="aurea-actions">
           {step>0&&<button onClick={()=>setStep(0)}>Back</button>}
-          <button onClick={()=>step===0?setStep(1):finish()}>{step===0?'Next':'Get Started'}</button>
+          <button onClick={()=>step===0?setStep(1):finish()}>{step===0?'Continue':'Get Started'}</button>
         </div>
       </div>
-      <picture>
+      <picture className="aurea-tour-frame">
         <source media="(max-width: 730px)" srcSet="/screenshots/remote.png"/>
         <img src="/screenshots/home.png" alt="Screenshot of the Aurea web demo"/>
       </picture>
@@ -154,6 +157,9 @@ function Introduction({finish}:{finish:()=>void}) {
   </main>;
 }
 const styles = `
+.aurea-tour-frame{display:block;padding:14px;background:#232940;border-radius:22px;border:1px solid #525a78}
+@media(max-width:730px){.aurea-tour-frame{max-width:320px;margin:auto;padding:10px}}
+
 .aurea-tools{display:flex;justify-content:flex-end;flex-wrap:wrap}.aurea-tools button{align-self:flex-end;margin:6px 12px;border:1px solid #777e99;border-radius:12px;background:#161b2e;color:#fff;min-height:44px;padding:8px 12px;cursor:pointer}
 .aurea-landing{box-sizing:border-box;min-height:100%;height:100%;overflow:auto;color:#f5f4ff;background:radial-gradient(ellipse at 75% 12%,#313260,#141728 48%,#10131e);font-family:system-ui;padding:clamp(18px,5vw,72px)}
 .aurea-landing header,.aurea-hero,.aurea-downloads,.aurea-landing footer{max-width:1200px;margin-inline:auto}

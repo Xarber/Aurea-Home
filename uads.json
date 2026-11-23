@@ -374,7 +374,8 @@
       "applicability": "Required",
       "state": "Pending",
       "evidence": [
-        "scripts/expo/capture.mjs"
+        "scripts/expo/capture.mjs",
+        "docs/features/RELEASE_HISTORY.md"
       ],
       "notes": "Web, TV and phone introductions exist. Phone Developer Options can open isolated sample screens. The phone has sample-only capture and share. Native runtime checks and matching platform screenshots remain open."
     },

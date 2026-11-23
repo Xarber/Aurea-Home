@@ -15,7 +15,7 @@ const {version, commit} = await releaseResponse.json();
 const screenshots = [];
 const browser = await chromium.launch({channel: process.env.CI ? 'chromium' : 'chrome'});
 try {
-  for (const {id, route, ready, width, height} of captures) {
+  for (const {id, route, ready, width, height, platform, deviceClass, captureKind} of captures) {
     const page = await browser.newPage({viewport: {width, height}, reducedMotion: 'reduce', serviceWorkers: 'block'});
     try {
       await page.clock.setFixedTime(new Date(2026, 10, 16, 10, 9));
@@ -25,7 +25,7 @@ try {
       await mkdir(output, {recursive: true});
       const filename = id + '.png';
       const image = await page.screenshot({path: resolve(output, filename), animations: 'disabled'});
-      screenshots.push({id, route, width, height, filename, sha256:createHash('sha256').update(image).digest('hex')});
+      screenshots.push({id, route, width, height, filename, platform, deviceClass, captureKind, version, sourceCommit:commit, captureDate:new Date().toISOString().slice(0,10), sha256:createHash('sha256').update(image).digest('hex')});
     } finally {
       await page.close();
     }

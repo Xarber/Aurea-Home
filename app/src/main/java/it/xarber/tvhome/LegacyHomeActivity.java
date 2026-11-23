@@ -435,10 +435,10 @@ public final class LegacyHomeActivity extends Activity {
     String readAsset(String name){try(InputStream in=getAssets().open(name)){ByteArrayOutputStream out=new ByteArrayOutputStream();byte[] buffer=new byte[4096];int count;while((count=in.read(buffer))!=-1)out.write(buffer,0,count);return out.toString("UTF-8");}catch(IOException error){return tr("Unavailable");}}
     void maybeShowUpdate(){
         if(!resumed||isFinishing()||isDestroyed()||updatePresented||panel!=null&&panel.isShowing())return;
-        int previous=ReleaseHistory.previousVersion(this);if(previous>=io.github.jqssun.airplay.BuildConfig.VERSION_CODE)return;
+        if(!ReleaseHistory.pending(this))return;int previous=ReleaseHistory.previousVersion(this);
         LinearLayout rows=dialog("What’s New");ReleasePanels.appendUpdate(this,rows,previous);
         addControlIcon(rows,"Full changelog","","history",()->{closePanel();showChangelog(false);});
-        addControl(rows,"Done","",this::closePanel);panel.show();focusFirst(rows);updatePresented=true;ReleaseHistory.markSeen(this);
+        addControl(rows,"Done","",this::closePanel);panel.setOnDismissListener(dismissed->{if(panel==dismissed)popupBackdrop=null;ReleaseHistory.markSeen(this);});panel.show();focusFirst(rows);updatePresented=true;
     }
     void showWhatsNew(){LinearLayout rows=dialog("What’s New");ReleasePanels.appendUpdate(this,rows,io.github.jqssun.airplay.BuildConfig.VERSION_CODE-1);addControlIcon(rows,"Full changelog","","history",()->{closePanel();showChangelog(false);});addControl(rows,"Done","",this::closePanel);panel.show();focusFirst(rows);}
     void showChangelog(boolean developer){

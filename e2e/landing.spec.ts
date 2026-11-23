@@ -27,7 +27,7 @@ test('hosted landing offers validated downloads and remembers entry',async({page
   expect(JSON.parse(decodeURIComponent(deepLink.replace('obtainium://app/',''))).id).toBe('it.xarber.mitvhome');
   await expect(page.getByRole('link',{name:'Add to AltStore'})).toHaveAttribute('href',/altdirect\.app/);
   await page.getByRole('button',{name:'Open Web App'}).click();
-  await page.getByRole('button',{name:'Next',exact:true}).click();
+  await page.getByRole('button',{name:'Continue',exact:true}).click();
   await page.getByRole('button',{name:'Get Started'}).click();
   await page.reload();
   await expect(page.getByRole('button',{name:'About Aurea'})).toBeVisible();

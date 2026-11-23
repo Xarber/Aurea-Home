@@ -1,71 +1,59 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, { useState } from "react";
-import { View, Text } from "react-native";
-import history from "../../assets/release-history.json";
-import { FocusButton } from "./FocusButton";
-import { Icon } from "./Icon";
-/** Generated from the canonical release source, bundled for offline phone/web use. */
-export function SharedChangelog({ group = "phone-modal" }: { group?: string }) {
-  const [expanded, setExpanded] = useState<string>();
-  return (
-    <View style={{ gap: 16 }}>
-      {history.releases.map((release) => (
-        <View key={release.version} style={{ gap: 10 }}>
-          <FocusButton
-            id={"release-" + release.version}
-            group={group}
-            label={release.version + " · " + release.highlights.en}
-            onPress={() =>
-              setExpanded(
-                expanded === release.version ? undefined : release.version,
-              )
-            }
-            style={{ alignItems: "flex-start", padding: 12 }}
-          >
-            <Text style={{ color: "#fff", fontSize: 19, fontWeight: "700" }}>
-              {release.version} · {release.date}
-            </Text>
-            <Text style={{ color: "#c4cede", fontSize: 14 }}>
-              {release.highlights.en}
-            </Text>
-          </FocusButton>
-          {expanded === release.version && (
-            <>
-              <View style={{ gap: 10 }}>
-                {release.features.map((feature, index) => (
-                  <View key={index} style={{ flexDirection: "row", gap: 10 }}>
-                    <Icon
-                      name={
-                        feature.icon === "code"
-                          ? "code"
-                          : feature.icon === "remote"
-                            ? "remote"
-                            : "info"
-                      }
-                      size={20}
-                    />
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: "#fff", fontWeight: "600" }}>
-                        {feature.label.en}
-                      </Text>
-                      <Text style={{ color: "#bcc7d8" }}>
-                        {feature.detail.en}
-                      </Text>
-                    </View>
-                  </View>
-                ))}
-              </View>
-              <Text style={{ color: "#fff", fontWeight: "600" }}>
-                Fixes &amp; Improvements
-              </Text>
-              <Text style={{ color: "#bcc7d8" }}>{release.fixes.en}</Text>
-              <Text style={{ color: "#aab7cc" }}>
-                {release.compatibility.en}
-              </Text>
-            </>
-          )}
-        </View>
-      ))}
-    </View>
-  );
+import React from 'react';
+import {Text, View} from 'react-native';
+import {releases, releaseChanges, releaseFor, type Release} from '../releases/history';
+import type {IconName} from '../model/catalog';
+import {FocusButton} from './FocusButton';
+import {Icon} from './Icon';
+
+const icons: Record<string, IconName> = {
+  remote:'remote', inputs:'inputs', apps:'apps', controls:'settings', airplay:'airplay',
+  sound:'volume', code:'code', history:'info', transfer:'apps', shield:'check',
+};
+
+export function SharedChangelog({group='phone-modal', version, announcement, since, language='en', onVersion}: {
+  group?:string;
+  version?:string;
+  announcement?:Release;
+  since?:string;
+  language?:'en'|'it';
+  onVersion?:(version:string)=>void;
+}) {
+  const selected = releaseFor(version);
+  const entries = announcement ? [announcement] : selected ? [selected] : version ? [] : releases;
+  const archive = !version && !announcement;
+  return <View style={{gap:22,paddingBottom:12}}>
+    {version && !selected && <Text style={{color:'#c4cede'}}>Release notes unavailable.</Text>}
+    {archive && <Text accessibilityRole="header" style={{color:'#fff',fontSize:20,fontWeight:'700'}}>
+      {language==='it'?'Cronologia delle versioni':'Release history'}
+    </Text>}
+    {entries.map(release=>{
+      const publication = release.publications?.[0];
+      const status = publication
+        ? publication.channel === 'stable' ? (language==='it'?'Stabile':'Stable') : 'Beta'
+        : release.record === 'development' ? (language==='it'?'Sviluppo':'Development')
+          : (language==='it'?'Cronologia ricostruita':'Reconstructed history');
+      return <View key={release.version} style={{gap:10,padding:12,borderRadius:14,backgroundColor:'#ffffff09'}}>
+        <Text accessibilityRole="header" style={{color:'#fff',fontSize:19,fontWeight:'700'}}>
+          {release.version} · {publication?.date ?? release.date} · {status}
+        </Text>
+        {releaseChanges(release,!!selected,since).map((row,index)=>
+          <View key={index} style={{flexDirection:'row',gap:10}}>
+            <Icon name={icons[row.icon] ?? 'info'} size={20}/>
+            <View style={{flex:1,gap:2}}>
+              <Text style={{color:'#fff',fontWeight:'600'}}>{row.label[language]}</Text>
+              <Text style={{color:'#c4cede',lineHeight:20}}>{row.detail[language]}</Text>
+            </View>
+          </View>
+        )}
+        {selected && <Text style={{color:'#c4cede'}}>{release.compatibility[language]}</Text>}
+        {(archive || !!announcement) && onVersion && <FocusButton id={'release-'+release.version}
+          group={group} label={(language==='it'?'Registro completo':'Full changelog')+' '+release.version}
+          style={{alignItems:'flex-start',justifyContent:'center',minHeight:44}}
+          onPress={()=>onVersion(release.version)}>
+          <Text style={{color:'#dce4ff',fontWeight:'600'}}>{language==='it'?'Registro completo':'Full changelog'}</Text>
+        </FocusButton>}
+      </View>;
+    })}
+  </View>;
 }
