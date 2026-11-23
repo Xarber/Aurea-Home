@@ -36,3 +36,24 @@ test('hosted landing offers validated downloads and remembers entry',async({page
   await page.goBack();
   await expect(page.getByRole('button',{name:'About Aurea'})).toBeVisible();
 });
+
+test('onboarding offers Back and Skip in a short viewport with enlarged text',async({page,baseURL})=>{
+  await page.setViewportSize({width:640,height:340});
+  await page.route('https://aurea.xcenter.it/**',async route=>{
+    const url=new URL(route.request().url());
+    await route.fulfill({response:await route.fetch({url:baseURL+url.pathname+url.search})});
+  });
+  await page.route('https://api.github.com/**',route=>route.fulfill({status:503}));
+  await page.goto('https://aurea.xcenter.it/');
+  await page.getByRole('button',{name:'Open Web App'}).click();
+  await page.addStyleTag({content:'.aurea-tour p{font-size:1.5rem}'});
+  await expect(page.getByRole('status',{name:''})).toHaveText('Step 1 of 2');
+  await page.getByRole('button',{name:'Continue',exact:true}).click();
+  await expect(page.getByRole('status',{name:''})).toHaveText('Step 2 of 2');
+  await page.getByRole('button',{name:'Back',exact:true}).click();
+  await expect(page.getByRole('status',{name:''})).toHaveText('Step 1 of 2');
+  await page.getByRole('button',{name:'Skip introduction'}).click();
+  await expect(page.getByRole('button',{name:'About Aurea'})).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('button',{name:'Skip introduction'})).toHaveCount(0);
+});
