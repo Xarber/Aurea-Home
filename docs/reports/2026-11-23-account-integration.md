@@ -1,6 +1,6 @@
 # Aurea account integration verification
 
-This report covers AUREA-011 and UADS-SEC-003 and UADS-SEC-004. It records the source batch containing this report. The sign-in, backup and approved-TV invitation implementations use existing account and device trust boundaries.
+This report covers AUREA-011 and UADS-SEC-003 and UADS-SEC-004. The checked source commit is `ac1382b` on `testing`. The sign-in, backup and approved-TV invitation implementations use existing account and device trust boundaries.
 
 | Check | Evidence |
 |---|---|
@@ -10,5 +10,7 @@ This report covers AUREA-011 and UADS-SEC-003 and UADS-SEC-004. It records the s
 | Browser UI | A fresh export passed the Chromium test for opening hosted account settings, loading a remote backup, restoring its preferences and discovering the approved TV. The first run needed an exact button-label match in the test. The browser routed account responses to fixtures. |
 | X-Center staging | The isolated account snapshot installed its locked dependencies, loaded the OIDC module and passed service unit and Nginx syntax checks. The existing signaling unit remained active. The public session URL returned the existing static HTML. |
 | UADS declaration | The schema validator checked 53 requirement entries. The security requirements remain Pending for live provider and device verification. |
+
+GitHub [source quality](https://github.com/Xarber/Aurea-Home/actions/runs/45228089238) passed governance, dependency audit and source checks. The [native verification build](https://github.com/Xarber/Aurea-Home/actions/runs/45228170005) was running at the checkpoint. It cannot publish from `testing`.
 
 Live credential provisioning, provider consent, passkeys and physical security keys, camera/QR, phone browser handoff, production settings, physical-TV pairing and per-remote revocation still need validation. The protected Aurea credential was absent on X-Center during staging. UADS §27 requires authorization to rotate the previously shared client secret. The public Nginx route and running services were left as observed.
