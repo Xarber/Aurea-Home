@@ -374,7 +374,7 @@ function LauncherView({ demo,onTarget,onOpenRemote }: { demo: Launcher;onOpenRem
     <BlurEnabled.Provider value={demo.prefs.blur!==false}><GlassTarget.Provider value={target}>
       <View style={[s.root, { height: canvasHeight, maxHeight: canvasHeight }]}>
         <BlurTargetView ref={target} style={StyleSheet.absoluteFill}>
-          <Wallpaper id={demo.prefs.wallpaper} motion={demo.prefs.motion} />
+          <Wallpaper id={demo.prefs.wallpaper} motion={demo.prefs.motion} city={demo.prefs.weatherCity} />
           <MusicTint dominance={demo.snapshot?.music.dominance} enabled={demo.prefs.musicTint===true} playing={demo.playing&&demo.music} colors={demo.native?(demo.snapshot?.music.colors??['#e6eaf0','#929aa8']):tracks[demo.track]!.colors}/>
 
           <View testID="launcher-hero"

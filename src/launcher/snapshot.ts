@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import {weatherCity} from '../model/weather';
 import type { NativeSnapshot } from './types';
 export function nativeSnapshot(value: Record<string, unknown>): NativeSnapshot {
   if (
@@ -40,5 +41,6 @@ export function nativeSnapshot(value: Record<string, unknown>): NativeSnapshot {
     throw new Error('invalid_native_response');
   if (!value.music || !value.network || !value.paired || !value.build)
     throw new Error('invalid_native_response');
+  prefs.weatherCity=weatherCity(prefs.weatherCity);
   return value as unknown as NativeSnapshot;
 }

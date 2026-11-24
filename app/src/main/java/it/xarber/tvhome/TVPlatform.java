@@ -64,6 +64,9 @@ public final class TVPlatform {
     JSONObject snapshot(boolean refresh)throws Exception{
         main.post(this::notifyUpdate);JSONObject result=new JSONObject().put("schema",1).put("catalog",catalog.read(refresh));
         JSONObject preferences=appearance().put("dock",catalog.dock());
+        String weatherCity=households.appearance().getString("weather-city",null);
+        if(weatherCity!=null)try{preferences.put("weatherCity",new JSONObject(weatherCity));}
+        catch(org.json.JSONException invalid){/* A malformed saved city falls back to the local clock. */}
         AudioManager audio=context.getSystemService(AudioManager.class);int maximum=audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC);int volume=Math.round(100f*audio.getStreamVolume(AudioManager.STREAM_MUSIC)/Math.max(1,maximum));
         JSONObject music=receiverPlayback().state();Bitmap cover=receiverPlayback().cover();if(cover!=paletteArtwork){paletteArtwork=cover;palette=new JSONArray();for(int color:WavePalette.from(cover))palette.put(String.format(java.util.Locale.US,"#%06x",color&0xffffff));}music.put("colors",palette).put("dominance",WavePalette.dominance(cover));HomeRemoteServer remote=HomeRemoteService.server();
         result.put("preferences",preferences).put("music",music).put("network",network()).put("volume",volume).put("remoteConnected",remote!=null&&remote.hasActiveRemote()).put("paired",pairedState()).put("receiver",ReceiverSettings.state(context)).put("updates",updateState())
@@ -103,7 +106,7 @@ public final class TVPlatform {
             if(!foreground()||!households.activeId().equals(data.getString("id")))throw new IllegalStateException("profile_changed");
             if(data.has("appearance")){
                 JSONObject incoming=data.getJSONObject("appearance");
-                if(incoming.has("dock"))throw new IllegalArgumentException("invalid_appearance");
+                if(incoming.has("dock")||incoming.has("weatherCity"))throw new IllegalArgumentException("invalid_appearance");
                 savePreferences(incoming);
             }
             return data.has("appearance")?snapshot(false):appearance();
@@ -224,6 +227,20 @@ public final class TVPlatform {
             String value=data.getString("wallpaper");
             if(!WallpaperArt.valid(value))throw new IllegalArgumentException("invalid_wallpaper");
             edit.putString("wallpaper",value);
+        }
+        if(data.has("weatherCity")){
+            JSONObject city=data.optJSONObject("weatherCity");
+            if(data.isNull("weatherCity"))edit.remove("weather-city");
+            else {
+                if(city==null)throw new IllegalArgumentException("invalid_weather_city");
+                String label=city.getString("label");
+                double latitude=city.getDouble("latitude"),longitude=city.getDouble("longitude");
+                if(label.trim().isEmpty()||label.length()>160||!Double.isFinite(latitude)||!Double.isFinite(longitude)||
+                   Math.abs(latitude)>90||Math.abs(longitude)>180)throw new IllegalArgumentException("invalid_weather_city");
+                JSONObject sanitized=new JSONObject().put("label",label).put("latitude",Math.round(latitude*100)/100.0)
+                    .put("longitude",Math.round(longitude*100)/100.0);
+                edit.putString("weather-city",sanitized.toString());
+            }
         }
         if(data.has("musicTint"))edit.putBoolean("music-wallpaper-tint",data.getBoolean("musicTint"));
         if(data.has("blur"))edit.putBoolean("blur-enabled",data.getBoolean("blur"));

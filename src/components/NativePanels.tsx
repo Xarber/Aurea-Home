@@ -11,6 +11,7 @@ import { AnchoredPanel, type Anchor } from './AnchoredPanel';
 import { FocusButton } from './FocusButton';
 import { FadedScroll } from './FadedScroll';
 import { Icon } from './Icon';
+import {WallpaperWeatherSettings} from './WallpaperWeatherSettings';
 import { Wallpaper } from './Wallpaper';
 import { wallpapers, type IconName } from '../model/catalog';
 import { PhonePlayer } from '../remote/PhonePlayer';
@@ -390,7 +391,7 @@ export function NativePanels({
                   <FocusButton
                     id={'native-wallpaper-' + w.id}
                     group="modal"
-                    label={w.name}
+                    label={t(w.name)}
                     selected={w.id === demo.prefs.wallpaper}
                     onPress={() => demo.change({ wallpaper: w.id })}
                     style={{
@@ -405,10 +406,12 @@ export function NativePanels({
                       <Icon name="check" size={22} />
                     )}
                   </FocusButton>
-                  <Text style={s.description}>{w.name}</Text>
+                  <Text style={s.description}>{t(w.name)}</Text>
                 </View>
               ))}
             </View>
+            {demo.prefs.wallpaper==='daylight'&&<WallpaperWeatherSettings city={demo.prefs.weatherCity}
+              language={demo.prefs.language} t={t} change={weatherCity=>demo.change({weatherCity})}/>}
             {row('Music wallpaper tint','music',()=>demo.change({musicTint:!demo.prefs.musicTint}),demo.prefs.musicTint?'On':'Off')}
             {row(
               'Animated wallpapers',

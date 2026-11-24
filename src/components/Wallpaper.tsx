@@ -1,27 +1,56 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import React,{useEffect,useId,useState} from 'react';
-import {Platform,StyleSheet,View,AppState} from 'react-native';
+import {StyleSheet,View,AppState} from 'react-native';
 import {LinearGradient} from 'expo-linear-gradient';
 import Svg,{Path,Defs,LinearGradient as SvgGradient,Stop} from 'react-native-svg';
 import Animated,{useSharedValue,useAnimatedStyle,withRepeat,withTiming,Easing,cancelAnimation,useReducedMotion} from 'react-native-reanimated';
 import {usePaletteTransition} from '../hooks/usePaletteTransition';
+import {fetchWeather,weatherAccent,weatherPhase,type WeatherCity,type WeatherObservation} from '../model/weather';
 import {daylightPalette} from '../model/daylight';
 import {wallpapers} from '../model/catalog';
-export function Wallpaper({id,motion=false,mini=false}:{id:string;motion?:boolean;mini?:boolean}){
+export function Wallpaper({id,motion=false,mini=false,city}:{id:string;motion?:boolean;mini?:boolean;city?:WeatherCity|null}){
  const [active,setActive]=useState(AppState.currentState!=='background'&&AppState.currentState!=='inactive');
  useEffect(()=>{const subscription=AppState.addEventListener('change',state=>setActive(state==='active'));return()=>subscription.remove();},[]);
  const wallpaper=wallpapers.find(w=>w.id===id)??wallpapers[0]!;const reduced=useReducedMotion();
  const drift=useSharedValue(0);
  useEffect(()=>{cancelAnimation(drift);drift.set(0);if(motion&&!reduced&&!mini&&active)drift.set(withRepeat(withTiming(1,{duration:10000,easing:Easing.inOut(Easing.sin)}),-1,true));return()=>cancelAnimation(drift);},[motion,reduced,mini,active]);
- const [hour,setHour]=useState(()=>new Date().getHours());
+ const [now,setNow]=useState(Date.now);
+ const [observation,setObservation]=useState<{place:string;value:WeatherObservation}>();
+ const place=id==='daylight'&&!mini&&city?city.latitude+','+city.longitude:undefined;
+ useEffect(()=>{
+  if(!place||!city||!active)return;
+  let timer:ReturnType<typeof setTimeout>;
+  const lifetime=new AbortController();
+  async function refresh(){
+   const request=new AbortController();
+   const abort=()=>request.abort();
+   lifetime.signal.addEventListener('abort',abort,{once:true});
+   const timeout=setTimeout(abort,8000);
+   try{
+    const value=await fetchWeather(city!,request.signal);
+    if(value&&!lifetime.signal.aborted)setObservation({place:place!,value});
+   }catch{/* Keep the last usable observation and fall back to the clock as it ages. */}
+   finally{
+    clearTimeout(timeout);
+    lifetime.signal.removeEventListener('abort',abort);
+    if(!lifetime.signal.aborted)timer=setTimeout(()=>void refresh(),30*60*1000);
+   }
+  }
+  void refresh();
+  return()=>{lifetime.abort();clearTimeout(timer);};
+ },[place,active]);
  useEffect(()=>{
   if(id!=='daylight'||mini||!active)return;
-  const update=()=>setHour(new Date().getHours());
+  const update=()=>setNow(Date.now());
   update();
   const timer=setInterval(update,30000);
   return()=>clearInterval(timer);
  },[id,mini,active]);
- const palette=id==='daylight'&&!mini?daylightPalette(hour):wallpaper.colors;
+ const reading=place&&observation?.place===place?observation.value:undefined;
+ const hour=reading?weatherPhase(reading,now/1000):undefined;
+ const clockPalette=id==='daylight'&&!mini?daylightPalette(hour??new Date(now).getHours()):wallpaper.colors;
+ const accent=reading&&hour!==undefined?weatherAccent(reading.weatherCode):undefined;
+ const palette=accent?[clockPalette[0],accent,clockPalette[2]] as const:clockPalette;
  const {layers,fade}=usePaletteTransition(palette,mini);
  const style=useAnimatedStyle(()=>({transform:[{translateX:drift.get()*28},{translateY:drift.get()*-16},{scale:1.3}]}));
  return <View testID={mini?undefined:'wallpaper-background'} style={[StyleSheet.absoluteFill,{overflow:'hidden',backgroundColor:palette[0]}]} pointerEvents="none">
