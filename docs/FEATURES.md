@@ -35,4 +35,4 @@ The shared TV launcher keeps each household profile’s dock, library visibility
 
 ### Household widgets
 
-In **Control Center → Household widgets**, a profile can save world clocks, minute timers and date countdowns. They stay on this TV and are separate across profiles. Timer deadlines persist while the panel is closed. The panel shows elapsed deadlines when reopened. The current timer interface has no background alarm.
+In **Control Center → Household widgets**, a profile can save world clocks, minute timers, date countdowns and household notes. They stay on this TV and are separate across profiles. Timer deadlines persist while the panel is closed. The panel shows elapsed deadlines when reopened. The current timer interface has no background alarm.

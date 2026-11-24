@@ -23,3 +23,8 @@ test('date countdowns reject invalid dates and count calendar days',()=>{
   assert.equal(countdownDate('2026-03-01',today),'2026-03-01');
   assert.equal(daysUntil(new Date(2026,2,1).getTime(),today),2);
 });
+
+test('household notes preserve their text and reject oversized imports',()=>{
+ const note={id:'1',type:'note',label:'Tomorrow',body:'Pick up groceries'};
+ assert.deepEqual(parseWidgets([note,{...note,body:'x'.repeat(601)}]),[note]);
+});

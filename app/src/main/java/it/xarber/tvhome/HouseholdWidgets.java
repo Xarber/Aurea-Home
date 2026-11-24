@@ -34,6 +34,11 @@ final class HouseholdWidgets {
                 String zone=request.getString("zone");
                 if(zone.length()>80||!ZoneId.getAvailableZoneIds().contains(zone))throw new IllegalArgumentException("invalid_zone");
                 value.put("type","clock").put("zone",zone);
+            }else if(operation.equals("note")){
+                String body=request.getString("body").trim();
+                if(body.isEmpty()||body.length()>600||body.replace("\n","").matches("(?s).*[\\p{Cc}\\p{Cf}].*"))
+                    throw new IllegalArgumentException("invalid_note");
+                value.put("type","note").put("body",body);
             }else if(operation.equals("countdown")){
                 java.time.LocalDate date=java.time.LocalDate.parse(request.getString("date"));
                 if(date.isBefore(java.time.LocalDate.now())||date.isAfter(java.time.LocalDate.now().plusYears(20)))

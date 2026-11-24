@@ -19,7 +19,7 @@ function clock(now:number,zone:string,language:string) {
 export function HouseholdWidgetSettings({demo,t}:{demo:Launcher;t:(text:string)=>string}) {
  const profile=demo.prefs.householdProfile??'home';
  const [widgets,setWidgets]=useState<Widget[]>([]);
- const [form,setForm]=useState<'timer'|'clock'|'countdown'>();
+ const [form,setForm]=useState<'timer'|'clock'|'countdown'|'note'>();
  const [name,setName]=useState(''),[value,setValue]=useState('');
  const [loading,setLoading]=useState(true),[error,setError]=useState(false);
  const [now,setNow]=useState(Date.now);
@@ -57,18 +57,22 @@ export function HouseholdWidgetSettings({demo,t}:{demo:Launcher;t:(text:string)=
  return <View style={{gap:7,paddingVertical:8}}>
   {error&&<Text accessibilityLiveRegion="polite" style={{color:'#ffd4e0'}}>{t('Could not update household widgets.')}</Text>}
   {!form&&<>
-   {widgets.map(widget=>row(widget.id,remove===widget.id?t('Remove')+' · '+widget.label:widget.label,()=>{
+   {widgets.map(widget=><View key={widget.id}>
+    {row(widget.id,remove===widget.id?t('Remove')+' · '+widget.label:widget.label,()=>{
     if(remove!==widget.id){setRemove(widget.id);return;}
     setRemove(undefined);
     void change({action:'remove',id:widget.id});
    },widget.type==='clock'?clock(now,widget.zone,demo.prefs.language):
-      widget.type==='countdown'?(now>=widget.until?t('Reached date'):new Intl.NumberFormat(demo.prefs.language,
+      widget.type==='note'?undefined:widget.type==='countdown'?(now>=widget.until?t('Reached date'):new Intl.NumberFormat(demo.prefs.language,
         {style:'unit',unit:'day',unitDisplay:'long'}).format(daysUntil(widget.until,now))):
-      now>=widget.until?t('Finished'):remainingTime(widget.until,now)))}
+      now>=widget.until?t('Finished'):remainingTime(widget.until,now))}
+    {widget.type==='note'&&<Text style={{color:'#dee8fc',lineHeight:23,paddingHorizontal:12,paddingBottom:8}}>{widget.body}</Text>}
+   </View>)}
    {widgets.length<12&&<>
     {row('timer',t('Add timer'),()=>setForm('timer'))}
     {row('clock',t('Add world clock'),()=>setForm('clock'))}
     {row('countdown',t('Add date countdown'),()=>setForm('countdown'))}
+    {row('note',t('Add note'),()=>setForm('note'))}
    </>}
   </>}
   {form==='timer'&&<>
@@ -93,6 +97,13 @@ export function HouseholdWidgetSettings({demo,t}:{demo:Launcher;t:(text:string)=
    <TVTextInput id="countdown-date" t={t} value={value} onChangeText={setValue} maxLength={10} placeholder="YYYY-MM-DD"
     accessibilityLabel={t('Countdown date (year-month-day)')} placeholderTextColor="#aeb9c9" style={inputStyle}/>
    {row('start-date',t('Start countdown'),()=>void change({action:'countdown',label:name.trim()||t('Countdown'),date}),undefined,!date)}
+  </>}
+  {form==='note'&&<>
+   <TVTextInput id="note-title" t={t} value={name} onChangeText={setName} maxLength={48} placeholder={t('Note title')}
+    accessibilityLabel={t('Note title')} placeholderTextColor="#aeb9c9" style={inputStyle}/>
+   <TVTextInput id="note-body" t={t} value={value} onChangeText={setValue} maxLength={600} multiline
+    placeholder={t('Note')} accessibilityLabel={t('Note')} placeholderTextColor="#aeb9c9" style={[inputStyle,{minHeight:80}]}/>
+   {row('save-note',t('Save note'),()=>void change({action:'note',label:name.trim()||t('Note'),body:value.trim()}),undefined,!value.trim())}
   </>}
   {!!form&&row('cancel',t('Cancel'),()=>{setForm(undefined);setName('');setValue('');})}
  </View>;

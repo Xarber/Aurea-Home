@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 type Base={id:string;label:string};
-export type Widget=(Base&{type:'clock';zone:string})|(Base&{type:'timer'|'countdown';until:number});
+export type Widget=(Base&{type:'clock';zone:string})|(Base&{type:'timer'|'countdown';until:number})|(Base&{type:'note';body:string});
 
 export function remainingTime(until:number,now:number) {
  const seconds=Math.max(0,Math.ceil((until-now)/1000));
@@ -37,5 +37,6 @@ export function parseWidgets(raw:unknown):Widget[] {
  return raw.slice(0,12).filter((widget):widget is Widget=>!!widget&&typeof widget.id==='string'&&
   typeof widget.label==='string'&&(
   widget.type==='clock'&&typeof widget.zone==='string'||
+  widget.type==='note'&&typeof widget.body==='string'&&widget.body.length<=600||
   (widget.type==='timer'||widget.type==='countdown')&&typeof widget.until==='number'&&Number.isFinite(widget.until)));
 }
