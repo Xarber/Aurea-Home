@@ -2,10 +2,10 @@
 import React,{useEffect,useId,useState} from 'react';
 import {StyleSheet,View,AppState} from 'react-native';
 import {LinearGradient} from 'expo-linear-gradient';
-import Svg,{Path,Defs,LinearGradient as SvgGradient,Stop} from 'react-native-svg';
+import Svg,{Path,Circle,Defs,LinearGradient as SvgGradient,Stop} from 'react-native-svg';
 import Animated,{useSharedValue,useAnimatedStyle,withRepeat,withTiming,Easing,cancelAnimation,useReducedMotion} from 'react-native-reanimated';
 import {usePaletteTransition} from '../hooks/usePaletteTransition';
-import {fetchWeather,weatherAccent,weatherPhase,type WeatherCity,type WeatherObservation} from '../model/weather';
+import {fetchWeather,weatherAccent,weatherEffect,weatherPhase,type WeatherCity,type WeatherObservation} from '../model/weather';
 import {daylightPalette} from '../model/daylight';
 import {wallpapers} from '../model/catalog';
 export function Wallpaper({id,motion=false,mini=false,city}:{id:string;motion?:boolean;mini?:boolean;city?:WeatherCity|null}){
@@ -49,13 +49,15 @@ export function Wallpaper({id,motion=false,mini=false,city}:{id:string;motion?:b
  const reading=place&&observation?.place===place?observation.value:undefined;
  const hour=reading?weatherPhase(reading,now/1000):undefined;
  const clockPalette=id==='daylight'&&!mini?daylightPalette(hour??new Date(now).getHours()):wallpaper.colors;
- const accent=reading&&hour!==undefined?weatherAccent(reading.weatherCode):undefined;
+ const effect=reading&&hour!==undefined?weatherEffect(reading.weatherCode):undefined;
+ const accent=reading&&effect?weatherAccent(reading.weatherCode):undefined;
  const palette=accent?[clockPalette[0],accent,clockPalette[2]] as const:clockPalette;
  const {layers,fade}=usePaletteTransition(palette,mini);
  const style=useAnimatedStyle(()=>({transform:[{translateX:drift.get()*28},{translateY:drift.get()*-16},{scale:1.3}]}));
  return <View testID={mini?undefined:'wallpaper-background'} style={[StyleSheet.absoluteFill,{overflow:'hidden',backgroundColor:palette[0]}]} pointerEvents="none">
  <View testID={!mini&&id==='classic'?'classic-wallpaper':undefined} style={[StyleSheet.absoluteFill,{opacity:1}]}><WallpaperScene colors={(mini?palette:layers.from) as [string,string,string]} style={style} motionId={mini?undefined:'wallpaper-motion'}/>
  {!mini&&<Animated.View testID="wallpaper-fade" style={[StyleSheet.absoluteFill,fade]}><WallpaperScene colors={layers.to as [string,string,string]} style={style}/></Animated.View>}
+ {!!effect&&effect!=='cloud'&&<WallpaperWeather effect={effect} style={style} reduced={reduced}/>}
 
  </View></View>;
 }
@@ -73,4 +75,26 @@ function WallpaperScene({colors,style,motionId}:{colors:readonly [string,string,
  </Animated.View>
  <LinearGradient colors={['transparent','rgba(3,7,15,0.18)','rgba(3,7,15,0.66)']} style={StyleSheet.absoluteFill}/>
  </View>;
+}
+
+
+const droplets=Array.from({length:36},(_,index)=>{
+ const x=(index*109+36)%1440,y=(index*197+42)%900;
+ return `M ${x} ${y} l -12 35`;
+}).join(' ');
+
+function WallpaperWeather({effect,style,reduced}:{
+ effect:'snow'|'rain'|'fog'|'storm';style:object;reduced:boolean;
+}){
+ return <Animated.View key={effect} style={[StyleSheet.absoluteFill,style,{
+   opacity:.75,animationName:reduced?undefined:{from:{opacity:0},to:{opacity:.75}},animationDuration:360,
+ }]}>
+   {effect==='fog'?<LinearGradient colors={['#b8c0d200','#b8c0d237','#b8c0d200']} style={StyleSheet.absoluteFill}/>:
+     <Svg width="100%" height="100%" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+       {effect==='snow'?Array.from({length:40},(_,index)=><Circle key={index}
+         cx={(index*109+36)%1440} cy={(index*197+42)%900} r={index%3+1} fill="#e0e9f2" opacity={.15+(index%4)*.06}/>):
+         <Path d={droplets} stroke={effect==='storm'?'#a3a9da':'#b5d1ec'} strokeWidth={effect==='storm'?3:2}
+           strokeLinecap="round" opacity={effect==='storm'?.18:.13}/>}
+     </Svg>}
+ </Animated.View>;
 }

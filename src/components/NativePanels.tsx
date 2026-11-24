@@ -425,6 +425,10 @@ export function NativePanels({
                 </View>
               ))}
             </View>
+            {row('Wallpaper clock','sun',()=>{
+              const next={off:'minimal',minimal:'stacked',stacked:'off'} as const;
+              demo.change({wallpaperClock:next[demo.prefs.wallpaperClock??'off']});
+            },{off:'Off',minimal:'Minimal',stacked:'Stacked'}[demo.prefs.wallpaperClock??'off'])}
             {demo.prefs.wallpaper==='daylight'&&<WallpaperWeatherSettings city={demo.prefs.weatherCity}
               language={demo.prefs.language} t={t} change={weatherCity=>demo.change({weatherCity})}/>}
             {row('Music wallpaper tint','music',()=>demo.change({musicTint:!demo.prefs.musicTint}),demo.prefs.musicTint?'On':'Off')}
@@ -445,6 +449,12 @@ export function NativePanels({
           {row('Import library layout','apps',()=>action('importProfileLayout',{profile:demo.prefs.householdProfile??'home'}))}
           {demo.prefs.canUndoLayoutImport===true&&row('Restore previous library layout','apps',()=>
             action('undoProfileLayout',{profile:demo.prefs.householdProfile??'home'}))}
+          {row('Dock size','apps',()=>{
+            const next={compact:'standard',standard:'large',large:'compact'} as const;
+            demo.change({dockSize:next[demo.prefs.dockSize??'standard']});
+          },{compact:'Compact',standard:'Standard',large:'Large'}[demo.prefs.dockSize??'standard'])}
+          {row('Navigation sound','volume',()=>demo.change({navigationSound:!demo.prefs.navigationSound}),
+            demo.prefs.navigationSound?'On':'Off')}
           {text('Open Aurea on')}
           {(['dock','inputs','apps'] as const).map((startFocus,index)=>row(
             ['Dock','Inputs','App library'][index]!,'apps',()=>demo.change({startFocus}),

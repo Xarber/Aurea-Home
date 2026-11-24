@@ -32,6 +32,7 @@ import { nativeFocus } from './src/platform/native/focus';
 import { useTVScrollFocus } from './src/hooks/useTVScrollFocus';
 import { useKeyboard, focusId } from './src/hooks/useKeyboard';
 import { translator } from './src/model/i18n';
+import {tv} from './src/platform/native/tv';
 import { tracks } from './src/model/catalog';
 import { Wallpaper } from './src/components/Wallpaper';
 import { FocusButton } from './src/components/FocusButton';
@@ -94,6 +95,18 @@ function LauncherView({ demo,onTarget,onOpenRemote }: { demo: Launcher;onOpenRem
   const modalWasOpen = useRef(false);
   const rememberedFocus=useRef<Record<string,string>>({});
   useEffect(()=>nativeFocus.onFocus(id=>{const group=nativeFocus.node(id)?.group;if(group?.startsWith("page-"))rememberedFocus.current[group]=id;}),[]);
+  useEffect(()=>{
+    if(!demo.native||!demo.ready||!demo.prefs.navigationSound)return;
+    let previous='',last=0;
+    return nativeFocus.onFocus(id=>{
+      if(previous===id)return;
+      previous=id;
+      const now=Date.now();
+      if(now-last<150)return;
+      last=now;
+      void tv.execute('navigationSound').catch(()=>{});
+    });
+  },[demo.native,demo.ready,demo.prefs.navigationSound]);
   const wheelLock = useRef(0);
   const changePage = useCallback(
     (page: number) => {
@@ -368,6 +381,8 @@ function LauncherView({ demo,onTarget,onOpenRemote }: { demo: Launcher;onOpenRem
       (demo.filter === 'all' || a.category === demo.filter),
   );
   const nativeMusic = demo.snapshot?.music;
+  const dockInset=demo.prefs.dockSize==='compact'&&!compact?Math.min(72,Math.round(width*.05)):0;
+  const dockLift=demo.prefs.dockSize==='large'&&!compact?Math.min(28,Math.round(width*.02)):0;
   if (demo.native && !demo.ready)
     return <LauncherSkeleton error={demo.error} retry={demo.refresh} t={t}/>;
 
@@ -378,6 +393,13 @@ function LauncherView({ demo,onTarget,onOpenRemote }: { demo: Launcher;onOpenRem
           <Wallpaper id={demo.prefs.wallpaper} motion={demo.prefs.motion} city={demo.prefs.weatherCity} />
           <MusicTint dominance={demo.snapshot?.music.dominance} enabled={demo.prefs.musicTint===true} playing={demo.playing&&demo.music} colors={demo.native?(demo.snapshot?.music.colors??['#e6eaf0','#929aa8']):tracks[demo.track]!.colors}/>
 
+          {demo.native&&demo.page===0&&demo.prefs.wallpaperClock&&demo.prefs.wallpaperClock!=='off'&&
+            <View pointerEvents="none" accessible={false} accessibilityElementsHidden
+              style={{position:'absolute',top:'20%',left:0,right:0,alignItems:'center',gap:8}}>
+              <Text style={{fontSize:Math.min(100,Math.max(54,width*.07)),fontWeight:'300',color:'#ffffffd9',
+                fontVariant:['tabular-nums'],textShadowColor:'#0008',textShadowRadius:10,textShadowOffset:{width:0,height:2}}}>{time}</Text>
+              {demo.prefs.wallpaperClock==='stacked'&&<Text style={{fontSize:22,color:'#f0f3fa',fontWeight:'500'}}>{date}</Text>}
+            </View>}
           <View testID="launcher-hero"
             style={[
               s.hero,
@@ -628,7 +650,7 @@ function LauncherView({ demo,onTarget,onOpenRemote }: { demo: Launcher;onOpenRem
                   ...(demo.native ? { paddingBottom: 16 } : {}),
                   paddingHorizontal: compact
                     ? 22
-                    : Math.max(48, width * (demo.native ? 0.045 : 0.065)),
+                    : Math.max(dockLift?32:48, width * (demo.native ? 0.045 : 0.065) - dockLift),
                 },
               ]}
             >
@@ -654,6 +676,7 @@ function LauncherView({ demo,onTarget,onOpenRemote }: { demo: Launcher;onOpenRem
                   demo.prefs.blur===false&&({backdropFilter:"none"} as object),
                   {
                     gap: compact ? 8 : 17,
+                    marginHorizontal:dockInset,
                     padding: demo.native ? 12 : compact ? 10 : 18,
                     borderRadius: demo.native ? 28 : 26,
                   },

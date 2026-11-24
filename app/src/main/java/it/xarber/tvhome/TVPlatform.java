@@ -111,6 +111,12 @@ public final class TVPlatform {
         case "automationConfigure":
             if(!foreground())throw new IllegalStateException("launcher_not_active");
             return automationAddress(AutomationAccess.get(context).configure(data.getString("platform"),data.getBoolean("enabled")));
+        case "navigationSound":
+            if(foreground()&&households.appearance().getBoolean("navigation-sound",false)){
+                AudioManager navigationAudio=context.getSystemService(AudioManager.class);
+                if(navigationAudio!=null)navigationAudio.playSoundEffect(AudioManager.FX_KEYPRESS_STANDARD);
+            }
+            return safe("accepted",true);
         case "exportProfileLayout":case "importProfileLayout":case "undoProfileLayout":
             if(!foreground()||!households.activeId().equals(data.getString("profile")))throw new IllegalStateException("profile_changed");
             if(operation.equals("undoProfileLayout")){ProfileLayout.undo(households.appearance());return snapshot(false);}
@@ -159,7 +165,7 @@ public final class TVPlatform {
             if(!foreground()||!households.activeId().equals(data.getString("id")))throw new IllegalStateException("profile_changed");
             if(data.has("appearance")){
                 JSONObject incoming=data.getJSONObject("appearance");
-                if(incoming.has("dock")||incoming.has("weatherCity")||incoming.has("startFocus"))throw new IllegalArgumentException("invalid_appearance");
+                if(incoming.has("dock")||incoming.has("weatherCity")||incoming.has("startFocus")||incoming.has("dockSize")||incoming.has("wallpaperClock")||incoming.has("navigationSound"))throw new IllegalArgumentException("invalid_appearance");
                 savePreferences(incoming);
             }
             return data.has("appearance")?snapshot(false):appearance();
@@ -276,7 +282,10 @@ public final class TVPlatform {
             .put("glass",settings.getBoolean("activity-background",true))
             .put("blur",settings.getBoolean("blur-enabled",true))
             .put("musicTint",settings.getBoolean("music-wallpaper-tint",false))
-            .put("language",households.language());
+            .put("language",households.language())
+            .put("dockSize",settings.getString("dock-size","standard"))
+            .put("wallpaperClock",settings.getString("wallpaper-clock","off"))
+            .put("navigationSound",settings.getBoolean("navigation-sound",false));
     }
 
     private void savePreferences(JSONObject data)throws Exception {
@@ -288,6 +297,17 @@ public final class TVPlatform {
             if(!java.util.Arrays.asList("dock","inputs","apps").contains(start))throw new IllegalArgumentException("invalid_start_focus");
             edit.putString("start-focus",start);
         }
+        if(data.has("dockSize")){
+            String size=data.getString("dockSize");
+            if(!java.util.Arrays.asList("compact","standard","large").contains(size))throw new IllegalArgumentException("invalid_dock_size");
+            edit.putString("dock-size",size);
+        }
+        if(data.has("wallpaperClock")){
+            String clock=data.getString("wallpaperClock");
+            if(!java.util.Arrays.asList("off","minimal","stacked").contains(clock))throw new IllegalArgumentException("invalid_clock");
+            edit.putString("wallpaper-clock",clock);
+        }
+        if(data.has("navigationSound"))edit.putBoolean("navigation-sound",data.getBoolean("navigationSound"));
         String language=data.has("language")?data.getString("language"):null;
         if(language!=null&&!language.equals("it")&&!language.equals("en"))throw new IllegalArgumentException("invalid_language");
         if(data.has("wallpaper")){

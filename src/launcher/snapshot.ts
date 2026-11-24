@@ -41,6 +41,9 @@ export function nativeSnapshot(value: Record<string, unknown>): NativeSnapshot {
     throw new Error('invalid_native_response');
   if (!value.music || !value.network || !value.paired || !value.build)
     throw new Error('invalid_native_response');
+  prefs.dockSize=prefs.dockSize==='compact'||prefs.dockSize==='large'?prefs.dockSize:'standard';
+  prefs.wallpaperClock=prefs.wallpaperClock==='minimal'||prefs.wallpaperClock==='stacked'?prefs.wallpaperClock:'off';
+  prefs.navigationSound=prefs.navigationSound===true;
   prefs.startFocus=prefs.startFocus==='apps'||prefs.startFocus==='inputs'?prefs.startFocus:'dock';
   const installed=new Set(value.catalog.filter(entry=>entry.kind==='app').map(entry=>entry.id));
   prefs.hiddenApps=Array.isArray(prefs.hiddenApps)

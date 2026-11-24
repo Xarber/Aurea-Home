@@ -45,12 +45,17 @@ export function weatherPhase(sample:WeatherObservation,now:number) {
   return 12;
 }
 
+export function weatherEffect(code:number) {
+  if(code>=95)return 'storm';
+  if([71,73,75,77,85,86].includes(code))return 'snow';
+  if([45,48].includes(code))return 'fog';
+  if([51,53,55,56,57,61,63,65,66,67,80,81,82].includes(code))return 'rain';
+  if(code===3)return 'cloud';
+}
+
 export function weatherAccent(code:number):string|undefined {
-  if(code>=95)return '#6c5597';
-  if([71,73,75,77,85,86].includes(code))return '#a6c3da';
-  if([45,48].includes(code))return '#929cb0';
-  if([51,53,55,56,57,61,63,65,66,67,80,81,82].includes(code))return '#5079a6';
-  if(code===3)return '#788ca1';
+  const effect=weatherEffect(code);
+  return effect?{storm:'#6c5597',snow:'#a6c3da',fog:'#929cb0',rain:'#5079a6',cloud:'#788ca1'}[effect]:undefined;
 }
 
 async function readJson(url:string,signal:AbortSignal) {
