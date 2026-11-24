@@ -28,3 +28,27 @@ test('account pairing requires a TV invitation and keeps the one-use grant priva
   clock = 91000;
   assert.equal(action('remote',phone,'POST',invite).status,404);
 });
+
+test('automatic pairing advertises only to the linked account and cannot republish a consumed grant',()=>{
+  let now=0;
+  const action=createInvitations(()=>now);
+  const tv={kind:'tv',sub:'viewer-a',expiresAt:200000};
+  const phone={kind:'phone',sub:'viewer-a'};
+  const web={kind:'web',sub:'viewer-a'};
+  const outsider={kind:'phone',sub:'viewer-b'};
+  const offer={peer:randomUUID(),device:randomUUID(),grant:'B'.repeat(43),label:'Aurea TV',automatic:true};
+  assert.equal(action('tv',tv,'POST',offer).status,200);
+  assert.deepEqual(action('other',outsider,'GET').televisions,[]);
+  assert.deepEqual(action('web',web,'GET').televisions,[{peer:offer.peer,label:offer.label,automatic:true}]);
+  assert.equal(action('other',outsider,'POST',{peer:offer.peer}).status,404);
+  assert.equal(action('phone',phone,'POST',{peer:offer.peer}).grant,offer.grant);
+  assert.equal(action('web',web,'POST',{peer:offer.peer}).status,404);
+  assert.equal(action('tv',tv,'POST',offer).status,409);
+  const next={...offer,grant:'C'.repeat(43)};
+  assert.equal(action('tv',tv,'POST',next).status,200);
+  action('tv',tv,'DELETE');
+  assert.deepEqual(action('phone',phone,'GET').televisions,[]);
+  assert.equal(action('tv',tv,'POST',next).status,200);
+  now=91000;
+  assert.equal(action('phone',phone,'POST',{peer:offer.peer}).status,404);
+});

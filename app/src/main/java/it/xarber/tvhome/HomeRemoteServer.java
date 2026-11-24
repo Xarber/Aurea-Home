@@ -28,16 +28,21 @@ final class HomeRemoteServer implements Runnable {
     private final java.util.Map<String,Long> accountRemotes = new java.util.HashMap<>();
     private final AccountInvitation invitation = new AccountInvitation(android.os.SystemClock::elapsedRealtime);
 
-    synchronized JSONObject openAccountInvitation() throws Exception {
+    private String accountGrant;
+
+    synchronized JSONObject openAccountInvitation(boolean reuse) throws Exception {
+        if(reuse&&invitation.available())return new JSONObject().put("device",deviceId).put("grant",accountGrant);
         byte[] random = new byte[32];
         new SecureRandom().nextBytes(random);
         String grant = android.util.Base64.encodeToString(random, android.util.Base64.NO_WRAP | android.util.Base64.NO_PADDING | android.util.Base64.URL_SAFE);
         invitation.open(grant);
+        accountGrant=grant;
         return new JSONObject().put("device", deviceId).put("grant", grant);
     }
 
     synchronized void closeAccountInvitation() {
         invitation.close();
+        accountGrant=null;
     }
 
     private String pairingOrigin="";
@@ -170,7 +175,10 @@ final class HomeRemoteServer implements Runnable {
         thread.start();
     }
 
-    synchronized void revokeAll() { AppPreviewService.cancelAll(context); commands.run("voice-cancel"); tokens.clear(); accountRemotes.clear(); activeRemotes.clear(); trust.clear(); closeAccountInvitation(); rotatePairing(); }
+    synchronized void revokeAll() {
+        try { HouseholdAccounts.get(context).disableAutomaticPairing(); }
+        catch (Exception unavailable) { android.util.Log.w("AureaRemote", "Could not store automatic pairing preference"); }
+        AppPreviewService.cancelAll(context); commands.run("voice-cancel"); tokens.clear(); accountRemotes.clear(); activeRemotes.clear(); trust.clear(); closeAccountInvitation(); rotatePairing(); }
     private void persistTrust() throws Exception {trust.save(new JSONObject().put("credentials",trustEntries().toString()).put("identifier","phone-remotes").put("name","Aurea Home"));}
 
     private org.json.JSONArray trustEntries() throws Exception {

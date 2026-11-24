@@ -114,7 +114,8 @@ export function accountHandler({identity, origin}) {
       const {status, account, ...result} = deviceLogins.pickup(payload?.id,payload?.proof,url.pathname.endsWith('/cancel'));
       if (!account) return json(status,result);
       const {id, ttl} = issueSession(account,'tv');
-      return json(200,{session:id, expiresIn:ttl, name:account.name});
+      const owner = createHash('sha256').update('aurea-tv-profile-v1\0').update(account.sub).digest('hex');
+      return json(200,{session:id, expiresIn:ttl, name:account.name, owner});
     }
     const native = device || phone;
     const kind = device ? 'tv' : phone ? 'phone' : 'web';

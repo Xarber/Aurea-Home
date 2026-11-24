@@ -3,6 +3,7 @@ import React, {useState} from 'react';
 import {Text, View} from 'react-native';
 import {FocusButton} from '../../components/FocusButton';
 import {Icon} from '../../components/Icon';
+import {acceptInvitation,getInvitations,singleAutomaticInvitation} from './invitations';
 import type {RemoteView} from '../remoteNavigation';
 
 export type Layout = {view:RemoteView; touchpad:boolean};
@@ -26,27 +27,20 @@ export function AccountSettingsPanel({layout, restore, session, request, onSignO
   const [busy, setBusy] = useState(false);
   const [remove, setRemove] = useState(false);
   const [televisions,setTelevisions] = useState<{peer:string;label:string}[]>([]);
-  const uuid=/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i;
-
   async function loadInvitations() {
-    const result = await request('invitations') as {televisions?: unknown};
-    const entries = Array.isArray(result.televisions) ? result.televisions.filter(tv=>
-      typeof tv?.peer==='string' && uuid.test(tv.peer) && typeof tv.label==='string') : [];
+    const entries=await getInvitations(request);
+    const offer=singleAutomaticInvitation(entries);
+    if(offer&&entries.length===1){await claimInvitation(offer.peer);return;}
     setTelevisions(entries);
-    setStatus(entries.length ? 'Choose a television to pair.' : 'On the TV, open X-Center ID and choose Allow a remote to pair.');
+    setStatus(entries.length ? 'Choose a television to pair.' : 'On the TV, open X-Center ID and enable pairing for the same account.');
   }
 
   async function claimInvitation(peer:string) {
-    const result = await request('invitations',{
-      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({peer}),
-    }) as {device?:string;peer?:string;grant?:string};
+    const result=await acceptInvitation(request,peer);
     setTelevisions([]);
-    if(result.peer!==peer || !result.device || !uuid.test(result.device) ||
-        !result.grant || !/^[A-Za-z0-9_-]{43}$/.test(result.grant)) throw new Error('invalid_invitation');
-    await pairApproved(peer,result.device,result.grant);
+    await pairApproved(result.peer,result.device,result.grant);
     setStatus('Television paired.');
   }
-
 
   async function run(action:()=>Promise<void>) {
     setBusy(true);

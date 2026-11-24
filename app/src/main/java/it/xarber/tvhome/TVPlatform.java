@@ -40,10 +40,11 @@ public final class TVPlatform {
     private final RemotePlayback playback;
     private final PairedPlayback paired;
     private final UpdateController updates;
+    private final HouseholdAccounts households;
     private Bitmap paletteArtwork;
     private JSONArray palette=new JSONArray().put("#e6eaf0").put("#929aa8");
     private final Handler main=new Handler(Looper.getMainLooper());
-    private TVPlatform(Context context){this.context=context;prefs=context.getSharedPreferences("it.xarber.tvhome.MainActivity",0);catalog=new TVHomeCatalog(context,prefs);paired=PairedPlayback.get(context);playback=new RemotePlayback(context,false);if(!BuildConfig.APPLICATION_ID.endsWith(".preview"))playback.start();updates=UpdateController.get(context);}
+    private TVPlatform(Context context){this.context=context;households=HouseholdAccounts.get(context);prefs=context.getSharedPreferences("it.xarber.tvhome.MainActivity",0);catalog=new TVHomeCatalog(context,prefs);paired=PairedPlayback.get(context);playback=new RemotePlayback(context,false);if(!BuildConfig.APPLICATION_ID.endsWith(".preview"))playback.start();updates=UpdateController.get(context);}
     public void resume(Activity host){activity=new WeakReference<>(host);foreground=true;paired.resume();if(!BuildConfig.MOBILE_REMOTE){updates.observe(this::notifyUpdate);updates.resume();}if(!BuildConfig.MOBILE_REMOTE&&!BuildConfig.APPLICATION_ID.endsWith(".preview")){HomeRemoteService.ensure(context);ensureReceiver();}main.post(()->AureaTVModule.event("home-resumed",safe("pairing",paired.pairingPending())));}
     public void pause(Activity host){if(activity.get()!=host)return;foreground=false;paired.pause();updates.pause();}
     private void ensureReceiver(){if(!ReceiverSettings.enabled(context))return;context.getSharedPreferences("settings",0).edit().putBoolean("auto_start",true).putBoolean("boot_auto_start",true).putBoolean("run_in_background",true).putBoolean("launch_on_connect",true).putBoolean("auto_fullscreen",true).apply();try{context.startForegroundService(new Intent(context,io.github.jqssun.airplay.service.AirPlayService.class).setAction(io.github.jqssun.airplay.service.AirPlayService.ACTION_START_SERVER));}catch(Exception failure){AureaTVModule.event("notice",safe("message","AirPlay service could not start"));}}
@@ -95,6 +96,24 @@ public final class TVPlatform {
         case "image":return catalog.image(data.getString("id"),data.optString("kind","icon"));
         case "artwork":return receiverPlayback().artwork();
         case "launch":catalog.launch(data.getString("id"));return safe("accepted",true);
+        case "householdProfiles":
+            if(!foreground())throw new IllegalStateException("launcher_not_active");
+            return households.view();
+        case "householdCreate":
+            if(!foreground())throw new IllegalStateException("launcher_not_active");
+            return households.create(data.getString("label"));
+        case "householdSelect":
+        case "householdSignOut":
+        case "householdAutomatic":
+            if(!foreground())throw new IllegalStateException("launcher_not_active");
+            HomeRemoteServer profileRemote=HomeRemoteService.server();
+            if(profileRemote!=null)profileRemote.closeAccountInvitation();
+            if(operation.equals("householdAutomatic"))return households.automatic(data.getString("id"),data.getBoolean("enabled"));
+            return operation.equals("householdSelect")?households.select(data.getString("id")):
+                households.signOut(data.getString("id"),data.optBoolean("unlink"));
+        case "householdSignIn":
+            if(!foreground())throw new IllegalStateException("launcher_not_active");
+            return households.signIn(data.getString("id"),data.getString("owner"),data.getString("session"),data.optString("name"));
         case "accountChallenge":return accountChallenge();
         case "accountInvite":
             if(!foreground())return SystemRemoteController.error("launcher_not_active");
@@ -104,7 +123,13 @@ public final class TVPlatform {
             if(inviteServer==null||!hosted.optBoolean("ready")||peerId==null||!peerId.matches("tv=[a-f0-9-]{36}"))
                 return SystemRemoteController.error("remote_unavailable");
             String label=Settings.Global.getString(context.getContentResolver(),"device_name");
-            return inviteServer.openAccountInvitation().put("peer",peerId.substring(3))
+            boolean automatic=data.optBoolean("automatic");
+            if(automatic){
+                JSONObject profile=households.view();
+                if(!profile.optBoolean("automatic")||!data.optString("profile").equals(profile.optString("active")))
+                    throw new IllegalStateException("automatic_pairing_disabled");
+            }
+            return inviteServer.openAccountInvitation(automatic).put("peer",peerId.substring(3))
                 .put("label",label==null||label.trim().isEmpty()?"Aurea Home":label);
         case "accountInviteCancel":
             HomeRemoteServer invitation=HomeRemoteService.server();
@@ -117,8 +142,10 @@ public final class TVPlatform {
         case "accountRemoteRevoke":
             if(!foreground())return SystemRemoteController.error("launcher_not_active");
             HomeRemoteServer revokeServer = HomeRemoteService.server();
-            return revokeServer == null ? SystemRemoteController.error("remote_unavailable") :
-                revokeServer.revokeAccountRemote(data.optString("id"));
+            if(revokeServer==null)return SystemRemoteController.error("remote_unavailable");
+            households.disableAutomaticPairing();
+            revokeServer.closeAccountInvitation();
+            return revokeServer.revokeAccountRemote(data.optString("id"));
         case "accountQr":
             String code=data.getString("code");
             if(!code.matches("[A-Z0-9-]{6,10}"))throw new IllegalArgumentException("invalid_code");

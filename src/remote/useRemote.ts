@@ -28,11 +28,12 @@ export function useRemote(initialPreview:boolean, developerEndpoint?:string){
  },isolated?undefined:nativeSystem));
  const state=useSyncExternalStore(client.subscribe,()=>client.snapshot,()=>client.snapshot);
  const chosen=useRef(false);
+ const [loaded,setLoaded]=useState(false);
  useEffect(()=>{
   let mounted=true;
   if(initialPreview){chosen.current=true;client.connect(new PreviewTransport(),{address:'preview',token:'preview'},true);}
   if(isolated)return()=>{void client.disconnect();};
-  void loadTVs().then(saved=>{if(!mounted)return;setTVs(saved);if(chosen.current)return;const linked=Platform.OS==='web'?/^#tv=([a-f0-9-]{36})$/i.exec(location.hash)?.[1]:undefined;if(linked){history.replaceState(null,'',location.pathname+location.search);const target='aurea://'+linked;chosen.current=true;setAddress(target);const prior=saved.find(tv=>tv.address===target);if(prior)client.connect(transport(target),prior);else void client.beginPair(transport(target),target);return;}const sameOrigin=Platform.OS==='web'&&document.querySelector('meta[name="aurea-remote"]')?location.origin:undefined;const qr=sameOrigin?/^#pair=(\d{6})$/.exec(location.hash)?.[1]:undefined;if(qr)history.replaceState(null,'',location.pathname+location.search);const selected=sameOrigin?saved.find(tv=>tv.address===sameOrigin):saved[0];if(selected){setAddress(selected.address);client.connect(transport(selected.address),selected);}else if(sameOrigin){setAddress(sameOrigin);{chosen.current=true;void client.beginPair(transport(sameOrigin),sameOrigin).then(()=>{if(qr&&client.snapshot.status==='pairing')return client.pair(qr);});}}}).catch(()=>{if(mounted)setStorageError(true);});
+  void loadTVs().then(saved=>{if(!mounted)return;setTVs(saved);if(chosen.current)return;const linked=Platform.OS==='web'?/^#tv=([a-f0-9-]{36})$/i.exec(location.hash)?.[1]:undefined;if(linked){history.replaceState(null,'',location.pathname+location.search);const target='aurea://'+linked;chosen.current=true;setAddress(target);const prior=saved.find(tv=>tv.address===target);if(prior)client.connect(transport(target),prior);else void client.beginPair(transport(target),target);return;}const sameOrigin=Platform.OS==='web'&&document.querySelector('meta[name="aurea-remote"]')?location.origin:undefined;const qr=sameOrigin?/^#pair=(\d{6})$/.exec(location.hash)?.[1]:undefined;if(qr)history.replaceState(null,'',location.pathname+location.search);const selected=sameOrigin?saved.find(tv=>tv.address===sameOrigin):saved[0];if(selected){setAddress(selected.address);client.connect(transport(selected.address),selected);}else if(sameOrigin){setAddress(sameOrigin);{chosen.current=true;void client.beginPair(transport(sameOrigin),sameOrigin).then(()=>{if(qr&&client.snapshot.status==='pairing')return client.pair(qr);});}}}).catch(()=>{if(mounted)setStorageError(true);}).finally(()=>{if(mounted)setLoaded(true);});
   return()=>{mounted=false;void client.disconnect();};
  },[client,initialPreview,isolated]);
  useEffect(()=>{const subscription=AppState.addEventListener('change',next=>{const active=remoteActivity(next);if(active!==undefined)client.setActive(active);});return()=>subscription.remove();},[client]);
@@ -48,5 +49,5 @@ export function useRemote(initialPreview:boolean, developerEndpoint?:string){
   await client.beginPair(transport(target),target,{device,grant});
  };
  const select=(tv:PairedTV)=>{chosen.current=true;setAddress(tv.address);setPreview(false);client.connect(transport(tv.address),tv);};
- return {client,state,tvs,address,setAddress,preview,setPreview:changePreview,storageError,formError,connect,select,pairApproved};
+ return {client,state,canAutoPair:loaded&&!isolated&&!preview,autoPairIdle:()=>!chosen.current&&!client.snapshot.selected,tvs,address,setAddress,preview,setPreview:changePreview,storageError,formError,connect,select,pairApproved};
 }

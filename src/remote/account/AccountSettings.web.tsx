@@ -13,6 +13,10 @@ async function request(path:string, init?:RequestInit) {
   return response.json();
 }
 
+export async function remoteAccountRequest() {
+  if(location.origin==='https://aurea.xcenter.it')return request;
+}
+
 export function AccountSettings({layout, restore, pairApproved}:{layout:Layout; restore:(layout:Layout)=>void; pairApproved:PairApproved}) {
   const [session, setSession] = useState<Session>();
   useEffect(() => {

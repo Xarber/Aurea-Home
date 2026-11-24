@@ -1,28 +1,27 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import React, {useEffect, useRef, useState} from 'react';
-import {Image, Text, View} from 'react-native';
+import {Image, Text, TextInput, View} from 'react-native';
 import {FocusButton} from '../../components/FocusButton';
 import {Icon} from '../../components/Icon';
 import type {Launcher} from '../../launcher/types';
 import {wallpapers} from '../../model/catalog';
 
-const root = 'https://aurea.xcenter.it/account/';
+import {tvAccountRequest as request,type Household} from './tvHousehold';
 type Approval = {id:string; code:string; proof:string; expiresIn:number; qr?:string};
-type Account = {session:string; name?:string};
 type Appearance = {schema:1; language:'en'|'it'; wallpaper:string; motion:boolean;musicTint:boolean;glass:boolean;blur:boolean};
 type Backup = {revision:string; preferences:Appearance|null};
 
-async function request(path:string, init?:RequestInit) {
-  const response=await fetch(root+path,{credentials:'omit',redirect:'error',cache:'no-store',...init});
-  if (!response.ok || !response.headers.get('content-type')?.includes('application/json')) {
-    throw new Error(String(response.status));
-  }
-  return response.json();
-}
-
-export function TVAccountSettings({demo, account, setAccount, t}: {
-  demo:Launcher; account?:Account; setAccount:(account?:Account)=>void; t:(value:string)=>string;
+export function TVAccountSettings({demo, household, setHousehold, t}: {
+  demo:Launcher; household:Household; setHousehold:(value:Household)=>void; t:(value:string)=>string;
 }) {
+  const {account,active:profile}=household;
+  const [name,setName]=useState('');
+  const [unlink,setUnlink]=useState(false);
+  async function update(operation:string,value:Record<string,unknown>) {
+    const result=await demo.execute(operation,value);
+    if(typeof result.active!=='string'||!Array.isArray(result.profiles))throw new Error('profile_failed');
+    setHousehold(result as Household);
+  }
   const [available,setAvailable]=useState(false);
   const [approval,setApproval]=useState<Approval>();
   const [backup,setBackup]=useState<Backup>();
@@ -58,9 +57,16 @@ export function TVAccountSettings({demo, account, setAccount, t}: {
         if(Date.now()>=expires)throw new Error('expired');
         const result=await request('device/pickup',{method:'POST',headers,body,signal:signal.signal});
         if(signal.signal.aborted)return;
-        if(typeof result.session==='string'){
+        if(typeof result.session==='string'&&typeof result.owner==='string'){
           pickedUp=true;
-          setAccount({session:result.session,name:result.name});
+          try{
+            await update('householdSignIn',{id:profile,owner:result.owner,session:result.session,name:result.name??''});
+          }catch{
+            await request('device/logout',{method:'POST',headers:{Authorization:'Bearer '+result.session}}).catch(()=>{});
+            setApproval(undefined);
+            setStatus('This profile is linked to a different account, or the account belongs to another profile.');
+            return;
+          }
           setApproval(undefined);
           setStatus('TV linked to X-Center ID.');
         }else{
@@ -75,7 +81,7 @@ export function TVAccountSettings({demo, account, setAccount, t}: {
       clearTimeout(timer);signal.abort();
       if(!pickedUp)void request('device/cancel',{method:'POST',headers,body}).catch(()=>{});
     };
-  },[approval,setAccount]);
+  },[approval,profile]);
 
   async function run(action:()=>Promise<void>) {
     setBusy(true);setStatus('');
@@ -83,7 +89,7 @@ export function TVAccountSettings({demo, account, setAccount, t}: {
     catch(error){
       if(!active.current)return;
       const code=error instanceof Error?error.message:'';
-      if(code==='401'||code==='403'){setAccount();setBackup(undefined);setStatus('Sign in again on this TV.');}
+      if(code==='401'||code==='403'){await update('householdSignOut',{id:profile});setBackup(undefined);setStatus('Sign in again on this TV.');}
       else if(code==='409'){setBackup(undefined);setStatus('The backup changed. Load it again before saving.');}
       else setStatus('Aurea couldn’t complete the request. Your local settings are still available.');
     }finally{if(active.current)setBusy(false);}
@@ -139,7 +145,30 @@ export function TVAccountSettings({demo, account, setAccount, t}: {
     <Icon name="settings" size={22}/>{text(label)}
   </FocusButton>;
 
+  async function revokeLogin(forget:boolean) {
+    const token=account?.session;
+    await update('householdSignOut',{id:profile,unlink:forget});
+    setBackup(undefined);setInvitation(0);setUnlink(false);
+    if(token)await request('device/logout',{method:'POST',headers:{Authorization:'Bearer '+token}}).catch(()=>{});
+  }
+
   return <View style={{gap:10,paddingVertical:10}}>
+    <Text accessibilityRole="header" style={{color:'#fff',fontSize:20,fontWeight:'600'}}>{t('Household profiles')}</Text>
+    {household.profiles.map(viewer=><React.Fragment key={viewer.id}>{row('profile-'+viewer.id,
+      (viewer.id===profile?'✓ ':'')+viewer.label,()=>void run(async()=>{
+        if(viewer.id===profile)return;
+        if(account)await request('device/invitations',{method:'DELETE',headers:auth()}).catch(()=>{});
+        await update('householdSelect',{id:viewer.id});
+      }))}</React.Fragment>)}
+    {household.profiles.length<8&&<>
+      <TextInput value={name} onChangeText={setName} maxLength={32} accessibilityLabel={t('New profile name')}
+        placeholder={t('New profile name')} placeholderTextColor="#9da9bc"
+        style={{color:'#fff',minHeight:50,paddingHorizontal:12,borderWidth:1,borderRadius:12,borderColor:'#a0a9b780'}}/>
+      {row('create','Add household profile',()=>void run(async()=>{
+        await update('householdCreate',{label:name});setName('');
+      }))}
+    </>}
+
     {!available ? text('Account sync is unavailable on this TV.') :
       approval ? <>
         {text('Visit id.xcenter.it/device and enter this code, or scan it with your phone.')}
@@ -173,16 +202,23 @@ export function TVAccountSettings({demo, account, setAccount, t}: {
             setBackup(undefined);setRemove(false);setStatus('Backup deleted.');
           });
         })}
-        {text('Allow one remote signed in to this account to pair for the next 90 seconds.')}
-        {invitation ? row('cancel-invite','Close pairing invitation',()=>void run(async()=>{
-          await cancelInvitation();setStatus('Pairing invitation closed.');
-        })) : row('open-invite','Allow a remote to pair',()=>void shareInvitation())}
-        {row('logout','Sign out of Aurea',()=>void run(async()=>{
-          await demo.execute('accountInviteCancel');
-          setInvitation(0);
-          await request('device/logout',{method:'POST',headers:auth()});setAccount();setBackup(undefined);
+        {text('Allow remotes signed in to this profile’s account to pair without a code.')}
+        {row('automatic',household.automatic?'Automatic pairing: On':'Automatic pairing: Off',()=>void run(async()=>{
+          const enable=!household.automatic;
+          await update('householdAutomatic',{id:profile,enabled:enable});
+          if(!enable)await request('device/invitations',{method:'DELETE',headers:auth()}).catch(()=>{});
         }))}
+        {!household.automatic&&text('Allow one remote signed in to this account to pair for the next 90 seconds.')}
+        {!household.automatic&&(invitation ? row('cancel-invite','Close pairing invitation',()=>void run(async()=>{
+          await cancelInvitation();setStatus('Pairing invitation closed.');
+        })) : row('open-invite','Allow a remote to pair',()=>void shareInvitation()))}
+        {row('logout','Sign out of Aurea',()=>void run(()=>revokeLogin(false)))}
       </> : row('link','Sign in with X-Center ID',()=>void start())}
+    {household.profiles.some(viewer=>viewer.id===profile&&viewer.linked)&&
+      row('unlink',unlink?'Confirm unlink account':'Unlink account',()=>{
+        if(!unlink){setUnlink(true);return;}
+        void run(()=>revokeLogin(true));
+      })}
     {row('list-remotes','Manage account-paired remotes',()=>void run(async()=>{
       await refreshRemotes();
       setStatus('Choose a remote to revoke its access to this TV.');
@@ -195,6 +231,7 @@ export function TVAccountSettings({demo, account, setAccount, t}: {
           void run(async()=>{
             const result=await demo.execute('accountRemoteRevoke',{id:remote.id});
             if(result.accepted!==true)throw new Error('revocation_failed');
+            await update('householdProfiles',{});
             await refreshRemotes();setRevoke(undefined);setStatus('Remote access revoked.');
           });
         })}</React.Fragment>;

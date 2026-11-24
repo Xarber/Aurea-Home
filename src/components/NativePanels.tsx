@@ -1,6 +1,7 @@
 import {SharedChangelog} from './SharedChangelog';
 import {releaseFor} from '../releases/history';
 import {TVAccountSettings} from '../remote/account/TVAccountSettings';
+import {useTVHousehold} from '../remote/account/tvHousehold';
 import {ReceiverControls} from './ReceiverControls';
 // SPDX-License-Identifier: AGPL-3.0-only
 import {IdeasPage} from '../developer/ideas/IdeasPage';
@@ -33,7 +34,7 @@ export function NativePanels({
   musicAnchor: Anchor;
   settingsAnchor: Anchor;
 }) {
-  const [tvAccount,setTVAccount]=useState<{session:string;name?:string}>();
+  const {household,setHousehold}=useTVHousehold(demo.ready&&process.env.EXPO_PUBLIC_AUREA_ACCOUNTS_ENABLED==='1');
   const [retained, setRetained] = useState<string | null>(null),
     [remote, setRemote] = useState<Record<string, unknown>>({}),
     [details, setDetails] = useState('');
@@ -417,7 +418,7 @@ export function NativePanels({
             )}
           </>
         )}
-        {demo.panel === 'account' && <TVAccountSettings demo={demo} account={tvAccount} setAccount={setTVAccount} t={t}/>}
+        {demo.panel === 'account' && household && <TVAccountSettings key={household.active} demo={demo} household={household} setHousehold={setHousehold} t={t}/>}
         {panel === 'about' && (
           <>
             {row(

@@ -20,6 +20,10 @@ final class AccountInvitation {
         expiresAt = elapsedTime.getAsLong() + 90_000;
     }
 
+    synchronized boolean available() {
+        return grant != null && elapsedTime.getAsLong() < expiresAt;
+    }
+
     synchronized void close() {
         grant = null;
         expiresAt = 0;

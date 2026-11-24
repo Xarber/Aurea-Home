@@ -28,6 +28,13 @@ async function accountRequest(path:string, init?:RequestInit, session?:string) {
   return response.json();
 }
 
+export async function remoteAccountRequest() {
+  if(process.env.EXPO_PUBLIC_AUREA_ACCOUNTS_ENABLED!=='1')return;
+  const token=await SecureStore.getItemAsync(key);
+  if(!token||!encodedToken.test(token))return;
+  return (path:string,init?:RequestInit)=>accountRequest(path,init,token);
+}
+
 function submit(path:string, payload:object, signal?:AbortSignal) {
   return accountRequest(path,{
     method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload), signal,

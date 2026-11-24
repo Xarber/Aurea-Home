@@ -2,6 +2,7 @@ import * as Clipboard from 'expo-clipboard';
 import developerNotes from '../../assets/developer-changelog.json';
 import {useReleaseAnnouncement} from '../releases/useReleaseAnnouncement';
 import {AccountSettings} from './account/AccountSettings';
+import {useAutomaticPairing} from './account/useAutomaticPairing';
 import {canCaptureSample,shareSampleScreenshot} from './captureSample';
 import {SignalingDiagnostics} from './peer/SignalingDiagnostics';
 import {RemoteIntroduction,useRemoteIntroduction,remoteIntroductionKey} from '../onboarding/RemoteIntroduction';
@@ -62,6 +63,7 @@ function PhoneRemoteScreen({preview, developerEndpoint, setDeveloperEndpoint}:{
  const [launcherPreview,setLauncherPreview]=useState(false);const [pairSuccess,setPairSuccess]=useState(false);const wasPairing=useRef(false);
 
  const navigation=usePanelNavigation(),{panel,setPanel}=navigation;const phoneAnchor=usePhoneAnchor();const blurTarget=useRef<React.ComponentRef<typeof View>>(null);
+ useAutomaticPairing(remote.canAutoPair&&!introduction.visible&&!panel,remote.autoPairIdle,remote.pairApproved);
  usePreviewOrientation(launcherPreview);
  const [tab,setTab]=useState<'remote'|'apps'|'inputs'|'tvs'>('remote');const developerAccess=useDeveloperAccess(tab==='remote'?0:tab==='apps'?1:tab==='inputs'?2:3),dev=developerAccess.enabled;const [retained,setRetained]=useState<string|null>(null);const [pin,setPin]=useState('');const [systemPin,setSystemPin]=useState('');const [hover,setHover]=useState(false);
  const releasePanel=useRef(false);
