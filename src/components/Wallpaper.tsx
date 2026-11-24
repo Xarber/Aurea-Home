@@ -5,6 +5,7 @@ import {LinearGradient} from 'expo-linear-gradient';
 import Svg,{Path,Defs,LinearGradient as SvgGradient,Stop} from 'react-native-svg';
 import Animated,{useSharedValue,useAnimatedStyle,withRepeat,withTiming,Easing,cancelAnimation,useReducedMotion} from 'react-native-reanimated';
 import {usePaletteTransition} from '../hooks/usePaletteTransition';
+import {daylightPalette} from '../model/daylight';
 import {wallpapers} from '../model/catalog';
 export function Wallpaper({id,motion=false,mini=false}:{id:string;motion?:boolean;mini?:boolean}){
  const [active,setActive]=useState(AppState.currentState!=='background'&&AppState.currentState!=='inactive');
@@ -12,7 +13,15 @@ export function Wallpaper({id,motion=false,mini=false}:{id:string;motion?:boolea
  const wallpaper=wallpapers.find(w=>w.id===id)??wallpapers[0]!;const reduced=useReducedMotion();
  const drift=useSharedValue(0);
  useEffect(()=>{cancelAnimation(drift);drift.set(0);if(motion&&!reduced&&!mini&&active)drift.set(withRepeat(withTiming(1,{duration:10000,easing:Easing.inOut(Easing.sin)}),-1,true));return()=>cancelAnimation(drift);},[motion,reduced,mini,active]);
- const palette=wallpaper.colors as [string,string,string];
+ const [hour,setHour]=useState(()=>new Date().getHours());
+ useEffect(()=>{
+  if(id!=='daylight'||mini||!active)return;
+  const update=()=>setHour(new Date().getHours());
+  update();
+  const timer=setInterval(update,30000);
+  return()=>clearInterval(timer);
+ },[id,mini,active]);
+ const palette=id==='daylight'&&!mini?daylightPalette(hour):wallpaper.colors;
  const {layers,fade}=usePaletteTransition(palette,mini);
  const style=useAnimatedStyle(()=>({transform:[{translateX:drift.get()*28},{translateY:drift.get()*-16},{scale:1.3}]}));
  return <View testID={mini?undefined:'wallpaper-background'} style={[StyleSheet.absoluteFill,{overflow:'hidden',backgroundColor:palette[0]}]} pointerEvents="none">
@@ -21,7 +30,7 @@ export function Wallpaper({id,motion=false,mini=false}:{id:string;motion?:boolea
 
  </View></View>;
 }
-function WallpaperScene({colors,style,motionId}:{colors:[string,string,string];style:object;motionId?:string}){
+function WallpaperScene({colors,style,motionId}:{colors:readonly [string,string,string];style:object;motionId?:string}){
  const gradientId='wallpaper-'+useId().replace(/[^a-zA-Z0-9_-]/g,'');
  return <View style={StyleSheet.absoluteFill} pointerEvents="none">
  <LinearGradient colors={colors} start={{x:0,y:0}} end={{x:1,y:1}} style={StyleSheet.absoluteFill}/>

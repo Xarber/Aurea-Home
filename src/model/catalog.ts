@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import {daylightPalette} from './daylight';
+
 export type IconName = 'playpause'|'menu'|'code'|'info'|'back'|'inputs'|'apps'|'music'|'film'|'play'|'airplay'|'settings'|'tv'|'game'|'apple'|'remote'|'wifi'|'sun'|'volume'|'chevron'|'pause'|'next'|'previous'|'close'|'home'|'check'|'wallpaper';
 export interface AppEntry { id:string; name:string; icon:IconName; color:string; category:'apps'|'system'|'casting'|'inputs'; mark?:string; subtitle?:string; kind?:string;profile?:string;brands?:string[];port?:number; }
 export const catalog:AppEntry[] = [
@@ -31,6 +33,7 @@ export const wallpapers=[
  {id:'tide',name:'Tide',detail:'A little room to breathe.',colors:['#0b222b','#668d91','#183d47'] as const},
  {id:'ink',name:'Ink',detail:'Nothing extra.',colors:['#080a10','#30333e','#10131c'] as const},
  {id:'aurora',name:'Aurora',detail:'Light, slowly unfolding.',colors:['#151426','#6b739f','#29334e'] as const},
+ {id:'daylight',name:'Daylight',detail:'Changes with the local time.',colors:daylightPalette(12)},
 ];
 export type WallpaperId=typeof wallpapers[number]['id'];
 export function pin(dock:string[],id:string,slot:number):string[]{

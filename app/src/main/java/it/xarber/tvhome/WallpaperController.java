@@ -9,11 +9,12 @@ import android.widget.LinearLayout;
 final class WallpaperController {
     private final LegacyHomeActivity home;
     private final Runnable frame=new Runnable(){@Override public void run(){
-        if(home.resumed&&!home.libraryVisible&&home.systemBackdrop&&home.motionEnabled()
-                &&preferences().getBoolean("wallpaper-motion",false)
-                &&!preferences().getString("wallpaper","classic").equals("classic")){
+        if(!home.resumed||home.libraryVisible||!home.systemBackdrop)return;
+        String id=preferences().getString("wallpaper","classic");
+        boolean animate=!id.equals("classic")&&home.motionEnabled()&&preferences().getBoolean("wallpaper-motion",false);
+        if(animate||id.equals("daylight")){
             if(home.heroImage!=null)home.heroImage.invalidate();
-            home.handler.postDelayed(this,80);
+            home.handler.postDelayed(this,animate?80:30000);
         }
     }};
     WallpaperController(LegacyHomeActivity home){this.home=home;}

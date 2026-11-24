@@ -24,3 +24,7 @@ See [the feature guide](features/EXPO_DEMO.md) for implemented preview behavior
 and the boundary between browser demonstrations and physical TV capabilities.
 
 See [phone remote](features/PHONE_REMOTE.md), [PWA](features/PWA.md), and [branding](BRANDING.md) for the separate Expo companion and native background bridge.
+
+### Daylight wallpaper
+
+Choose **Daylight** in Wallpapers to use a palette based on the local device clock. Dawn starts at 05:00, day at 08:00, dusk at 17:00 and night at 20:00. The shared launcher and remote preview reuse the existing palette crossfade and respect Reduced Motion. The classic Android launcher updates the scene without animation when motion is disabled. Daylight needs no location permission or network connection. Weather-adjusted scenes are tracked separately in the development queue.

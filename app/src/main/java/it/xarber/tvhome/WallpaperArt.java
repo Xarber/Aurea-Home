@@ -10,11 +10,12 @@ import android.graphics.PixelFormat;
 import android.graphics.Shader;
 import android.graphics.drawable.Drawable;
 import android.os.SystemClock;
+import java.util.Calendar;
 
 /** Original vector wallpapers; no decoded frames, network assets or blur cache. */
 final class WallpaperArt extends Drawable {
-    static final String[] IDS={"classic","silk","dune","tide","ink","aurora"};
-    static final String[] LABELS={"Classic","Silk","Dune","Tide","Ink","Aurora"};
+    static final String[] IDS={"classic","silk","dune","tide","ink","aurora","daylight"};
+    static final String[] LABELS={"Classic","Silk","Dune","Tide","Ink","Aurora","Daylight"};
     private final String id;
     private final boolean motion;
     private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -22,6 +23,13 @@ final class WallpaperArt extends Drawable {
     WallpaperArt(String id,boolean motion){this.id=id;this.motion=motion;}
     static boolean valid(String id){for(String value:IDS)if(value.equals(id))return true;return false;}
     private int[] colors(){switch(id){
+        case "daylight": {
+            int hour=Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
+            if(hour>=5&&hour<8)return new int[]{0xff231c3c,0xffc47974,0xff563d67};
+            if(hour>=8&&hour<17)return new int[]{0xff142f55,0xff5194bd,0xff254666};
+            if(hour>=17&&hour<20)return new int[]{0xff2d1b39,0xffad6156,0xff62364d};
+            return new int[]{0xff0a1029,0xff434a8a,0xff1b254b};
+        }
         case "dune":return new int[]{0xff2c2022,0xffb09278,0xff483e48};
         case "tide":return new int[]{0xff0b222b,0xff668d91,0xff183d47};
         case "ink":return new int[]{0xff080a10,0xff30333e,0xff10131c};
