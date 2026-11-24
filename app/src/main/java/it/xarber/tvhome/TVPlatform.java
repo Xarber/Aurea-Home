@@ -133,6 +133,11 @@ public final class TVPlatform {
                 }
             });
             return safe("accepted",true);
+        case "widgetList":case "widgetChange":
+            if(!foreground())throw new IllegalStateException("launcher_not_active");
+            SharedPreferences widgetPreferences=households.layoutFor(data.getString("profile"));
+            if(operation.equals("widgetChange"))HouseholdWidgets.change(widgetPreferences,data);
+            return new JSONObject().put("widgets",HouseholdWidgets.read(widgetPreferences));
         case "folderChange":
             if(!foreground()||!households.activeId().equals(data.getString("profile")))throw new IllegalStateException("profile_changed");
             ProfileFolders.change(households.appearance(),catalog,data);

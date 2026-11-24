@@ -11,6 +11,7 @@ import { AnchoredPanel, type Anchor } from './AnchoredPanel';
 import { FocusButton } from './FocusButton';
 import { FadedScroll } from './FadedScroll';
 import { Icon } from './Icon';
+import {HouseholdWidgetSettings} from './HouseholdWidgetSettings';
 import {ProfileFolderSettings} from './ProfileFolderSettings';
 import {PlexSettings} from './PlexSettings';
 import {WatchNextSettings} from './WatchNextSettings';
@@ -133,6 +134,7 @@ export function NativePanels({
     plex: 'Plex Continue Watching',
     layout: 'Home layout',
     folders: 'App folders',
+    widgets: 'Household widgets',
     changelog: 'Changelog',
     developer: 'Developer settings',ideas:'Ideas',
     profiles: 'Input appearance',
@@ -267,6 +269,7 @@ export function NativePanels({
             )}
             {row('Keep Watching','film',()=>demo.setPanel('watchNext'))}
             {row('Household profiles','home',()=>demo.setPanel('account'))}
+            {row('Household widgets','sun',()=>demo.setPanel('widgets'))}
             {row('Home layout','apps',()=>demo.setPanel('layout'))}
             {row('Smart home','home',()=>demo.setPanel('automations'))}
             {row('Wallpapers', 'wallpaper', () => demo.setPanel('wallpapers'))}
@@ -472,6 +475,7 @@ export function NativePanels({
           {(demo.prefs.householdProfile??'home')==='home'&&demo.panel==='watchNext'&&<WatchNextSettings demo={demo} t={t}/>}
           {row('Plex Continue Watching','film',()=>demo.setPanel('plex'))}
         </>}
+        {demo.panel==='widgets'&&<HouseholdWidgetSettings key={demo.prefs.householdProfile??'home'} demo={demo} t={t}/>}
         {demo.panel==='plex'&&<PlexSettings key={demo.prefs.householdProfile??'home'} demo={demo} t={t}/>}
         {demo.panel==='automations'&&<SmartHomeSettings demo={demo} t={t}/>}
         {demo.panel==='account'&&(household?<TVAccountSettings key={household.active} demo={demo} household={household}

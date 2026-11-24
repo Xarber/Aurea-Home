@@ -1,0 +1,99 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+import {TVTextInput} from './TVTextInput';
+import React,{useEffect,useState} from 'react';
+import {AppState,Text,View} from 'react-native';
+import type {Launcher} from '../launcher/types';
+import {countdownDate,daysUntil,parseWidgets,remainingTime,timerMinutes,type Widget} from '../model/widgets';
+import {FocusButton} from './FocusButton';
+import {Icon} from './Icon';
+
+const locations=[['Local UTC','UTC'],['Rome','Europe/Rome'],['London','Europe/London'],
+ ['New York','America/New_York'],['Los Angeles','America/Los_Angeles'],['Dubai','Asia/Dubai'],
+ ['Tokyo','Asia/Tokyo'],['Sydney','Australia/Sydney']] as const;
+
+function clock(now:number,zone:string,language:string) {
+ try{return new Intl.DateTimeFormat(language,{timeZone:zone,hour:'2-digit',minute:'2-digit'}).format(now);}
+ catch{return '—';}
+}
+
+export function HouseholdWidgetSettings({demo,t}:{demo:Launcher;t:(text:string)=>string}) {
+ const profile=demo.prefs.householdProfile??'home';
+ const [widgets,setWidgets]=useState<Widget[]>([]);
+ const [form,setForm]=useState<'timer'|'clock'|'countdown'>();
+ const [name,setName]=useState(''),[value,setValue]=useState('');
+ const [loading,setLoading]=useState(true),[error,setError]=useState(false);
+ const [now,setNow]=useState(Date.now);
+ useEffect(()=>{
+  let live=true;
+  void demo.execute('widgetList',{profile}).then(result=>{
+   if(live)setWidgets(parseWidgets(result.widgets));
+  }).catch(()=>{if(live)setError(true);}).finally(()=>{if(live)setLoading(false);});
+  return()=>{live=false;};
+ },[demo.execute,profile]);
+ useEffect(()=>{
+  const tick=()=>{if(!['background','inactive'].includes(AppState.currentState??''))setNow(Date.now());};
+  const timer=setInterval(tick,widgets.some(widget=>widget.type==='timer')?1000:30000);
+  const state=AppState.addEventListener('change',tick);
+  return()=>{clearInterval(timer);state.remove();};
+ },[widgets]);
+ async function change(payload:Record<string,unknown>){
+  if(loading)return;
+  setLoading(true);setError(false);
+  try{
+   const result=await demo.execute('widgetChange',{profile,...payload});
+   setWidgets(parseWidgets(result.widgets));setForm(undefined);setName('');setValue('');
+  }catch{setError(true);}finally{setLoading(false);}
+ }
+ const row=(id:string,label:string,press:()=>void,detail?:string,disabled=false)=><FocusButton
+  key={id} id={'household-widget-'+id} group="modal" label={[label,detail].filter(Boolean).join(' · ')}
+  onPress={press} disabled={disabled||loading} style={{minHeight:48,flexDirection:'row',justifyContent:'flex-start',paddingHorizontal:10,gap:8}}>
+  <Icon name="sun" size={18}/><Text style={{color:'#f4f6ff',fontSize:17,flex:1}}>{label}</Text>
+  {detail&&<Text style={{color:'#dee8fc',fontVariant:['tabular-nums'],fontSize:17}}>{detail}</Text>}
+ </FocusButton>;
+ const [remove,setRemove]=useState<string>();
+ const minutes=timerMinutes(value);
+ const date=countdownDate(value,now);
+ const inputStyle={minHeight:48,borderColor:'#8e99ab',borderWidth:1,borderRadius:12,paddingHorizontal:12,color:'#fff',fontSize:16};
+ return <View style={{gap:7,paddingVertical:8}}>
+  {error&&<Text accessibilityLiveRegion="polite" style={{color:'#ffd4e0'}}>{t('Could not update household widgets.')}</Text>}
+  {!form&&<>
+   {widgets.map(widget=>row(widget.id,remove===widget.id?t('Remove')+' · '+widget.label:widget.label,()=>{
+    if(remove!==widget.id){setRemove(widget.id);return;}
+    setRemove(undefined);
+    void change({action:'remove',id:widget.id});
+   },widget.type==='clock'?clock(now,widget.zone,demo.prefs.language):
+      widget.type==='countdown'?(now>=widget.until?t('Reached date'):new Intl.NumberFormat(demo.prefs.language,
+        {style:'unit',unit:'day',unitDisplay:'long'}).format(daysUntil(widget.until,now))):
+      now>=widget.until?t('Finished'):remainingTime(widget.until,now)))}
+   {widgets.length<12&&<>
+    {row('timer',t('Add timer'),()=>setForm('timer'))}
+    {row('clock',t('Add world clock'),()=>setForm('clock'))}
+    {row('countdown',t('Add date countdown'),()=>setForm('countdown'))}
+   </>}
+  </>}
+  {form==='timer'&&<>
+   <TVTextInput id="timer-label" t={t} value={name} onChangeText={setName} maxLength={48} placeholder={t('Timer name')}
+    accessibilityLabel={t('Timer name')} placeholderTextColor="#aeb9c9" style={inputStyle}/>
+   <TVTextInput id="timer-minutes" t={t} value={value} onChangeText={setValue} maxLength={4} keyboardType="numeric" placeholder={t('Minutes')}
+    accessibilityLabel={t('Minutes')} placeholderTextColor="#aeb9c9" style={inputStyle}/>
+   {row('start',t('Start timer'),()=>void change({action:'timer',label:name.trim()||t('Timer'),minutes}),undefined,!minutes)}
+  </>}
+  {form==='clock'&&<>
+   {locations.map(([name,zone])=>row(zone,t(name),()=>void change({action:'clock',label:t(name),zone}),
+     clock(now,zone,demo.prefs.language)))}
+   <TVTextInput id="clock-zone" t={t} value={value} onChangeText={setValue} maxLength={80} autoCapitalize="none" autoCorrect={false}
+    placeholder={t('Time zone (e.g. Europe/Paris)')} accessibilityLabel={t('Time zone')}
+    placeholderTextColor="#aeb9c9" style={inputStyle}/>
+   {row('custom',t('Add time zone'),()=>void change({action:'clock',label:value.trim().replaceAll('_',' '),zone:value.trim()}),
+     undefined,clock(now,value.trim(),demo.prefs.language)==='—')}
+  </>}
+  {form==='countdown'&&<>
+   <TVTextInput id="countdown-label" t={t} value={name} onChangeText={setName} maxLength={48} placeholder={t('Countdown name')}
+    accessibilityLabel={t('Countdown name')} placeholderTextColor="#aeb9c9" style={inputStyle}/>
+   <TVTextInput id="countdown-date" t={t} value={value} onChangeText={setValue} maxLength={10} placeholder="YYYY-MM-DD"
+    accessibilityLabel={t('Countdown date (year-month-day)')} placeholderTextColor="#aeb9c9" style={inputStyle}/>
+   {row('start-date',t('Start countdown'),()=>void change({action:'countdown',label:name.trim()||t('Countdown'),date}),undefined,!date)}
+  </>}
+  {!!form&&row('cancel',t('Cancel'),()=>{setForm(undefined);setName('');setValue('');})}
+ </View>;
+}

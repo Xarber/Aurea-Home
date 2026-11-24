@@ -1,0 +1,25 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+import assert from 'node:assert/strict';
+import {test} from 'node:test';
+import {countdownDate,daysUntil,remainingTime,timerMinutes,parseWidgets} from '../../src/model/widgets.ts';
+
+test('household timers handle partial seconds, expiry and long durations',()=>{
+  assert.equal(remainingTime(1,0),'0:01');
+  assert.equal(remainingTime(0,1),'0:00');
+  assert.equal(remainingTime(3690000,0),'1:01:30');
+  assert.equal(timerMinutes('60'),60);
+  for(const invalid of ['-1','0','3.5','1441','Infinity'])assert.equal(timerMinutes(invalid),undefined);
+});
+
+test('invalid or unknown local widget records never enter rendering',()=>{
+  const timer={id:'1',type:'timer',label:'Break',until:3600};
+  assert.deepEqual(parseWidgets([timer,{...timer,until:Infinity},{type:'web'},{type:'clock',zone:5}]),[timer]);
+});
+
+test('date countdowns reject invalid dates and count calendar days',()=>{
+  const today=new Date(2026,1,27,21).getTime();
+  assert.equal(countdownDate('2026-02-31',today),undefined);
+  assert.equal(countdownDate('2026-02-26',today),undefined);
+  assert.equal(countdownDate('2026-03-01',today),'2026-03-01');
+  assert.equal(daysUntil(new Date(2026,2,1).getTime(),today),2);
+});
