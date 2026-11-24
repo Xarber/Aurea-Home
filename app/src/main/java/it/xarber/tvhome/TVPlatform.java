@@ -64,7 +64,9 @@ public final class TVPlatform {
     static void remoteEvent(String event,HomeRemoteServer server){if(!foreground())return;JSONObject value=new JSONObject();try{if(event.equals("pair-request"))value.put("pin",server.pin()).put("origin",server.requestingOrigin());}catch(Exception ignored){}AureaTVModule.event(event,value);}
     JSONObject snapshot(boolean refresh)throws Exception{
         main.post(this::notifyUpdate);JSONObject result=new JSONObject().put("schema",1).put("catalog",catalog.read(refresh));
-        JSONObject preferences=appearance().put("dock",catalog.dock());
+        SharedPreferences layout=households.appearance();
+        JSONObject preferences=appearance().put("dock",catalog.dock(layout)).put("startFocus",layout.getString("start-focus","dock"))
+            .put("hiddenApps",new JSONArray(new java.util.TreeSet<>(layout.getStringSet("hidden-apps",java.util.Collections.emptySet()))));
         String weatherCity=households.appearance().getString("weather-city",null);
         if(weatherCity!=null)try{preferences.put("weatherCity",new JSONObject(weatherCity));}
         catch(org.json.JSONException invalid){/* A malformed saved city falls back to the local clock. */}
@@ -106,6 +108,15 @@ public final class TVPlatform {
         case "automationConfigure":
             if(!foreground())throw new IllegalStateException("launcher_not_active");
             return automationAddress(AutomationAccess.get(context).configure(data.getString("platform"),data.getBoolean("enabled")));
+        case "hideLauncherApp":
+            if(!foreground())throw new IllegalStateException("launcher_not_active");
+            String application=data.getString("id");
+            if(!catalog.isApp(application))throw new IllegalArgumentException("unknown_app");
+            SharedPreferences profileLayout=households.appearance();
+            java.util.Set<String> hidden=new java.util.HashSet<>(profileLayout.getStringSet("hidden-apps",java.util.Collections.emptySet()));
+            if(data.getBoolean("hidden"))hidden.add(application);else hidden.remove(application);
+            if(!profileLayout.edit().putStringSet("hidden-apps",hidden).commit())throw new IllegalStateException("storage_failed");
+            return snapshot(false);
         case "watchNext":
         case "watchNextOpen":
         case "watchNextDismiss":
@@ -119,7 +130,7 @@ public final class TVPlatform {
             if(!foreground()||!households.activeId().equals(data.getString("id")))throw new IllegalStateException("profile_changed");
             if(data.has("appearance")){
                 JSONObject incoming=data.getJSONObject("appearance");
-                if(incoming.has("dock")||incoming.has("weatherCity"))throw new IllegalArgumentException("invalid_appearance");
+                if(incoming.has("dock")||incoming.has("weatherCity")||incoming.has("startFocus"))throw new IllegalArgumentException("invalid_appearance");
                 savePreferences(incoming);
             }
             return data.has("appearance")?snapshot(false):appearance();
@@ -242,8 +253,12 @@ public final class TVPlatform {
     private void savePreferences(JSONObject data)throws Exception {
         SharedPreferences.Editor edit=households.appearance().edit();
         boolean primary=households.activeId().equals("home");
-        SharedPreferences.Editor dock=data.has("dock")?(primary?edit:prefs.edit()):null;
-        if(dock!=null)catalog.writeDock(data.getJSONArray("dock"),dock);
+        if(data.has("dock"))catalog.writeDock(data.getJSONArray("dock"),edit);
+        if(data.has("startFocus")){
+            String start=data.getString("startFocus");
+            if(!java.util.Arrays.asList("dock","inputs","apps").contains(start))throw new IllegalArgumentException("invalid_start_focus");
+            edit.putString("start-focus",start);
+        }
         String language=data.has("language")?data.getString("language"):null;
         if(language!=null&&!language.equals("it")&&!language.equals("en"))throw new IllegalArgumentException("invalid_language");
         if(data.has("wallpaper")){
@@ -270,7 +285,6 @@ public final class TVPlatform {
         if(data.has("motion"))edit.putBoolean("wallpaper-motion",data.getBoolean("motion"));
         if(data.has("glass"))edit.putBoolean("activity-background",data.getBoolean("glass"));
         if(language!=null&&!primary)edit.putString("language",language);
-        if(dock!=null&&dock!=edit&&!dock.commit())throw new IllegalStateException("storage_failed");
         if(!edit.commit())throw new IllegalStateException("storage_failed");
         if(language!=null&&primary)AppLanguage.set(context,language);
     }

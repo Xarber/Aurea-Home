@@ -60,9 +60,10 @@ final class TVHomeCatalog {
     }
     private JSONArray array(){JSONArray result=new JSONArray();List<JSONObject> values=new ArrayList<>(entries.values());values.sort((a,b)->{boolean ai=a.optString("kind").equals("hdmi"),bi=b.optString("kind").equals("hdmi");if(ai&&bi)return Integer.compare(a.optInt("port"),b.optInt("port"));if(ai!=bi)return ai?-1:1;return 0;});for(JSONObject value:values)result.put(value);return result;}
     private String normalize(String key){return key.equals("library")?"all":key;}
-    synchronized JSONArray dock()throws Exception{
-        read(false);List<String> requested=new ArrayList<>();requested.add(normalize(prefs.getString("input-dock-pin","inputs")));
-        String saved=prefs.getString("dock-pins",null);
+    synchronized boolean isApp(String id)throws Exception{read(false);return applications.containsKey(id);}
+    synchronized JSONArray dock(SharedPreferences layout)throws Exception{
+        read(false);List<String> requested=new ArrayList<>();requested.add(normalize(layout.getString("input-dock-pin","inputs")));
+        String saved=layout.getString("dock-pins",null);
         if(saved!=null)try{JSONArray values=new JSONArray(saved);for(int i=0;i<Math.min(5,values.length());i++)requested.add(normalize(values.getString(i)));}catch(Exception ignored){}
         if(requested.size()==1)requested.addAll(Arrays.asList("com.netflix.ninja","com.amazon.amazonvideo.livingroom","com.google.android.youtube.tv","airplay","all"));
         JSONArray result=new JSONArray();HashSet<String> used=new HashSet<>();

@@ -28,3 +28,7 @@ See [phone remote](features/PHONE_REMOTE.md), [PWA](features/PWA.md), and [brand
 ### Daylight wallpaper
 
 Choose **Daylight** in Wallpapers to use a palette based on the local device clock. Dawn starts at 05:00, day at 08:00, dusk at 17:00 and night at 20:00. The shared launcher and remote preview reuse the existing palette crossfade and respect Reduced Motion. The classic Android launcher updates the scene without animation when motion is disabled. Daylight needs no location permission or network connection. Daylight on the shared launcher can also use a manually selected city for local sunrise, sunset and weather accents. Search terms and rounded city coordinates go to Open-Meteo. The selected city is stored locally and excluded from account backups. The launcher falls back to the clock if a forecast is missing or stale. The legacy launcher and the remote background use the clock-only mode.
+
+### Household layout
+
+The shared TV launcher keeps each household profile’s dock, library visibility and startup destination separate. Use **Control Center → Home layout** to choose Dock, Inputs or App library for a cold launch and to restore hidden apps. Hiding an app from the library leaves its dock shortcut and installed data available. The remote Home command still returns to the dock.

@@ -41,6 +41,11 @@ export function nativeSnapshot(value: Record<string, unknown>): NativeSnapshot {
     throw new Error('invalid_native_response');
   if (!value.music || !value.network || !value.paired || !value.build)
     throw new Error('invalid_native_response');
+  prefs.startFocus=prefs.startFocus==='apps'||prefs.startFocus==='inputs'?prefs.startFocus:'dock';
+  const installed=new Set(value.catalog.filter(entry=>entry.kind==='app').map(entry=>entry.id));
+  prefs.hiddenApps=Array.isArray(prefs.hiddenApps)
+    ?[...new Set(prefs.hiddenApps.filter(id=>installed.has(id)))].slice(0,256)
+    :[];
   prefs.weatherCity=weatherCity(prefs.weatherCity);
   return value as unknown as NativeSnapshot;
 }

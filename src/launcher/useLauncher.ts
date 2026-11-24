@@ -57,6 +57,7 @@ export function useNativeLauncher(): Launcher {
     setError(undefined);
     if(resumePairing.current){resumePairing.current=false;if(next.paired.pending)setPanel('pair');}
     if (first.current) {
+      setPage(next.preferences.startFocus==='inputs'?1:next.preferences.startFocus==='apps'?2:0);
       setSelected(next.preferences.dock[0]!);
       tv.ready();
       first.current = false;

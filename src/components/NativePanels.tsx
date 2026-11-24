@@ -91,10 +91,11 @@ export function NativePanels({
     icon: IconName,
     click: () => void,
     value?: string,
+    identity=label,
   ) => (
     <FocusButton
-      key={label}
-      id={'native-' + label}
+      key={identity}
+      id={'native-' + identity}
       group="modal"
       label={t(label)}
       onPress={click}
@@ -126,6 +127,7 @@ export function NativePanels({
     account: 'X-Center ID',
     automations: 'Smart home',
     watchNext: 'Keep Watching',
+    layout: 'Home layout',
     changelog: 'Changelog',
     developer: 'Developer settings',ideas:'Ideas',
     profiles: 'Input appearance',
@@ -258,6 +260,7 @@ export function NativePanels({
               demo.remote ? 'Connected' : undefined,
             )}
             {(!household||household.active==='home')&&row('Keep Watching','film',()=>demo.setPanel('watchNext'))}
+            {row('Home layout','apps',()=>demo.setPanel('layout'))}
             {row('Smart home','home',()=>demo.setPanel('automations'))}
             {row('Wallpapers', 'wallpaper', () => demo.setPanel('wallpapers'))}
             {row('Disable blur','sun',()=>demo.change({blur:demo.prefs.blur===false}),demo.prefs.blur===false?'On':'Off')}
@@ -427,6 +430,18 @@ export function NativePanels({
             )}
           </>
         )}
+        {panel==='layout'&&<>
+          {text('Open Aurea on')}
+          {(['dock','inputs','apps'] as const).map((startFocus,index)=>row(
+            ['Dock','Inputs','App library'][index]!,'apps',()=>demo.change({startFocus}),
+            (demo.prefs.startFocus??'dock')===startFocus?'✓':undefined,
+          ))}
+          {text('Hidden apps')}
+          {!demo.prefs.hiddenApps?.length&&text('No apps are hidden from the library.')}
+          {demo.catalog.filter(item=>demo.prefs.hiddenApps?.includes(item.id)).map(item=>row(
+            item.name,'apps',()=>action('hideLauncherApp',{id:item.id,hidden:false}),'Show in library','hidden-'+item.id,
+          ))}
+        </>}
         {demo.panel==='watchNext'&&<WatchNextSettings demo={demo} t={t}/>}
         {demo.panel==='automations'&&<SmartHomeSettings demo={demo} t={t}/>}
         {demo.panel === 'account' && household && <TVAccountSettings key={household.active} demo={demo} household={household} setHousehold={setHousehold} t={t}/>}
@@ -545,6 +560,10 @@ export function NativePanels({
               )}
             {app.kind === 'app' && (
               <>
+                {row(demo.prefs.hiddenApps?.includes(id)?'Show in library':'Hide from library','apps',()=>{
+                  action('hideLauncherApp',{id,hidden:!demo.prefs.hiddenApps?.includes(id)});
+                  demo.close();
+                })}
                 {row('App info', 'info', () => action('appInfo', { id }))}
                 {row('Uninstall', 'close', () => action('uninstall', { id }))}
               </>

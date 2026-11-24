@@ -273,7 +273,7 @@ function LauncherView({ demo,onTarget,onOpenRemote }: { demo: Launcher;onOpenRem
   useEffect(() => {
     if (demo.ready) {
       const timer = setTimeout(
-        () => {if(!latest.current.panel)focusId(`dock:${demo.prefs.dock[0]}`);},
+        () => {if(!latest.current.panel&&latest.current.page===0)focusId(`dock:${demo.prefs.dock[0]}`);},
         220,
       );
       return () => clearTimeout(timer);
@@ -363,6 +363,7 @@ function LauncherView({ demo,onTarget,onOpenRemote }: { demo: Launcher;onOpenRem
   const apps = catalog.filter(
     (a) =>
       a.category !== 'inputs' &&
+      !demo.prefs.hiddenApps?.includes(a.id) &&
       (demo.native || (a.id !== 'all' && a.id !== 'inputs')) &&
       (demo.filter === 'all' || a.category === demo.filter),
   );

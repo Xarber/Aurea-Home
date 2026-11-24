@@ -6,3 +6,12 @@ const state=()=>({schema:1,catalog:[{id:'org.example.player',name:'Player',kind:
 test('native state preserves canonical TV package IDs and saved dock order',()=>{const value=nativeSnapshot(state());assert.equal(value.preferences.dock[0],'hdmi1');assert.equal(value.catalog[0]?.id,'org.example.player');assert.equal(value.music.active,false);});
 test('malformed or duplicate native dock never falls back to example apps',()=>{for(const dock of [['inputs'],['inputs','inputs','live','airplay','hdmi1','all'],['all','inputs','live','airplay','hdmi1','hdmi2']]){const value=state();value.preferences.dock=dock;assert.throws(()=>nativeSnapshot(value));}assert.throws(()=>nativeSnapshot({...state(),schema:2}));});
 test('unsupported native catalog kinds fail before rendering',()=>{const value=state();value.catalog[0]!.kind='untrusted';assert.throws(()=>nativeSnapshot(value));});
+
+test('profile layout accepts only installed apps and supported startup destinations',()=>{
+  const base=state();
+  const result=nativeSnapshot({...base,preferences:{...base.preferences,startFocus:'apps',
+    hiddenApps:['org.example.player','org.example.player','inputs','unknown']}});
+  assert.equal(result.preferences.startFocus,'apps');
+  assert.deepEqual(result.preferences.hiddenApps,['org.example.player']);
+  assert.equal(nativeSnapshot({...base,preferences:{...base.preferences,startFocus:'settings'}}).preferences.startFocus,'dock');
+});
