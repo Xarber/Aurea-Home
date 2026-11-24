@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import {weatherCity} from '../model/weather';
+import {weatherCity} from '../model/weather.ts';
 import type { NativeSnapshot } from './types';
 export function nativeSnapshot(value: Record<string, unknown>): NativeSnapshot {
   if (
