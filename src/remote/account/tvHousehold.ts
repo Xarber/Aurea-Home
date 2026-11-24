@@ -19,7 +19,7 @@ export async function tvAccountRequest(path:string, init?:RequestInit) {
   return response.json();
 }
 
-export function useTVHousehold(enabled:boolean) {
+export function useTVHousehold(enabled:boolean,accountsEnabled:boolean) {
   const [household,setHousehold]=useState<Household>();
   useEffect(()=>{
     if(!enabled)return;
@@ -38,7 +38,7 @@ export function useTVHousehold(enabled:boolean) {
   const session=household?.account?.session;
   const automatic=household?.automatic;
   useEffect(()=>{
-    if(!enabled||!automatic||!profile||!session)return;
+    if(!enabled||!accountsEnabled||!automatic||!profile||!session)return;
     const controller=new AbortController();
     let timer:ReturnType<typeof setTimeout>;
     const headers={Authorization:'Bearer '+session,'Content-Type':'application/json'};
@@ -65,7 +65,7 @@ export function useTVHousehold(enabled:boolean) {
     };
     void publish();
     return()=>{clearTimeout(timer);controller.abort();};
-  },[enabled,automatic,profile,session]);
+  },[enabled,accountsEnabled,automatic,profile,session]);
 
   return {household,setHousehold};
 }

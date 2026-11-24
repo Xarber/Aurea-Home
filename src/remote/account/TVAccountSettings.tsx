@@ -11,8 +11,8 @@ type Approval = {id:string; code:string; proof:string; expiresIn:number; qr?:str
 type Appearance = {schema:1; language:'en'|'it'; wallpaper:string; motion:boolean;musicTint:boolean;glass:boolean;blur:boolean};
 type Backup = {revision:string; preferences:Appearance|null};
 
-export function TVAccountSettings({demo, household, setHousehold, t}: {
-  demo:Launcher; household:Household; setHousehold:(value:Household)=>void; t:(value:string)=>string;
+export function TVAccountSettings({demo, household, setHousehold, t, accountsEnabled}: {
+  demo:Launcher; household:Household; setHousehold:(value:Household)=>void; t:(value:string)=>string; accountsEnabled:boolean;
 }) {
   const {account,active:profile}=household;
   const [name,setName]=useState('');
@@ -42,9 +42,9 @@ export function TVAccountSettings({demo, household, setHousehold, t}: {
   useEffect(()=>{
     active.current=true;
     const signal=new AbortController();
-    void request('session',{signal:signal.signal}).then(({available})=>setAvailable(available===true)).catch(()=>{});
+    if(accountsEnabled)void request('session',{signal:signal.signal}).then(({available})=>setAvailable(available===true)).catch(()=>{});
     return()=>{active.current=false;signal.abort();};
-  },[]);
+  },[accountsEnabled]);
   useEffect(()=>{
     if(!approval)return;
     const signal=new AbortController();
@@ -158,7 +158,7 @@ export function TVAccountSettings({demo, household, setHousehold, t}: {
     {household.profiles.map(viewer=><React.Fragment key={viewer.id}>{row('profile-'+viewer.id,
       (viewer.id===profile?'✓ ':'')+viewer.label,()=>void run(async()=>{
         if(viewer.id===profile)return;
-        if(account)await request('device/invitations',{method:'DELETE',headers:auth()}).catch(()=>{});
+        if(accountsEnabled&&account)await request('device/invitations',{method:'DELETE',headers:auth()}).catch(()=>{});
         await update('householdSelect',{id:viewer.id});
       }))}</React.Fragment>)}
     {household.profiles.length<8&&<>
@@ -170,7 +170,7 @@ export function TVAccountSettings({demo, household, setHousehold, t}: {
       }))}
     </>}
 
-    {!available ? text('Account sync is unavailable on this TV.') :
+    {accountsEnabled&&(!available ? text('Account sync is unavailable on this TV.') :
       approval ? <>
         {text('Visit id.xcenter.it/device and enter this code, or scan it with your phone.')}
         {text(approval.code)}
@@ -217,13 +217,13 @@ export function TVAccountSettings({demo, household, setHousehold, t}: {
       </> : <>
         {row('stay',stay?'Stay signed in: On':'Stay signed in: Off',()=>setStay(!stay))}
         {row('link','Sign in with X-Center ID',()=>void start())}
-      </>}
-    {household.profiles.some(viewer=>viewer.id===profile&&viewer.linked)&&
+      </>)}
+    {accountsEnabled&&household.profiles.some(viewer=>viewer.id===profile&&viewer.linked)&&
       row('unlink',unlink?'Confirm unlink account':'Unlink account',()=>{
         if(!unlink){setUnlink(true);return;}
         void run(()=>revokeLogin(true));
       })}
-    {row('list-remotes','Manage account-paired remotes',()=>void run(async()=>{
+    {accountsEnabled&&row('list-remotes','Manage account-paired remotes',()=>void run(async()=>{
       await refreshRemotes();
       setStatus('Choose a remote to revoke its access to this TV.');
     }))}

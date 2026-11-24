@@ -810,6 +810,15 @@ function LauncherView({ demo,onTarget,onOpenRemote }: { demo: Launcher;onOpenRem
                 contentContainerStyle={{ padding: 8, paddingBottom: 95 }}
               >
                 <View style={s.appsGrid}>
+                  {demo.native&&demo.page===2&&demo.filter==='all'&&demo.prefs.folders?.map(folder=>(
+                    <View key={folder.id} style={{width:compact?'30%':'15%',marginBottom:25}}>
+                      <FocusButton id={'library-folder:'+folder.id} group="page-2" label={folder.name}
+                        onPress={()=>demo.setPanel('folder:'+folder.id)} style={{aspectRatio:1.65,borderRadius:14,backgroundColor:'#64768f55'}}>
+                        <Icon name="apps" size={28}/>
+                      </FocusButton>
+                      <Text numberOfLines={2} style={s.appCaption}>{folder.name}</Text>
+                    </View>
+                  ))}
                   {(!demo.native || demo.page === 2) &&
                     apps.map((a) => (
                       <View

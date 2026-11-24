@@ -68,7 +68,8 @@ public final class TVPlatform {
         SharedPreferences layout=households.appearance();
         JSONObject preferences=appearance().put("dock",catalog.dock(layout)).put("startFocus",layout.getString("start-focus","dock"))
             .put("hiddenApps",new JSONArray(new java.util.TreeSet<>(layout.getStringSet("hidden-apps",java.util.Collections.emptySet()))))
-            .put("householdProfile",households.activeId());
+            .put("householdProfile",households.activeId()).put("canUndoLayoutImport",ProfileLayout.canUndo(layout));
+        try{preferences.put("folders",ProfileFolders.read(layout));}catch(org.json.JSONException invalid){/* Keep Home available with invalid saved folders. */}
         String weatherCity=households.appearance().getString("weather-city",null);
         if(weatherCity!=null)try{preferences.put("weatherCity",new JSONObject(weatherCity));}
         catch(org.json.JSONException invalid){/* A malformed saved city falls back to the local clock. */}
@@ -110,6 +111,22 @@ public final class TVPlatform {
         case "automationConfigure":
             if(!foreground())throw new IllegalStateException("launcher_not_active");
             return automationAddress(AutomationAccess.get(context).configure(data.getString("platform"),data.getBoolean("enabled")));
+        case "exportProfileLayout":case "importProfileLayout":case "undoProfileLayout":
+            if(!foreground()||!households.activeId().equals(data.getString("profile")))throw new IllegalStateException("profile_changed");
+            if(operation.equals("undoProfileLayout")){ProfileLayout.undo(households.appearance());return snapshot(false);}
+            String layoutProfile=households.activeId();
+            main.post(()->{
+                Activity host=activity.get();
+                if(host instanceof MainActivity){
+                    if(operation.equals("exportProfileLayout"))((MainActivity)host).exportProfileLayout(layoutProfile);
+                    else ((MainActivity)host).importProfileLayout(layoutProfile);
+                }
+            });
+            return safe("accepted",true);
+        case "folderChange":
+            if(!foreground()||!households.activeId().equals(data.getString("profile")))throw new IllegalStateException("profile_changed");
+            ProfileFolders.change(households.appearance(),catalog,data);
+            return snapshot(false);
         case "hideLauncherApp":
             if(!foreground())throw new IllegalStateException("launcher_not_active");
             String application=data.getString("id");

@@ -33,6 +33,11 @@ final class HouseholdAccounts {
         return context.getSharedPreferences(name,0);
     }
 
+    synchronized android.content.SharedPreferences layoutFor(String expected){
+        if(!expected.equals(activeId))throw new IllegalStateException("profile_changed");
+        return appearance();
+    }
+
     String language(){
         return activeId.equals("home")?AppLanguage.code(context):appearance().getString("language","it");
     }

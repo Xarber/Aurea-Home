@@ -11,6 +11,7 @@ import { AnchoredPanel, type Anchor } from './AnchoredPanel';
 import { FocusButton } from './FocusButton';
 import { FadedScroll } from './FadedScroll';
 import { Icon } from './Icon';
+import {ProfileFolderSettings} from './ProfileFolderSettings';
 import {PlexSettings} from './PlexSettings';
 import {WatchNextSettings} from './WatchNextSettings';
 import {SmartHomeSettings} from './SmartHomeSettings';
@@ -38,7 +39,7 @@ export function NativePanels({
   musicAnchor: Anchor;
   settingsAnchor: Anchor;
 }) {
-  const {household,setHousehold}=useTVHousehold(demo.ready&&process.env.EXPO_PUBLIC_AUREA_ACCOUNTS_ENABLED==='1');
+  const {household,setHousehold}=useTVHousehold(demo.ready,process.env.EXPO_PUBLIC_AUREA_ACCOUNTS_ENABLED==='1');
   const [retained, setRetained] = useState<string | null>(null),
     [remote, setRemote] = useState<Record<string, unknown>>({}),
     [details, setDetails] = useState('');
@@ -125,11 +126,12 @@ export function NativePanels({
     sound: 'Sound',
     airplay: 'AirPlay',
     about: 'About Aurea Home',
-    account: 'X-Center ID',
+    account: 'Household profiles',
     automations: 'Smart home',
     watchNext: 'Keep Watching',
     plex: 'Plex Continue Watching',
     layout: 'Home layout',
+    folders: 'App folders',
     changelog: 'Changelog',
     developer: 'Developer settings',ideas:'Ideas',
     profiles: 'Input appearance',
@@ -137,11 +139,12 @@ export function NativePanels({
     input: 'Choose HDMI input',
     notes: 'Release notes',
   };
-  const title = panel?.startsWith('release:') ? 'Full changelog' : id
+  const folder=panel.startsWith('folder:')?demo.prefs.folders?.find(value=>value.id===id):undefined;
+  const title = folder?.name??(panel.startsWith('folder-app:')?'Add to folder':panel?.startsWith('release:') ? 'Full changelog' : id
     ? panel.startsWith('pin:')
       ? 'Choose a slot'
       : app.name
-    : (titles[panel] ?? panel);
+    : (titles[panel] ?? panel));
   const updates = snapshot.updates;
   const candidate = updates.candidate as Record<string, unknown> | undefined;
   const music = snapshot.music;
@@ -262,6 +265,7 @@ export function NativePanels({
               demo.remote ? 'Connected' : undefined,
             )}
             {row('Keep Watching','film',()=>demo.setPanel('watchNext'))}
+            {row('Household profiles','home',()=>demo.setPanel('account'))}
             {row('Home layout','apps',()=>demo.setPanel('layout'))}
             {row('Smart home','home',()=>demo.setPanel('automations'))}
             {row('Wallpapers', 'wallpaper', () => demo.setPanel('wallpapers'))}
@@ -432,7 +436,15 @@ export function NativePanels({
             )}
           </>
         )}
+        {demo.panel&&(panel==='folders'||panel.startsWith('folder:')||panel.startsWith('folder-app:'))&&
+          <ProfileFolderSettings key={panel} demo={demo} t={t} launch={launch} folderId={panel.startsWith('folder:')?id:undefined}
+            assignApp={panel.startsWith('folder-app:')?id:undefined}/>}
         {panel==='layout'&&<>
+          {row('App folders','apps',()=>demo.setPanel('folders'))}
+          {row('Export library layout','apps',()=>action('exportProfileLayout',{profile:demo.prefs.householdProfile??'home'}))}
+          {row('Import library layout','apps',()=>action('importProfileLayout',{profile:demo.prefs.householdProfile??'home'}))}
+          {demo.prefs.canUndoLayoutImport===true&&row('Restore previous library layout','apps',()=>
+            action('undoProfileLayout',{profile:demo.prefs.householdProfile??'home'}))}
           {text('Open Aurea on')}
           {(['dock','inputs','apps'] as const).map((startFocus,index)=>row(
             ['Dock','Inputs','App library'][index]!,'apps',()=>demo.change({startFocus}),
@@ -450,7 +462,9 @@ export function NativePanels({
         </>}
         {demo.panel==='plex'&&<PlexSettings key={demo.prefs.householdProfile??'home'} demo={demo} t={t}/>}
         {demo.panel==='automations'&&<SmartHomeSettings demo={demo} t={t}/>}
-        {demo.panel === 'account' && household && <TVAccountSettings key={household.active} demo={demo} household={household} setHousehold={setHousehold} t={t}/>}
+        {demo.panel==='account'&&(household?<TVAccountSettings key={household.active} demo={demo} household={household}
+          setHousehold={setHousehold} t={t} accountsEnabled={process.env.EXPO_PUBLIC_AUREA_ACCOUNTS_ENABLED==='1'}/>:
+          text('Household profiles are loading…'))}
         {panel === 'about' && (
           <>
             {row(
@@ -566,6 +580,7 @@ export function NativePanels({
               )}
             {app.kind === 'app' && (
               <>
+                {row('Add to folder','apps',()=>demo.setPanel('folder-app:'+id))}
                 {row(demo.prefs.hiddenApps?.includes(id)?'Show in library':'Hide from library','apps',()=>{
                   action('hideLauncherApp',{id,hidden:!demo.prefs.hiddenApps?.includes(id)});
                   demo.close();

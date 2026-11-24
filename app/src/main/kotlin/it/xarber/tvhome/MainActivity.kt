@@ -30,6 +30,56 @@ class MainActivity : ReactActivity() {
     }
     fun exportPreferences() { exportFile.launch("Aurea-Home-preferences.json") }
     fun importPreferences() { importFile.launch(arrayOf("application/json","text/plain")) }
+    private var profileLayoutOperation: String? = null
+    private val exportLibraryLayout = registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        val expected = profileLayoutOperation
+        profileLayoutOperation = null
+        if (uri != null && expected != null) try {
+            val profiles = HouseholdAccounts.get(this)
+            val data = ProfileLayout.describe(profiles.layoutFor(expected)).toString(2)
+            checkNotNull(contentResolver.openOutputStream(uri)).use { it.write(data.toByteArray(Charsets.UTF_8)) }
+            AureaTVModule.event("notice", TVPlatform.safe("message", "Library layout exported"))
+        } catch (_: Exception) {
+            AureaTVModule.event("notice", TVPlatform.safe("message", "Could not export the library layout."))
+        }
+    }
+    private val importLibraryLayout = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        val expected = profileLayoutOperation
+        profileLayoutOperation = null
+        if (uri != null && expected != null) try {
+            val candidate = contentResolver.openInputStream(uri).use { ProfileLayout.read(it) }
+            AlertDialog.Builder(this)
+                .setTitle(AppLanguage.text(this, "Import library layout"))
+                .setMessage(AppLanguage.text(this, "Replace the active profile’s dock, folders, hidden apps and startup destination? You can restore the previous layout."))
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(android.R.string.ok) { _, _ ->
+                    try {
+                        val profiles = HouseholdAccounts.get(this)
+                        ProfileLayout.restore(profiles.layoutFor(expected), candidate)
+                        AureaTVModule.event("notice", TVPlatform.safe("message", "Library layout imported"))
+                        AureaTVModule.event("playback", org.json.JSONObject())
+                    } catch (_: Exception) {
+                        AureaTVModule.event("notice", TVPlatform.safe("message", "Could not import the library layout."))
+                    }
+                }.show()
+        } catch (_: Exception) {
+            AureaTVModule.event("notice", TVPlatform.safe("message", "This library layout file is invalid."))
+        }
+    }
+    fun exportProfileLayout(profile: String) = launchProfileLayoutPicker(profile) {
+        exportLibraryLayout.launch("Aurea-Home-library-layout.json")
+    }
+    fun importProfileLayout(profile: String) = launchProfileLayoutPicker(profile) {
+        importLibraryLayout.launch(arrayOf("application/json", "text/plain"))
+    }
+    private fun launchProfileLayoutPicker(profile: String, launch: () -> Unit) {
+        if (profileLayoutOperation != null) return
+        profileLayoutOperation = profile
+        try { launch() } catch (_: Exception) {
+            profileLayoutOperation = null
+            AureaTVModule.event("notice", TVPlatform.safe("message", "No document picker is available on this TV."))
+        }
+    }
     private var previewApproval = ""
     private val previewConsent = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val approval=previewApproval;previewApproval=""

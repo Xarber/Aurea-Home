@@ -46,6 +46,13 @@ export function nativeSnapshot(value: Record<string, unknown>): NativeSnapshot {
   prefs.hiddenApps=Array.isArray(prefs.hiddenApps)
     ?[...new Set(prefs.hiddenApps.filter(id=>installed.has(id)))].slice(0,256)
     :[];
+  const folderIds=new Set<string>();
+  prefs.folders=Array.isArray(prefs.folders)?prefs.folders.slice(0,12).flatMap(folder=>{
+    if(!folder||typeof folder.id!=='string'||!/^[a-f0-9-]{36}$/.test(folder.id)||folderIds.has(folder.id)||
+       typeof folder.name!=='string'||!folder.name.trim()||folder.name.length>40||!Array.isArray(folder.apps))return [];
+    folderIds.add(folder.id);
+    return [{id:folder.id,name:folder.name,apps:[...new Set(folder.apps.filter(id=>installed.has(id)))].slice(0,24)}];
+  }):[];
   prefs.weatherCity=weatherCity(prefs.weatherCity);
   return value as unknown as NativeSnapshot;
 }

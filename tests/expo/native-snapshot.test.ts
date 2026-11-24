@@ -15,3 +15,11 @@ test('profile layout accepts only installed apps and supported startup destinati
   assert.deepEqual(result.preferences.hiddenApps,['org.example.player']);
   assert.equal(nativeSnapshot({...base,preferences:{...base.preferences,startFocus:'settings'}}).preferences.startFocus,'dock');
 });
+
+test('library folders retain only unique locally installed app identifiers',()=>{
+  const base=state(),id='11111111-1111-1111-1111-111111111111';
+  const folders=[{id,name:'Video',apps:['org.example.player','org.example.player','unknown']},
+    {id,name:'Duplicate',apps:[]},{id:'e',name:'Malformed',apps:[]}];
+  assert.deepEqual(nativeSnapshot({...base,preferences:{...base.preferences,folders}}).preferences.folders,
+    [{id,name:'Video',apps:['org.example.player']}]);
+});
