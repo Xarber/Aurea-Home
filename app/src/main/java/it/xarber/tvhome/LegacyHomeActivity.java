@@ -441,7 +441,7 @@ public final class LegacyHomeActivity extends Activity {
         addControl(rows,"Done","",this::closePanel);panel.setOnDismissListener(dismissed->{if(panel==dismissed)popupBackdrop=null;ReleaseHistory.markSeen(this);});panel.show();focusFirst(rows);updatePresented=true;
     }
     private void showCurrentRelease(){
-        JSONObject latest=ReleaseHistory.entries(this).optJSONObject(0);
+        org.json.JSONObject latest=ReleaseHistory.entries(this).optJSONObject(0);
         closePanel();
         if(latest!=null)showRelease(latest);
     }
@@ -453,7 +453,7 @@ public final class LegacyHomeActivity extends Activity {
         else ReleasePanels.appendHistory(this,rows);
         addControl(rows,"Done","",this::closePanel);panel.show();focusFirst(rows);
     }
-    void showRelease(org.json.JSONObject release){LinearLayout rows=dialog("Aurea Home "+release.optString("version"));ReleasePanels.appendRelease(this,rows,release);addControlIcon(rows,"Full changelog","","history",this::showCurrentRelease);addControl(rows,"Done","",this::closePanel);panel.show();focusFirst(rows);}
+    void showRelease(org.json.JSONObject release){LinearLayout rows=dialog("Aurea Home "+release.optString("version"));ReleasePanels.appendRelease(this,rows,release);addControl(rows,"Done","",this::closePanel);panel.show();focusFirst(rows);}
     String diagnosticReport(){return it.xarber.tvhome.diagnostics.Diagnostics.report(this,nativeReceiver!=null,remoteServer!=null)+(pairedPlayback==null?"":pairedPlayback.diagnosticHistory());}
     void showDeveloperDetails(){if(!developerEnabled())return;LinearLayout rows=dialog("Diagnostic details");developerPanel=panel;TextView details=text(diagnosticReport(),11,MUTED);details.setTextIsSelectable(true);rows.addView(details,lp(-1,-2));addControl(rows,"Done","",this::closePanel);panel.show();focusFirst(rows);}
     void showDeveloperOptions(){

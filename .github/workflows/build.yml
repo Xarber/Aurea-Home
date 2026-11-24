@@ -217,8 +217,18 @@ jobs:
           FLAGS=("-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8" --max-workers=2)
           if [ "$TARGET" = remote ]; then FLAGS+=(-PmobileRemote -PhomeApplicationId=it.xarber.aurea.remote); fi
           if [ "$PACKAGE_FORMAT" = apk ]; then TASK=assembleRelease; else TASK=bundleRelease; fi
-          ./gradlew :app:compileReleaseJavaWithJavac "${FLAGS[@]}" --console=plain --stacktrace
-          ./gradlew ":app:$TASK" "${FLAGS[@]}" --console=plain --stacktrace
+          set -o pipefail
+          log="$RUNNER_TEMP/gradle-release.log"
+          for attempt in 1 2 3; do
+            if ./gradlew :app:compileReleaseJavaWithJavac ":app:$TASK" "${FLAGS[@]}" --console=plain --stacktrace 2>&1 | tee "$log"; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ] || ! grep -Fq "could not resolve plugin artifact 'org.gradle.toolchains.foojay-resolver-convention:" "$log"; then
+              exit 1
+            fi
+            echo "::warning::Foojay plugin resolution failed on attempt $attempt. Retrying Gradle."
+            sleep "$((attempt * 15))"
+          done
       - name: Verify signed packages and embedded provenance
         env:
           GH_TOKEN: ${{ github.token }}

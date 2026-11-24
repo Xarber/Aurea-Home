@@ -60,13 +60,51 @@ test('activities slide in both directions and panels grow from their own bubbles
  await focus(page,'dock:music').click();await page.waitForTimeout(320);
  const music=await page.locator('#demo-panel-content').boundingBox();expect(music!.x).toBeLessThan(65);expect(music!.y).toBeLessThan(50);expect(music!.width).toBeLessThanOrEqual(480);
  await page.keyboard.press('Escape');await page.waitForTimeout(310);
- await focus(page,'header-settings').focus();await page.waitForTimeout(210);
- const collapsed=(await focus(page,'activity-music').boundingBox())!.width;
- await focus(page,'activity-music').focus();await page.waitForTimeout(90);
- const halfway=(await focus(page,'activity-music').boundingBox())!.width;
- await page.waitForTimeout(160);const expanded=(await focus(page,'activity-music').boundingBox())!.width;
- expect(halfway).toBeGreaterThan(collapsed+10);expect(expanded).toBeGreaterThan(collapsed+100);
- await focus(page,'header-settings').focus();await page.waitForTimeout(230);expect((await focus(page,'activity-music').boundingBox())!.width).toBeLessThan(collapsed+3);
+ await page.mouse.move(700,500);
+ const activity=focus(page,'activity-music');
+ const settingsButton=focus(page,'header-settings');
+ await settingsButton.focus();
+ await expect.poll(async()=>(await activity.boundingBox())!.width).toBeLessThan(53);
+ const collapsed=(await activity.boundingBox())!.width;
+
+ async function slide(toward: 'expand' | 'collapse') {
+  return activity.evaluate(async(element,{toward})=>{
+   const target=toward==='expand'?element:document.querySelector<HTMLElement>('[data-nav="header-settings"]')!;
+   return new Promise<number>((resolve,reject)=>{
+    const timeout=window.setTimeout(()=>{
+     element.removeEventListener('transitionrun',sample);
+     reject(new Error('Activity did not start a width transition'));
+    },3000);
+    function sample(event:Event){
+     if(!(event instanceof TransitionEvent)||event.propertyName!=='width')return;
+     const child=event.target as HTMLElement;
+     const transition=child.getAnimations().find(animation=>
+      animation instanceof CSSTransition&&animation.transitionProperty==='width');
+     if(!transition)return;
+     clearTimeout(timeout);
+     element.removeEventListener('transitionrun',sample);
+     const duration=Number(transition.effect!.getTiming().duration);
+     transition.pause();
+     transition.currentTime=duration/2;
+     const width=element.getBoundingClientRect().width;
+     transition.finish();
+     resolve(width);
+    }
+    element.addEventListener('transitionrun',sample);
+    (target as HTMLElement).focus();
+   });
+  },{toward});
+ }
+
+ const opening=await slide('expand');
+ const expanded=(await activity.boundingBox())!.width;
+ expect(expanded).toBeGreaterThan(collapsed+100);
+ expect(opening).toBeGreaterThan(collapsed+10);
+ expect(opening).toBeLessThan(expanded-10);
+ const closing=await slide('collapse');
+ expect(closing).toBeGreaterThan(collapsed+10);
+ expect(closing).toBeLessThan(expanded-10);
+ await expect.poll(async()=>(await activity.boundingBox())!.width).toBeLessThan(collapsed+3);
 });
 
 test('keyboard hints disappear after loading and playback has no demo labels',async({page})=>{
