@@ -142,7 +142,7 @@ public final class HomeRemoteService extends Service {
         }
     }
     private JSONObject systemState()throws Exception{JSONObject value=system.state();value.put("voiceReady",value.optBoolean("ready"));if(localAdb.enabled()){JSONObject adb=localAdb.state();value.put("ready",adb.optBoolean("ready")).put("backend","local-adb").put("status",adb.optString("status"));}return value;}
-    private JSONObject wallpaper()throws Exception{android.content.SharedPreferences preferences=HouseholdAccounts.get(this).appearance();return new JSONObject().put("id",preferences.getString("wallpaper","classic")).put("motion",preferences.getBoolean("wallpaper-motion",false)).put("musicTint",preferences.getBoolean("music-wallpaper-tint",false));}
+    private JSONObject wallpaper()throws Exception{android.content.SharedPreferences preferences=HouseholdAccounts.get(this).appearance();return new JSONObject().put("id",WallpaperArt.activeWallpaper(preferences)).put("motion",preferences.getBoolean("wallpaper-motion",false)).put("musicTint",preferences.getBoolean("music-wallpaper-tint",false));}
     private JSONObject key(String command)throws Exception{
         if(!RemoteKeys.supported(command))return SystemRemoteController.error("unsupported");
         if(command.equals("mute")){AudioManager audio=getSystemService(AudioManager.class);audio.adjustStreamVolume(AudioManager.STREAM_MUSIC,AudioManager.ADJUST_TOGGLE_MUTE,0);return accepted();}

@@ -70,9 +70,13 @@ public final class TVPlatform {
             .put("hiddenApps",new JSONArray(new java.util.TreeSet<>(layout.getStringSet("hidden-apps",java.util.Collections.emptySet()))))
             .put("householdProfile",households.activeId()).put("canUndoLayoutImport",ProfileLayout.canUndo(layout));
         try{preferences.put("folders",ProfileFolders.read(layout));}catch(org.json.JSONException invalid){/* Keep Home available with invalid saved folders. */}
-        String weatherCity=households.appearance().getString("weather-city",null);
+        String weatherCity=layout.getString("weather-city",null);
         if(weatherCity!=null)try{preferences.put("weatherCity",new JSONObject(weatherCity));}
         catch(org.json.JSONException invalid){/* A malformed saved city falls back to the local clock. */}
+        preferences.put("wallpaperScheduleEnabled",layout.getBoolean("wallpaper-schedule-enabled",false));
+        String schedule=layout.getString("wallpaper-schedule",null);
+        if(schedule!=null)try{preferences.put("wallpaperSchedule",new JSONObject(schedule));}
+        catch(org.json.JSONException invalid){/* Use built-in default schedule. */}
         AudioManager audio=context.getSystemService(AudioManager.class);int maximum=audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC);int volume=Math.round(100f*audio.getStreamVolume(AudioManager.STREAM_MUSIC)/Math.max(1,maximum));
         JSONObject music=receiverPlayback().state();Bitmap cover=receiverPlayback().cover();if(cover!=paletteArtwork){paletteArtwork=cover;palette=new JSONArray();for(int color:WavePalette.from(cover))palette.put(String.format(java.util.Locale.US,"#%06x",color&0xffffff));}music.put("colors",palette).put("dominance",WavePalette.dominance(cover));HomeRemoteServer remote=HomeRemoteService.server();
         result.put("preferences",preferences).put("music",music).put("network",network()).put("volume",volume).put("remoteConnected",remote!=null&&remote.hasActiveRemote()).put("paired",pairedState()).put("receiver",ReceiverSettings.state(context)).put("updates",updateState())
@@ -165,7 +169,7 @@ public final class TVPlatform {
             if(!foreground()||!households.activeId().equals(data.getString("id")))throw new IllegalStateException("profile_changed");
             if(data.has("appearance")){
                 JSONObject incoming=data.getJSONObject("appearance");
-                if(incoming.has("dock")||incoming.has("weatherCity")||incoming.has("startFocus")||incoming.has("dockSize")||incoming.has("wallpaperClock")||incoming.has("navigationSound"))throw new IllegalArgumentException("invalid_appearance");
+                if(incoming.has("dock")||incoming.has("weatherCity")||incoming.has("startFocus")||incoming.has("dockSize")||incoming.has("wallpaperClock")||incoming.has("navigationSound")||incoming.has("wallpaperSchedule")||incoming.has("wallpaperScheduleEnabled"))throw new IllegalArgumentException("invalid_appearance");
                 savePreferences(incoming);
             }
             return data.has("appearance")?snapshot(false):appearance();
@@ -302,6 +306,9 @@ public final class TVPlatform {
             if(!java.util.Arrays.asList("compact","standard","large").contains(size))throw new IllegalArgumentException("invalid_dock_size");
             edit.putString("dock-size",size);
         }
+        if(data.has("wallpaperScheduleEnabled"))edit.putBoolean("wallpaper-schedule-enabled",data.getBoolean("wallpaperScheduleEnabled"));
+        if(data.has("wallpaperSchedule"))edit.putString("wallpaper-schedule",
+            WallpaperArt.validateSchedule(data.getJSONObject("wallpaperSchedule")).toString());
         if(data.has("wallpaperClock")){
             String clock=data.getString("wallpaperClock");
             if(!java.util.Arrays.asList("off","minimal","stacked").contains(clock))throw new IllegalArgumentException("invalid_clock");

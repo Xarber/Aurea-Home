@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import {validateWallpaperSchedule} from '../model/catalog.ts';
 import {weatherCity} from '../model/weather.ts';
 import type { NativeSnapshot } from './types';
 export function nativeSnapshot(value: Record<string, unknown>): NativeSnapshot {
@@ -56,6 +57,8 @@ export function nativeSnapshot(value: Record<string, unknown>): NativeSnapshot {
     folderIds.add(folder.id);
     return [{id:folder.id,name:folder.name,apps:[...new Set(folder.apps.filter(id=>installed.has(id)))].slice(0,24)}];
   }):[];
+  prefs.wallpaperSchedule=validateWallpaperSchedule(prefs.wallpaperSchedule);
+  prefs.wallpaperScheduleEnabled=prefs.wallpaperScheduleEnabled===true;
   prefs.weatherCity=weatherCity(prefs.weatherCity);
   return value as unknown as NativeSnapshot;
 }

@@ -33,7 +33,7 @@ import { useTVScrollFocus } from './src/hooks/useTVScrollFocus';
 import { useKeyboard, focusId } from './src/hooks/useKeyboard';
 import { translator } from './src/model/i18n';
 import {tv} from './src/platform/native/tv';
-import { tracks } from './src/model/catalog';
+import { defaultWallpaperSchedule,tracks } from './src/model/catalog';
 import { Wallpaper } from './src/components/Wallpaper';
 import { FocusButton } from './src/components/FocusButton';
 import { Tile } from './src/components/Tile';
@@ -390,7 +390,8 @@ function LauncherView({ demo,onTarget,onOpenRemote }: { demo: Launcher;onOpenRem
     <BlurEnabled.Provider value={demo.prefs.blur!==false}><GlassTarget.Provider value={target}>
       <View style={[s.root, { height: canvasHeight, maxHeight: canvasHeight }]}>
         <BlurTargetView ref={target} style={StyleSheet.absoluteFill}>
-          <Wallpaper id={demo.prefs.wallpaper} motion={demo.prefs.motion} city={demo.prefs.weatherCity} />
+          <Wallpaper id={demo.prefs.wallpaper} motion={demo.prefs.motion} city={demo.prefs.weatherCity}
+            schedule={demo.prefs.wallpaperScheduleEnabled?(demo.prefs.wallpaperSchedule??defaultWallpaperSchedule):undefined} />
           <MusicTint dominance={demo.snapshot?.music.dominance} enabled={demo.prefs.musicTint===true} playing={demo.playing&&demo.music} colors={demo.native?(demo.snapshot?.music.colors??['#e6eaf0','#929aa8']):tracks[demo.track]!.colors}/>
 
           {demo.native&&demo.page===0&&demo.prefs.wallpaperClock&&demo.prefs.wallpaperClock!=='off'&&

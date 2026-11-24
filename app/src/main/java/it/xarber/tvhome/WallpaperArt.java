@@ -22,6 +22,34 @@ final class WallpaperArt extends Drawable {
     private final Path path=new Path();
     WallpaperArt(String id,boolean motion){this.id=id;this.motion=motion;}
     static boolean valid(String id){for(String value:IDS)if(value.equals(id))return true;return false;}
+    private static final String[] PHASES={"dawn","day","dusk","night"};
+    private static int phase(int hour){
+        if(hour>=5&&hour<8)return 0;
+        if(hour>=8&&hour<17)return 1;
+        if(hour>=17&&hour<20)return 2;
+        return 3;
+    }
+
+    static org.json.JSONObject validateSchedule(org.json.JSONObject input)throws Exception {
+        org.json.JSONObject result=new org.json.JSONObject();
+        for(String phase:PHASES){
+            String selection=input.getString(phase);
+            if(!valid(selection))throw new IllegalArgumentException("invalid_scheduled_wallpaper");
+            result.put(phase,selection);
+        }
+        return result;
+    }
+
+    static String activeWallpaper(android.content.SharedPreferences preferences){
+        String fallback=preferences.getString("wallpaper","classic");
+        if(!preferences.getBoolean("wallpaper-schedule-enabled",false))return fallback;
+        int phase=phase(Calendar.getInstance().get(Calendar.HOUR_OF_DAY));
+        try{
+            org.json.JSONObject schedule=new org.json.JSONObject(preferences.getString("wallpaper-schedule","{}"));
+            String selected=schedule.optString(PHASES[phase],new String[]{"dune","silk","tide","ink"}[phase]);
+            return valid(selected)?selected:fallback;
+        }catch(org.json.JSONException invalid){return fallback;}
+    }
     private int[] colors(){switch(id){
         case "daylight": {
             int hour=Calendar.getInstance().get(Calendar.HOUR_OF_DAY);

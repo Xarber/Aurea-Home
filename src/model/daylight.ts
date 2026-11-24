@@ -6,10 +6,18 @@ const palettes = {
   night: ['#0a1029','#434a8a','#1b254b'],
 } as const;
 
+export const phases=['dawn','day','dusk','night'] as const;
+export type Phase=typeof phases[number];
+export type WallpaperSchedule=Record<Phase,string>;
+
+export function localPhase(hour:number):Phase {
+  if(hour>=5&&hour<8)return 'dawn';
+  if(hour>=8&&hour<17)return 'day';
+  if(hour>=17&&hour<20)return 'dusk';
+  return 'night';
+}
+
 /** Four local clock phases. These do not require a location or weather service. */
 export function daylightPalette(hour: number) {
-  if (hour >= 5 && hour < 8) return palettes.dawn;
-  if (hour >= 8 && hour < 17) return palettes.day;
-  if (hour >= 17 && hour < 20) return palettes.dusk;
-  return palettes.night;
+  return palettes[localPhase(hour)];
 }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import {daylightPalette} from './daylight.ts';
+import {daylightPalette,phases,type WallpaperSchedule} from './daylight.ts';
 
 export type IconName = 'playpause'|'menu'|'code'|'info'|'back'|'inputs'|'apps'|'music'|'film'|'play'|'airplay'|'settings'|'tv'|'game'|'apple'|'remote'|'wifi'|'sun'|'volume'|'chevron'|'pause'|'next'|'previous'|'close'|'home'|'check'|'wallpaper';
 export interface AppEntry { id:string; name:string; icon:IconName; color:string; category:'apps'|'system'|'casting'|'inputs'; mark?:string; subtitle?:string; kind?:string;profile?:string;brands?:string[];port?:number; }
@@ -36,6 +36,14 @@ export const wallpapers=[
  {id:'daylight',name:'Daylight',detail:'Changes with the local time.',colors:daylightPalette(12)},
 ];
 export type WallpaperId=typeof wallpapers[number]['id'];
+export const defaultWallpaperSchedule:WallpaperSchedule={dawn:'dune',day:'silk',dusk:'tide',night:'ink'};
+export function validateWallpaperSchedule(value:unknown):WallpaperSchedule|undefined {
+ if(!value||typeof value!=='object')return;
+ const choice=value as Record<string,unknown>;
+ if(!phases.every(phase=>wallpapers.some(item=>item.id===choice[phase])))return;
+ return Object.fromEntries(phases.map(phase=>[phase,choice[phase]])) as WallpaperSchedule;
+}
+
 export function pin(dock:string[],id:string,slot:number):string[]{
  if(slot<0||slot>5||id==='all'&&slot!==5)return dock;
  const next=[...dock];const previous=next.indexOf(id);

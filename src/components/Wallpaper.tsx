@@ -6,17 +6,20 @@ import Svg,{Path,Circle,Defs,LinearGradient as SvgGradient,Stop} from 'react-nat
 import Animated,{useSharedValue,useAnimatedStyle,withRepeat,withTiming,Easing,cancelAnimation,useReducedMotion} from 'react-native-reanimated';
 import {usePaletteTransition} from '../hooks/usePaletteTransition';
 import {fetchWeather,weatherAccent,weatherEffect,weatherPhase,type WeatherCity,type WeatherObservation} from '../model/weather';
-import {daylightPalette} from '../model/daylight';
+import {daylightPalette,localPhase,type WallpaperSchedule} from '../model/daylight';
 import {wallpapers} from '../model/catalog';
-export function Wallpaper({id,motion=false,mini=false,city}:{id:string;motion?:boolean;mini?:boolean;city?:WeatherCity|null}){
+export function Wallpaper({id,motion=false,mini=false,city,schedule}:{id:string;motion?:boolean;mini?:boolean;city?:WeatherCity|null;schedule?:WallpaperSchedule}){
  const [active,setActive]=useState(AppState.currentState!=='background'&&AppState.currentState!=='inactive');
  useEffect(()=>{const subscription=AppState.addEventListener('change',state=>setActive(state==='active'));return()=>subscription.remove();},[]);
- const wallpaper=wallpapers.find(w=>w.id===id)??wallpapers[0]!;const reduced=useReducedMotion();
+ const reduced=useReducedMotion();
  const drift=useSharedValue(0);
  useEffect(()=>{cancelAnimation(drift);drift.set(0);if(motion&&!reduced&&!mini&&active)drift.set(withRepeat(withTiming(1,{duration:10000,easing:Easing.inOut(Easing.sin)}),-1,true));return()=>cancelAnimation(drift);},[motion,reduced,mini,active]);
  const [now,setNow]=useState(Date.now);
+ const localHour=new Date(now).getHours();
+ const effective=schedule?schedule[localPhase(localHour)]:id;
+ const wallpaper=wallpapers.find(w=>w.id===effective)??wallpapers[0]!;
  const [observation,setObservation]=useState<{place:string;value:WeatherObservation}>();
- const place=id==='daylight'&&!mini&&city?city.latitude+','+city.longitude:undefined;
+ const place=effective==='daylight'&&!mini&&city?city.latitude+','+city.longitude:undefined;
  useEffect(()=>{
   if(!place||!city||!active)return;
   let timer:ReturnType<typeof setTimeout>;
@@ -40,22 +43,22 @@ export function Wallpaper({id,motion=false,mini=false,city}:{id:string;motion?:b
   return()=>{lifetime.abort();clearTimeout(timer);};
  },[place,active]);
  useEffect(()=>{
-  if(id!=='daylight'||mini||!active)return;
+  if((id!=='daylight'&&!schedule)||mini||!active)return;
   const update=()=>setNow(Date.now());
   update();
   const timer=setInterval(update,30000);
   return()=>clearInterval(timer);
- },[id,mini,active]);
+ },[id,mini,active,!!schedule]);
  const reading=place&&observation?.place===place?observation.value:undefined;
  const hour=reading?weatherPhase(reading,now/1000):undefined;
- const clockPalette=id==='daylight'&&!mini?daylightPalette(hour??new Date(now).getHours()):wallpaper.colors;
+ const clockPalette=effective==='daylight'&&!mini?daylightPalette(hour??localHour):wallpaper.colors;
  const effect=reading&&hour!==undefined?weatherEffect(reading.weatherCode):undefined;
  const accent=reading&&effect?weatherAccent(reading.weatherCode):undefined;
  const palette=accent?[clockPalette[0],accent,clockPalette[2]] as const:clockPalette;
  const {layers,fade}=usePaletteTransition(palette,mini);
  const style=useAnimatedStyle(()=>({transform:[{translateX:drift.get()*28},{translateY:drift.get()*-16},{scale:1.3}]}));
  return <View testID={mini?undefined:'wallpaper-background'} style={[StyleSheet.absoluteFill,{overflow:'hidden',backgroundColor:palette[0]}]} pointerEvents="none">
- <View testID={!mini&&id==='classic'?'classic-wallpaper':undefined} style={[StyleSheet.absoluteFill,{opacity:1}]}><WallpaperScene colors={(mini?palette:layers.from) as [string,string,string]} style={style} motionId={mini?undefined:'wallpaper-motion'}/>
+ <View testID={!mini&&effective==='classic'?'classic-wallpaper':undefined} style={[StyleSheet.absoluteFill,{opacity:1}]}><WallpaperScene colors={(mini?palette:layers.from) as [string,string,string]} style={style} motionId={mini?undefined:'wallpaper-motion'}/>
  {!mini&&<Animated.View testID="wallpaper-fade" style={[StyleSheet.absoluteFill,fade]}><WallpaperScene colors={layers.to as [string,string,string]} style={style}/></Animated.View>}
  {!!effect&&effect!=='cloud'&&<WallpaperWeather effect={effect} style={style} reduced={reduced}/>}
 

@@ -15,6 +15,7 @@ import {ProfileFolderSettings} from './ProfileFolderSettings';
 import {PlexSettings} from './PlexSettings';
 import {WatchNextSettings} from './WatchNextSettings';
 import {SmartHomeSettings} from './SmartHomeSettings';
+import {WallpaperScheduleSettings} from './WallpaperScheduleSettings';
 import {WallpaperWeatherSettings} from './WallpaperWeatherSettings';
 import { Wallpaper } from './Wallpaper';
 import { wallpapers, type IconName } from '../model/catalog';
@@ -429,7 +430,8 @@ export function NativePanels({
               const next={off:'minimal',minimal:'stacked',stacked:'off'} as const;
               demo.change({wallpaperClock:next[demo.prefs.wallpaperClock??'off']});
             },{off:'Off',minimal:'Minimal',stacked:'Stacked'}[demo.prefs.wallpaperClock??'off'])}
-            {demo.prefs.wallpaper==='daylight'&&<WallpaperWeatherSettings city={demo.prefs.weatherCity}
+            <WallpaperScheduleSettings prefs={demo.prefs} change={demo.change} t={t}/>
+            {(demo.prefs.wallpaper==='daylight'||demo.prefs.wallpaperScheduleEnabled)&&<WallpaperWeatherSettings city={demo.prefs.weatherCity}
               language={demo.prefs.language} t={t} change={weatherCity=>demo.change({weatherCity})}/>}
             {row('Music wallpaper tint','music',()=>demo.change({musicTint:!demo.prefs.musicTint}),demo.prefs.musicTint?'On':'Off')}
             {row(
