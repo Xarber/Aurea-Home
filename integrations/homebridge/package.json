@@ -1,0 +1,9 @@
+{
+  "name": "homebridge-aurea-home",
+  "version": "0.1.0",
+  "description": "Local control for Aurea Home televisions",
+  "license": "AGPL-3.0-only",
+  "keywords": ["homebridge-plugin"],
+  "main": "index.cjs",
+  "engines": {"node": ">=20", "homebridge": ">=1.8.0"}
+}

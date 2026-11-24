@@ -293,6 +293,26 @@ final class HomeRemoteServer implements Runnable {
             finishPairing(client, token);
             return;
         }
+        if((method.equals("POST")&&path.equals("/api/automation"))||
+           (method.equals("GET")&&path.equals("/api/automation/challenge"))){
+            if(!origin.isEmpty()||peer.isLoopbackAddress()){
+                respond(client,403,"application/json","{\"error\":\"lan_only\"}");return;
+            }
+            AutomationAccess access=AutomationAccess.get(context);
+            if(method.equals("GET")){
+                respond(client,200,"application/json",new JSONObject().put("epoch",access.epoch()).toString());return;
+            }
+            AutomationAccess.Grant grant;
+            try{grant=access.accept(new JSONObject(json),System.currentTimeMillis()/1000);}
+            catch(Exception invalid){grant=null;}
+            if(grant==null){respond(client,401,"application/json","{\"error\":\"authorization_required\"}");return;}
+            JSONObject response;
+            try{response=commands.request("automation",grant.payload);}
+            catch(Exception unavailable){response=SystemRemoteController.error("unavailable");}
+            JSONObject envelope=access.reply(grant,response);
+            if(envelope==null){respond(client,401,"application/json","{\"error\":\"authorization_required\"}");return;}
+            respond(client,200,"application/json",envelope.toString());return;
+        }
         if (method.equals("POST") && path.startsWith("/api/")) {
             JSONObject payload;
             try { payload = new JSONObject(json); } catch (org.json.JSONException error) { respond(client,400,"application/json","{\"error\":\"Invalid JSON\"}");return; }

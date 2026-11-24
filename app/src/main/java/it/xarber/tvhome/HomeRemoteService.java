@@ -84,6 +84,7 @@ public final class HomeRemoteService extends Service {
             apple.request(action,args,result::complete);
             try{return result.get(15,TimeUnit.SECONDS);}catch(Exception failure){return SystemRemoteController.error("timeout");}
         }
+        if(operation.equals("automation"))return automation(payload);
         if(operation.equals("state"))return new JSONObject().put("schema",1).put("name",DeviceName.read(this)).put("observedAt",System.currentTimeMillis()).put("homeActive",home()!=null||TVPlatform.foreground()).put("systemRemote",systemState()).put("localAdb",localAdb.state()).put("appleTV",new JSONObject().put("paired",apple.paired()).put("name",apple.name()).put("connected",apple.connected()).put("appsPaired",apple.companionPaired())).put("music",playback.state()).put("wallpaper",wallpaper());
         if(operation.equals("catalog"))return catalog.read();
         if(operation.equals("icon"))return catalog.icon(payload.optString("id"));
@@ -107,6 +108,38 @@ public final class HomeRemoteService extends Service {
         }
         if(operation.equals("key"))return key(payload.optString("command"));
         return SystemRemoteController.error("unsupported");
+    }
+    private JSONObject automation(JSONObject payload)throws Exception {
+        AudioManager audio=getSystemService(AudioManager.class);
+        android.os.PowerManager power=getSystemService(android.os.PowerManager.class);
+        switch(payload.optString("action")){
+            case "state":{
+                int maximum=Math.max(1,audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC));
+                return new JSONObject().put("schema",1).put("name",DeviceName.read(this))
+                    .put("interactive",power.isInteractive()).put("homeActive",home()!=null||TVPlatform.foreground())
+                    .put("volume",Math.round(100f*audio.getStreamVolume(AudioManager.STREAM_MUSIC)/maximum))
+                    .put("muted",audio.isStreamMute(AudioManager.STREAM_MUSIC))
+                    .put("sources",catalog.read().getJSONArray("inputs"));
+            }
+            case "open_home":return key("home");
+            case "input":{
+                String id=payload.optString("id");
+                if(!id.startsWith("input:")&&!id.equals("live"))return SystemRemoteController.error("invalid_source");
+                return handle("launch",new JSONObject().put("id",id));
+            }
+            case "volume":{
+                double level=payload.optDouble("value",-1);
+                if(!Double.isFinite(level)||level<0||level>100)return SystemRemoteController.error("invalid_volume");
+                audio.setStreamVolume(AudioManager.STREAM_MUSIC,(int)Math.round(level*audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC)/100),0);
+                return accepted();
+            }
+            case "mute":{
+                if(!(payload.opt("value") instanceof Boolean))return SystemRemoteController.error("invalid_mute");
+                audio.adjustStreamVolume(AudioManager.STREAM_MUSIC,payload.optBoolean("value")?AudioManager.ADJUST_MUTE:AudioManager.ADJUST_UNMUTE,0);
+                return accepted();
+            }
+            default:return SystemRemoteController.error("unsupported");
+        }
     }
     private JSONObject systemState()throws Exception{JSONObject value=system.state();value.put("voiceReady",value.optBoolean("ready"));if(localAdb.enabled()){JSONObject adb=localAdb.state();value.put("ready",adb.optBoolean("ready")).put("backend","local-adb").put("status",adb.optString("status"));}return value;}
     private JSONObject wallpaper()throws Exception{android.content.SharedPreferences preferences=HouseholdAccounts.get(this).appearance();return new JSONObject().put("id",preferences.getString("wallpaper","classic")).put("motion",preferences.getBoolean("wallpaper-motion",false)).put("musicTint",preferences.getBoolean("music-wallpaper-tint",false));}

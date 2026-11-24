@@ -99,6 +99,12 @@ public final class TVPlatform {
         case "image":return catalog.image(data.getString("id"),data.optString("kind","icon"));
         case "artwork":return receiverPlayback().artwork();
         case "launch":catalog.launch(data.getString("id"));return safe("accepted",true);
+        case "automationStatus":
+            if(!foreground())throw new IllegalStateException("launcher_not_active");
+            return automationAddress(AutomationAccess.get(context).status());
+        case "automationConfigure":
+            if(!foreground())throw new IllegalStateException("launcher_not_active");
+            return automationAddress(AutomationAccess.get(context).configure(data.getString("platform"),data.getBoolean("enabled")));
         case "householdProfiles":
             if(!foreground())throw new IllegalStateException("launcher_not_active");
             return households.view();
@@ -205,6 +211,16 @@ public final class TVPlatform {
         }
     }
     private static byte[] read(java.io.InputStream input)throws Exception{java.io.ByteArrayOutputStream output=new java.io.ByteArrayOutputStream();byte[] buffer=new byte[4096];int count;while((count=input.read(buffer))!=-1)output.write(buffer,0,count);return output.toByteArray();}
+    private JSONObject automationAddress(JSONObject result)throws Exception {
+        HomeRemoteServer server=HomeRemoteService.server();
+        if(server==null)return result;
+        for(NetworkInterface network:Collections.list(NetworkInterface.getNetworkInterfaces()))
+            for(java.net.InetAddress addr:Collections.list(network.getInetAddresses()))
+                if(addr instanceof Inet4Address&&addr.isSiteLocalAddress()&&!addr.isLoopbackAddress())
+                    return result.put("url","http://"+addr.getHostAddress()+(server.port()==80?"":":"+server.port()));
+        return result;
+    }
+
     private JSONObject appearance() throws Exception {
         SharedPreferences settings=households.appearance();
         return new JSONObject()

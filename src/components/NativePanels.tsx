@@ -11,6 +11,7 @@ import { AnchoredPanel, type Anchor } from './AnchoredPanel';
 import { FocusButton } from './FocusButton';
 import { FadedScroll } from './FadedScroll';
 import { Icon } from './Icon';
+import {SmartHomeSettings} from './SmartHomeSettings';
 import {WallpaperWeatherSettings} from './WallpaperWeatherSettings';
 import { Wallpaper } from './Wallpaper';
 import { wallpapers, type IconName } from '../model/catalog';
@@ -122,6 +123,7 @@ export function NativePanels({
     airplay: 'AirPlay',
     about: 'About Aurea Home',
     account: 'X-Center ID',
+    automations: 'Smart home',
     changelog: 'Changelog',
     developer: 'Developer settings',ideas:'Ideas',
     profiles: 'Input appearance',
@@ -253,6 +255,7 @@ export function NativePanels({
               () => demo.setPanel('remote'),
               demo.remote ? 'Connected' : undefined,
             )}
+            {row('Smart home','home',()=>demo.setPanel('automations'))}
             {row('Wallpapers', 'wallpaper', () => demo.setPanel('wallpapers'))}
             {row('Disable blur','sun',()=>demo.change({blur:demo.prefs.blur===false}),demo.prefs.blur===false?'On':'Off')}
             {row(
@@ -421,6 +424,7 @@ export function NativePanels({
             )}
           </>
         )}
+        {demo.panel==='automations'&&<SmartHomeSettings demo={demo} t={t}/>}
         {demo.panel === 'account' && household && <TVAccountSettings key={household.active} demo={demo} household={household} setHousehold={setHousehold} t={t}/>}
         {panel === 'about' && (
           <>

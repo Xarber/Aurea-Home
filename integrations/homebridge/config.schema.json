@@ -1,0 +1,23 @@
+{
+  "pluginAlias": "AureaHome",
+  "pluginType": "platform",
+  "singular": true,
+  "schema": {
+    "type": "object",
+    "properties": {
+      "televisions": {
+        "title": "Televisions",
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["address", "key"],
+          "properties": {
+            "name": {"title": "Name in Apple Home", "type": "string"},
+            "address": {"title": "Local Aurea URL", "type": "string", "required": true},
+            "key": {"title": "Homebridge integration key", "type": "string", "required": true}
+          }
+        }
+      }
+    }
+  }
+}

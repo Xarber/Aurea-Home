@@ -248,5 +248,21 @@
   "Stay signed in: On": "Mantieni l’accesso: attivo",
   "Stay signed in: Off": "Mantieni l’accesso: disattivato",
   "Daylight": "Luce del giorno",
-  "Changes with the local time.": "Cambia in base all’ora locale."
+  "Changes with the local time.": "Cambia in base all’ora locale.",
+  "Daylight weather": "Meteo di Luce del giorno",
+  "City name": "Nome della città",
+  "Search cities": "Cerca città",
+  "Searching cities…": "Ricerca città…",
+  "No cities found.": "Nessuna città trovata.",
+  "Weather search is unavailable. Try again.": "Ricerca meteo non disponibile. Riprova.",
+  "Turn off weather": "Disattiva meteo",
+  "Choose a city for sunrise, sunset and weather colors. City searches and forecasts use Open-Meteo.": "Scegli una città per alba, tramonto e colori del meteo. La ricerca e le previsioni usano Open-Meteo.",
+  "Smart home": "Casa smart",
+  "Connect a local hub to open Home, switch inputs and control volume.": "Connetti un hub locale per aprire Home, cambiare ingresso e regolare il volume.",
+  "Revoke integration key": "Revoca chiave di integrazione",
+  "Create integration key": "Crea chiave di integrazione",
+  "Save this key in your hub. Aurea only shows it here once.": "Salva questa chiave nell’hub. Aurea la mostra qui una sola volta.",
+  "Integration key": "Chiave di integrazione",
+  "Hide key": "Nascondi chiave",
+  "Smart home settings are unavailable. Try again.": "Impostazioni casa smart non disponibili. Riprova."
 }

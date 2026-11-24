@@ -1,0 +1,16 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect an Aurea television",
+        "description": "On the TV, open Control Center → Smart home → Home Assistant. Create a key and enter the local URL and key shown there.",
+        "data": {"address": "Local TV URL", "key": "Home Assistant integration key"}
+      }
+    },
+    "error": {
+      "cannot_connect": "The TV did not respond. Check the local address, key and network.",
+      "invalid_configuration": "Enter a private IPv4 URL and the Home Assistant key shown on the TV."
+    },
+    "abort": {"already_configured": "This television is already configured."}
+  }
+}
