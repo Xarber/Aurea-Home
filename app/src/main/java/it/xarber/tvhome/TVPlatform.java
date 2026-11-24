@@ -42,10 +42,11 @@ public final class TVPlatform {
     private final UpdateController updates;
     private final HouseholdAccounts households;
     private final WatchNextShelf watchNext;
+    private final PlexShelf plex;
     private Bitmap paletteArtwork;
     private JSONArray palette=new JSONArray().put("#e6eaf0").put("#929aa8");
     private final Handler main=new Handler(Looper.getMainLooper());
-    private TVPlatform(Context context){this.context=context;households=HouseholdAccounts.get(context);watchNext=new WatchNextShelf(context);prefs=context.getSharedPreferences("it.xarber.tvhome.MainActivity",0);catalog=new TVHomeCatalog(context,prefs);paired=PairedPlayback.get(context);playback=new RemotePlayback(context,false);if(!BuildConfig.APPLICATION_ID.endsWith(".preview"))playback.start();updates=UpdateController.get(context);}
+    private TVPlatform(Context context){this.context=context;households=HouseholdAccounts.get(context);watchNext=new WatchNextShelf(context);plex=new PlexShelf(context);prefs=context.getSharedPreferences("it.xarber.tvhome.MainActivity",0);catalog=new TVHomeCatalog(context,prefs);paired=PairedPlayback.get(context);playback=new RemotePlayback(context,false);if(!BuildConfig.APPLICATION_ID.endsWith(".preview"))playback.start();updates=UpdateController.get(context);}
     public void resume(Activity host){activity=new WeakReference<>(host);foreground=true;paired.resume();if(!BuildConfig.MOBILE_REMOTE){updates.observe(this::notifyUpdate);updates.resume();}if(!BuildConfig.MOBILE_REMOTE&&!BuildConfig.APPLICATION_ID.endsWith(".preview")){HomeRemoteService.ensure(context);ensureReceiver();}main.post(()->AureaTVModule.event("home-resumed",safe("pairing",paired.pairingPending())));}
     public void pause(Activity host){if(activity.get()!=host)return;foreground=false;paired.pause();updates.pause();}
     private void ensureReceiver(){if(!ReceiverSettings.enabled(context))return;context.getSharedPreferences("settings",0).edit().putBoolean("auto_start",true).putBoolean("boot_auto_start",true).putBoolean("run_in_background",true).putBoolean("launch_on_connect",true).putBoolean("auto_fullscreen",true).apply();try{context.startForegroundService(new Intent(context,io.github.jqssun.airplay.service.AirPlayService.class).setAction(io.github.jqssun.airplay.service.AirPlayService.ACTION_START_SERVER));}catch(Exception failure){AureaTVModule.event("notice",safe("message","AirPlay service could not start"));}}
@@ -66,7 +67,8 @@ public final class TVPlatform {
         main.post(this::notifyUpdate);JSONObject result=new JSONObject().put("schema",1).put("catalog",catalog.read(refresh));
         SharedPreferences layout=households.appearance();
         JSONObject preferences=appearance().put("dock",catalog.dock(layout)).put("startFocus",layout.getString("start-focus","dock"))
-            .put("hiddenApps",new JSONArray(new java.util.TreeSet<>(layout.getStringSet("hidden-apps",java.util.Collections.emptySet()))));
+            .put("hiddenApps",new JSONArray(new java.util.TreeSet<>(layout.getStringSet("hidden-apps",java.util.Collections.emptySet()))))
+            .put("householdProfile",households.activeId());
         String weatherCity=households.appearance().getString("weather-city",null);
         if(weatherCity!=null)try{preferences.put("weatherCity",new JSONObject(weatherCity));}
         catch(org.json.JSONException invalid){/* A malformed saved city falls back to the local clock. */}
@@ -117,6 +119,16 @@ public final class TVPlatform {
             if(data.getBoolean("hidden"))hidden.add(application);else hidden.remove(application);
             if(!profileLayout.edit().putStringSet("hidden-apps",hidden).commit())throw new IllegalStateException("storage_failed");
             return snapshot(false);
+        case "plexStatus": case "plexConnect": case "plexList": case "plexDisconnect": case "plexOpen":
+            if(!foreground()||!households.activeId().equals(data.getString("profile")))throw new IllegalStateException("profile_changed");
+            String plexProfile=households.activeId();
+            switch(operation){
+                case "plexConnect":return plex.connect(plexProfile,data.getString("server"),data.getString("key"));
+                case "plexList":return plex.list(plexProfile);
+                case "plexDisconnect":return plex.disconnect(plexProfile);
+                case "plexOpen":plex.openApp();return safe("accepted",true);
+                default:return plex.status(plexProfile);
+            }
         case "watchNext":
         case "watchNextOpen":
         case "watchNextDismiss":

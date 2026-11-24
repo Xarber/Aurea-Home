@@ -11,6 +11,7 @@ import { AnchoredPanel, type Anchor } from './AnchoredPanel';
 import { FocusButton } from './FocusButton';
 import { FadedScroll } from './FadedScroll';
 import { Icon } from './Icon';
+import {PlexSettings} from './PlexSettings';
 import {WatchNextSettings} from './WatchNextSettings';
 import {SmartHomeSettings} from './SmartHomeSettings';
 import {WallpaperWeatherSettings} from './WallpaperWeatherSettings';
@@ -127,6 +128,7 @@ export function NativePanels({
     account: 'X-Center ID',
     automations: 'Smart home',
     watchNext: 'Keep Watching',
+    plex: 'Plex Continue Watching',
     layout: 'Home layout',
     changelog: 'Changelog',
     developer: 'Developer settings',ideas:'Ideas',
@@ -259,7 +261,7 @@ export function NativePanels({
               () => demo.setPanel('remote'),
               demo.remote ? 'Connected' : undefined,
             )}
-            {(!household||household.active==='home')&&row('Keep Watching','film',()=>demo.setPanel('watchNext'))}
+            {row('Keep Watching','film',()=>demo.setPanel('watchNext'))}
             {row('Home layout','apps',()=>demo.setPanel('layout'))}
             {row('Smart home','home',()=>demo.setPanel('automations'))}
             {row('Wallpapers', 'wallpaper', () => demo.setPanel('wallpapers'))}
@@ -442,7 +444,11 @@ export function NativePanels({
             item.name,'apps',()=>action('hideLauncherApp',{id:item.id,hidden:false}),'Show in library','hidden-'+item.id,
           ))}
         </>}
-        {demo.panel==='watchNext'&&<WatchNextSettings demo={demo} t={t}/>}
+        {panel==='watchNext'&&<>
+          {(demo.prefs.householdProfile??'home')==='home'&&demo.panel==='watchNext'&&<WatchNextSettings demo={demo} t={t}/>}
+          {row('Plex Continue Watching','film',()=>demo.setPanel('plex'))}
+        </>}
+        {demo.panel==='plex'&&<PlexSettings key={demo.prefs.householdProfile??'home'} demo={demo} t={t}/>}
         {demo.panel==='automations'&&<SmartHomeSettings demo={demo} t={t}/>}
         {demo.panel === 'account' && household && <TVAccountSettings key={household.active} demo={demo} household={household} setHousehold={setHousehold} t={t}/>}
         {panel === 'about' && (
