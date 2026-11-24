@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import {TVTextInput} from './TVTextInput';
 import React,{useEffect,useState} from 'react';
-import {Text,TextInput,View} from 'react-native';
+import {Text,View} from 'react-native';
 import type {Launcher} from '../launcher/types';
 import {Icon} from './Icon';
 import {FocusButton} from './FocusButton';
@@ -48,10 +49,10 @@ export function PlexSettings({demo,t}:{demo:Launcher;t:(value:string)=>string}){
     {error&&<Text accessibilityLiveRegion="polite" style={{color:'#f5d0dc'}}>{t('Plex could not complete the request. Check the app or server connection.')}</Text>}
     {connected===false&&<>
       <Text style={{color:'#d6e3ff',fontSize:16}}>{t('Read Continue Watching from a Plex server you trust. Use its HTTPS address and a Plex access token.')}</Text>
-      <TextInput value={server} onChangeText={setServer} autoCapitalize="none" autoCorrect={false}
+      <TVTextInput id="plex-server-edit" t={t} value={server} onChangeText={setServer} autoCapitalize="none" autoCorrect={false}
         accessibilityLabel={t('Plex server HTTPS URL')} placeholder={t('Plex server HTTPS URL')}
         placeholderTextColor="#aeb9c9" maxLength={512} style={inputStyle}/>
-      <TextInput value={key} onChangeText={setKey} secureTextEntry autoCapitalize="none" autoCorrect={false}
+      <TVTextInput id="plex-token-edit" t={t} value={key} onChangeText={setKey} secureTextEntry autoCapitalize="none" autoCorrect={false}
         accessibilityLabel={t('Plex access token')} placeholder={t('Plex access token')}
         placeholderTextColor="#aeb9c9" maxLength={256} style={inputStyle}/>
       {row('connect','Connect to Plex',()=>void run('plexConnect'),!server.trim()||!key.trim())}

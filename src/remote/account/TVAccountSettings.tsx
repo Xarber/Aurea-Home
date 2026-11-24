@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import {TVTextInput} from '../../components/TVTextInput';
 import React, {useEffect, useRef, useState} from 'react';
-import {Image, Text, TextInput, View} from 'react-native';
+import {Image, Text,  View} from 'react-native';
 import {FocusButton} from '../../components/FocusButton';
 import {Icon} from '../../components/Icon';
 import type {Launcher} from '../../launcher/types';
@@ -162,7 +163,7 @@ export function TVAccountSettings({demo, household, setHousehold, t, accountsEna
         await update('householdSelect',{id:viewer.id});
       }))}</React.Fragment>)}
     {household.profiles.length<8&&<>
-      <TextInput value={name} onChangeText={setName} maxLength={32} accessibilityLabel={t('New profile name')}
+      <TVTextInput id="profile-name-edit" t={t} value={name} onChangeText={setName} maxLength={32} accessibilityLabel={t('New profile name')}
         placeholder={t('New profile name')} placeholderTextColor="#9da9bc"
         style={{color:'#fff',minHeight:50,paddingHorizontal:12,borderWidth:1,borderRadius:12,borderColor:'#a0a9b780'}}/>
       {row('create','Add household profile',()=>void run(async()=>{

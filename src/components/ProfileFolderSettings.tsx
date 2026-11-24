@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import {TVTextInput} from './TVTextInput';
 import React,{useState} from 'react';
-import {Text,TextInput,View} from 'react-native';
+import {Text,View} from 'react-native';
 import type {Launcher} from '../launcher/types';
 import {FocusButton} from './FocusButton';
 import {Icon} from './Icon';
@@ -30,7 +31,7 @@ export function ProfileFolderSettings({demo,t,launch,folderId,assignApp}:{
     style={{minHeight:48,flexDirection:'row',justifyContent:'flex-start',paddingHorizontal:10,gap:8}}>
     <Icon name="apps" size={20}/><Text style={{color:'#eef2ff',fontSize:17,flex:1}}>{label}</Text>
   </FocusButton>;
-  const field=<TextInput value={name} onChangeText={setName} maxLength={40}
+  const field=<TVTextInput id="folder-name-edit" t={t} value={name} onChangeText={setName} maxLength={40}
     accessibilityLabel={t('Folder name')} placeholder={t('Folder name')} placeholderTextColor="#aeb9c9"
     style={{color:'#fff',minHeight:48,fontSize:17,paddingHorizontal:12,borderColor:'#919bad',borderWidth:1,borderRadius:12}}/>;
   return <View style={{gap:8,paddingVertical:7}}>
