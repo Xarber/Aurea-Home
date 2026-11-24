@@ -1,0 +1,7 @@
+# Keep Watching
+
+Open **Control Center → Keep Watching** on an Android TV using the Home household profile. Aurea requests the device's Android Watch Next rows and shows resumable and next-episode records that have a safe, resolvable link back into the publishing app. It displays playback progress only when the publisher supplies both a position and duration. Choose a row to open it or hide it from Aurea. A hidden entry can return when the publisher reports newer activity.
+
+This read-only integration never changes the Android Watch Next provider. A TV may restrict third-party launchers to their own rows or deny access. The feature shows an empty or unavailable state in those cases. It requires no extra privileges, viewing history is excluded from snapshots and account sync, and secondary household profiles cannot see the TV-global feed. A selected link is reconstructed as a plain VIEW intent restricted to its publisher. Content and file schemes, embedded components, arbitrary extras and nested intents are excluded. The publisher decides whether it can resume the program.
+
+The first source is Android TV Watch Next. Per-profile history, Plex, Stremio-specific continuation sources, title availability, recommendations and imports remain tracked in the active queue. The observed visibility and playback behavior of any particular streaming app needs verification on that TV. [Android Watch Next reference](https://developer.android.com/reference/android/media/tv/TvContract.WatchNextPrograms)

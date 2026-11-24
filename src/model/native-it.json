@@ -264,5 +264,13 @@
   "Save this key in your hub. Aurea only shows it here once.": "Salva questa chiave nell’hub. Aurea la mostra qui una sola volta.",
   "Integration key": "Chiave di integrazione",
   "Hide key": "Nascondi chiave",
-  "Smart home settings are unavailable. Try again.": "Impostazioni casa smart non disponibili. Riprova."
+  "Smart home settings are unavailable. Try again.": "Impostazioni casa smart non disponibili. Riprova.",
+  "Keep Watching": "Continua a guardare",
+  "Looking for programs…": "Ricerca dei programmi…",
+  "No resumable programs are available.": "Nessun programma da riprendere.",
+  "Android Watch Next is unavailable for this profile or TV.": "Continua a guardare non è disponibile su questo profilo o TV.",
+  "Open in app": "Apri nell’app",
+  "Hide from Keep Watching": "Nascondi da Continua a guardare",
+  "Back to Keep Watching": "Torna a Continua a guardare",
+  "This program could not be opened or updated.": "Impossibile aprire o aggiornare questo programma."
 }

@@ -8,6 +8,7 @@ Aurea Home is an Android TV launcher with an AirPlay receiver. Aurea Remote cont
 
 ## Documentation map
 
+- [Android TV Keep Watching](features/KEEP_WATCHING.md).
 - [Home Assistant and Homebridge integrations](features/SMART_HOME.md).
 - [Expo application base, preview and wallpapers](features/EXPO_DEMO.md).
 
