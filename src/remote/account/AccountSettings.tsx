@@ -45,6 +45,7 @@ export function AccountSettings({layout, restore, pairApproved}:{layout:Layout; 
   const [session,setSession] = useState<Session>();
   const [status,setStatus] = useState('');
   const [busy,setBusy] = useState(false);
+  const [stay,setStay] = useState(false);
   const bearer = useRef<string>(undefined);
   const attempt = useRef<AbortController>(undefined);
   const pending = useRef<{id:string;proof:string}>(undefined);
@@ -99,7 +100,7 @@ export function AccountSettings({layout, restore, pairApproved}:{layout:Layout; 
       if (seed.length !== 64) throw new Error('invalid_random');
       const proof = base64url(seed.slice(0,32));
       const challenge = base64url(forge.md.sha256.create().update(proof).digest().getBytes());
-      const handoff = await submit('start',{challenge},controller.signal);
+      const handoff = await submit('start',{challenge,stay},controller.signal);
       if (typeof handoff.id !== 'string' || !encodedToken.test(handoff.id) ||
           handoff.browser !== origin+'/account/phone/browser?id='+handoff.id) throw new Error('invalid_browser_url');
       pending.current = {id:handoff.id,proof};
@@ -143,6 +144,10 @@ export function AccountSettings({layout, restore, pairApproved}:{layout:Layout; 
     onSignOut={signOut}
     onManage={()=>void Linking.openURL('https://id.xcenter.it').catch(()=>{})}
     signIn={<View style={{gap:6}}>
+      <FocusButton id="account-stay" group="phone-modal" label="Stay signed in" selected={stay} disabled={busy}
+        onPress={()=>setStay(!stay)} style={{minHeight:44,justifyContent:'center',paddingHorizontal:8}}>
+        <Text style={{color:'#e9eeff',fontSize:16}}>Stay signed in · {stay?'On':'Off'}</Text>
+      </FocusButton>
       <FocusButton id="account-sign-in" group="phone-modal" label="Sign in with X-Center ID" disabled={busy}
         onPress={()=>void signIn()} style={{minHeight:44,justifyContent:'center',paddingHorizontal:8}}>
         <Text style={{color:'#e9eeff',fontSize:16}}>Sign in with X-Center ID</Text>

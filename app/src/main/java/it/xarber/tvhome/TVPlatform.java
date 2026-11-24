@@ -63,7 +63,7 @@ public final class TVPlatform {
     static void remoteEvent(String event,HomeRemoteServer server){if(!foreground())return;JSONObject value=new JSONObject();try{if(event.equals("pair-request"))value.put("pin",server.pin()).put("origin",server.requestingOrigin());}catch(Exception ignored){}AureaTVModule.event(event,value);}
     JSONObject snapshot(boolean refresh)throws Exception{
         main.post(this::notifyUpdate);JSONObject result=new JSONObject().put("schema",1).put("catalog",catalog.read(refresh));
-        JSONObject preferences=new JSONObject().put("dock",catalog.dock()).put("wallpaper",prefs.getString("wallpaper","classic")).put("motion",prefs.getBoolean("wallpaper-motion",false)).put("glass",prefs.getBoolean("activity-background",true)).put("blur",prefs.getBoolean("blur-enabled",true)).put("musicTint",prefs.getBoolean("music-wallpaper-tint",false)).put("language",AppLanguage.code(context));
+        JSONObject preferences=appearance().put("dock",catalog.dock());
         AudioManager audio=context.getSystemService(AudioManager.class);int maximum=audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC);int volume=Math.round(100f*audio.getStreamVolume(AudioManager.STREAM_MUSIC)/Math.max(1,maximum));
         JSONObject music=receiverPlayback().state();Bitmap cover=receiverPlayback().cover();if(cover!=paletteArtwork){paletteArtwork=cover;palette=new JSONArray();for(int color:WavePalette.from(cover))palette.put(String.format(java.util.Locale.US,"#%06x",color&0xffffff));}music.put("colors",palette).put("dominance",WavePalette.dominance(cover));HomeRemoteServer remote=HomeRemoteService.server();
         result.put("preferences",preferences).put("music",music).put("network",network()).put("volume",volume).put("remoteConnected",remote!=null&&remote.hasActiveRemote()).put("paired",pairedState()).put("receiver",ReceiverSettings.state(context)).put("updates",updateState())
@@ -99,6 +99,14 @@ public final class TVPlatform {
         case "householdProfiles":
             if(!foreground())throw new IllegalStateException("launcher_not_active");
             return households.view();
+        case "householdAppearance":
+            if(!foreground()||!households.activeId().equals(data.getString("id")))throw new IllegalStateException("profile_changed");
+            if(data.has("appearance")){
+                JSONObject incoming=data.getJSONObject("appearance");
+                if(incoming.has("dock"))throw new IllegalArgumentException("invalid_appearance");
+                savePreferences(incoming);
+            }
+            return data.has("appearance")?snapshot(false):appearance();
         case "householdCreate":
             if(!foreground())throw new IllegalStateException("launcher_not_active");
             return households.create(data.getString("label"));
@@ -194,14 +202,37 @@ public final class TVPlatform {
         }
     }
     private static byte[] read(java.io.InputStream input)throws Exception{java.io.ByteArrayOutputStream output=new java.io.ByteArrayOutputStream();byte[] buffer=new byte[4096];int count;while((count=input.read(buffer))!=-1)output.write(buffer,0,count);return output.toByteArray();}
-    private void savePreferences(JSONObject data)throws Exception{
-        SharedPreferences.Editor edit=prefs.edit();if(data.has("dock"))catalog.writeDock(data.getJSONArray("dock"),edit);
-        String language=data.has("language")?data.getString("language"):null;if(language!=null&&!language.equals("it")&&!language.equals("en"))throw new IllegalArgumentException("invalid_language");
-        if(data.has("wallpaper")){String value=data.getString("wallpaper");if(!WallpaperArt.valid(value))throw new IllegalArgumentException("invalid_wallpaper");edit.putString("wallpaper",value);}
+    private JSONObject appearance() throws Exception {
+        SharedPreferences settings=households.appearance();
+        return new JSONObject()
+            .put("wallpaper",settings.getString("wallpaper","classic"))
+            .put("motion",settings.getBoolean("wallpaper-motion",false))
+            .put("glass",settings.getBoolean("activity-background",true))
+            .put("blur",settings.getBoolean("blur-enabled",true))
+            .put("musicTint",settings.getBoolean("music-wallpaper-tint",false))
+            .put("language",households.language());
+    }
+
+    private void savePreferences(JSONObject data)throws Exception {
+        SharedPreferences.Editor edit=households.appearance().edit();
+        boolean primary=households.activeId().equals("home");
+        SharedPreferences.Editor dock=data.has("dock")?(primary?edit:prefs.edit()):null;
+        if(dock!=null)catalog.writeDock(data.getJSONArray("dock"),dock);
+        String language=data.has("language")?data.getString("language"):null;
+        if(language!=null&&!language.equals("it")&&!language.equals("en"))throw new IllegalArgumentException("invalid_language");
+        if(data.has("wallpaper")){
+            String value=data.getString("wallpaper");
+            if(!WallpaperArt.valid(value))throw new IllegalArgumentException("invalid_wallpaper");
+            edit.putString("wallpaper",value);
+        }
         if(data.has("musicTint"))edit.putBoolean("music-wallpaper-tint",data.getBoolean("musicTint"));
         if(data.has("blur"))edit.putBoolean("blur-enabled",data.getBoolean("blur"));
-        if(data.has("motion"))edit.putBoolean("wallpaper-motion",data.getBoolean("motion"));if(data.has("glass"))edit.putBoolean("activity-background",data.getBoolean("glass"));if(!edit.commit())throw new IllegalStateException("storage_failed");
-        if(language!=null)AppLanguage.set(context,language);
+        if(data.has("motion"))edit.putBoolean("wallpaper-motion",data.getBoolean("motion"));
+        if(data.has("glass"))edit.putBoolean("activity-background",data.getBoolean("glass"));
+        if(language!=null&&!primary)edit.putString("language",language);
+        if(dock!=null&&dock!=edit&&!dock.commit())throw new IllegalStateException("storage_failed");
+        if(!edit.commit())throw new IllegalStateException("storage_failed");
+        if(language!=null&&primary)AppLanguage.set(context,language);
     }
     private void openSettings(String screen)throws Exception{String action;switch(screen){case "network":action=Settings.ACTION_WIFI_SETTINGS;break;case "display":action=Settings.ACTION_DISPLAY_SETTINGS;break;case "location":action=Settings.ACTION_LOCATION_SOURCE_SETTINGS;break;case "sound":action=Settings.ACTION_SOUND_SETTINGS;break;case "inputs":action=Settings.ACTION_SETTINGS;break;case "airplay":context.startActivity(new Intent(context,io.github.jqssun.airplay.MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));return;default:action=Settings.ACTION_SETTINGS;}
         Intent intent=new Intent(action);if(screen.equals("display")){Intent picture=new Intent("com.mitv.settings.PICTURE_SETTINGS");if(context.getPackageManager().resolveActivity(picture,0)!=null)intent=picture;}if(context.getPackageManager().resolveActivity(intent,0)==null)intent=new Intent(Settings.ACTION_SETTINGS);context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));}

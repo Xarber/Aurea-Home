@@ -19,6 +19,7 @@ export async function remoteAccountRequest() {
 
 export function AccountSettings({layout, restore, pairApproved}:{layout:Layout; restore:(layout:Layout)=>void; pairApproved:PairApproved}) {
   const [session, setSession] = useState<Session>();
+  const [stay,setStay]=useState(false);
   useEffect(() => {
     if (location.origin !== 'https://aurea.xcenter.it') return;
     const controller = new AbortController();
@@ -31,7 +32,10 @@ export function AccountSettings({layout, restore, pairApproved}:{layout:Layout; 
   return <AccountSettingsPanel pairApproved={pairApproved} layout={layout} restore={restore} session={session} request={request}
     onSignOut={()=>setSession({available:true,signedIn:false})}
     onManage={()=>window.open('https://id.xcenter.it','_blank','noopener,noreferrer')}
-    signIn={<form action="/account/start" method="post">
+    signIn={<form action={stay?'/account/start?stay=1':'/account/start'} method="post">
+      <label style={{display:'flex',alignItems:'center',gap:8,minHeight:44}}>
+        <input type="checkbox" checked={stay} onChange={event=>setStay(event.target.checked)}/>Stay signed in
+      </label>
       <button type="submit" style={{padding:'12px 16px',borderRadius:10}}>Sign in with X-Center ID</button>
     </form>}/>;
 }

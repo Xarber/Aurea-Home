@@ -2,6 +2,7 @@
 import {createHash, randomBytes, timingSafeEqual} from 'node:crypto';
 import {createDeviceLogins} from './devices.mjs';
 import {createInvitations} from './invitations.mjs';
+import {createSessions} from './sessions.mjs';
 
 const validToken = value => typeof value === 'string' && /^[A-Za-z0-9_-]{43}$/.test(value);
 const sessionCookie = '__Host-aurea-session';
@@ -38,25 +39,16 @@ async function readBody(request) {
   return JSON.parse(Buffer.concat(chunks).toString('utf8'));
 }
 
-export function accountHandler({identity, origin}) {
+export function accountHandler({identity, origin, sessionStore, clock=Date.now}) {
   const logins = new Map();
-  const sessions = new Map();
+  const sessions=createSessions(identity,sessionStore,clock);
   const handoffs = new Map();
   const invitations = createInvitations();
   const deviceLogins = createDeviceLogins(identity);
-  function issueSession(account, kind) {
-    const ttl = Math.min(3600, Math.floor(Number(account.expiresIn)));
-    if (!account.sub || !account.accessToken || !Number.isFinite(ttl) || ttl < 1 || sessions.size >= 1024) {
-      throw new Error('invalid_session');
-    }
-    const id = token();
-    sessions.set(id, {...account, kind, expiresAt:Date.now() + ttl * 1000});
-    return {id, ttl};
-  }
   async function route(request, response) {
     const url = new URL(request.url, origin);
     const method = request.method;
-    const now = Date.now();
+    const now=clock();
     const json = (status, value) => {response.writeHead(status, {'Content-Type':'application/json'}); response.end(JSON.stringify(value));};
     const redirect = location => {response.writeHead(303, {Location:location}); response.end();};
     const body = message => {response.writeHead(200, {'Content-Type':'text/plain; charset=utf-8'}); response.end(message);};
@@ -64,7 +56,8 @@ export function accountHandler({identity, origin}) {
     response.setHeader('Referrer-Policy', 'no-referrer');
     response.setHeader('X-Content-Type-Options', 'nosniff');
     response.setHeader('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'");
-    for (const store of [logins, sessions, handoffs]) {
+    sessions.prune(now);
+    for (const store of [logins, handoffs]) {
       for (const [key, value] of store) if (value.expiresAt <= now) store.delete(key);
     }
 
@@ -78,7 +71,7 @@ export function accountHandler({identity, origin}) {
         if (!validToken(payload?.challenge)) return json(400,{error:'invalid_challenge'});
         if (handoffs.size >= 64) return json(429,{error:'try_again'});
         const id = token();
-        handoffs.set(id,{challenge:payload.challenge, expiresAt:now+300000});
+        handoffs.set(id,{challenge:payload.challenge, stay:payload.stay===true, expiresAt:now+300000});
         return json(200,{id, browser:origin+'/account/phone/browser?id='+id, expiresIn:300});
       }
       const entry = handoffs.get(payload?.id);
@@ -92,7 +85,7 @@ export function accountHandler({identity, origin}) {
       if (!entry.account && !entry.failed) return json(202,{});
       handoffs.delete(payload.id);
       if (entry.failed) return json(403,{error:'invalid_login'});
-      const {id,ttl} = issueSession(entry.account,'phone');
+      const {id,ttl} = sessions.issue(entry.account,'phone');
       return json(200,{session:id, expiresIn:ttl, signedIn:true, name:entry.account.name});
     }
     if (url.pathname === '/account/phone/browser' && method === 'GET') {
@@ -100,7 +93,7 @@ export function accountHandler({identity, origin}) {
       const handoff = handoffs.get(phoneId);
       if (!handoff || handoff.opened) return body('Return to Aurea and start a new sign-in.');
       handoff.opened = true;
-      return beginBrowserLogin(phoneId, handoff.expiresAt);
+      return beginBrowserLogin(phoneId, handoff.expiresAt, handoff.stay);
     }
     if (device && !request.headers.origin && method === 'POST' && [
       '/account/device/start', '/account/device/pickup', '/account/device/cancel',
@@ -108,32 +101,41 @@ export function accountHandler({identity, origin}) {
       let payload;
       try {payload = await readBody(request);} catch {return json(400, {error:'invalid_request'});}
       if (url.pathname.endsWith('/start')) {
-        const {status, ...result} = await deviceLogins.begin(payload?.challenge);
+        const {status, ...result} = await deviceLogins.begin(payload?.challenge,payload?.stay===true);
         return json(status,result);
       }
       const {status, account, ...result} = deviceLogins.pickup(payload?.id,payload?.proof,url.pathname.endsWith('/cancel'));
       if (!account) return json(status,result);
-      const {id, ttl} = issueSession(account,'tv');
+      const {id, ttl} = sessions.issue(account,'tv');
       const owner = createHash('sha256').update('aurea-tv-profile-v1\0').update(account.sub).digest('hex');
       return json(200,{session:id, expiresIn:ttl, name:account.name, owner});
     }
     const native = device || phone;
     const kind = device ? 'tv' : phone ? 'phone' : 'web';
     const sessionId = native ? request.headers.authorization?.match(/^Bearer ([A-Za-z0-9_-]{43})$/)?.[1] : readCookie(request, sessionCookie);
-    const candidate = sessions.get(sessionId);
-    const session = candidate?.kind === kind ? candidate : undefined;
     if (method !== 'GET' && (native ? !!request.headers.origin : request.headers.origin !== origin)) return json(403, {error:'invalid_origin'});
-    if (['/account/session','/account/phone/session'].includes(url.pathname) && method === 'GET') return json(200, {
+    if (url.pathname === '/account/start' && method === 'POST') {
+      return beginBrowserLogin(undefined,now+300000,url.searchParams.get('stay')==='1');
+    }
+    const currentSession=sessions.read(sessionId,kind);
+    const shouldRefresh=[ '/account/session','/account/phone/session','/account/device/session',
+      '/account/'+(device?'device/':phone?'phone/':'')+'preferences',
+      '/account/'+(device?'device/':phone?'phone/':'')+'invitations',
+    ].includes(url.pathname)&&!(method==='DELETE'&&url.pathname.endsWith('/invitations'));
+    const session=shouldRefresh?await sessions.use(sessionId,kind):currentSession;
+    if(shouldRefresh&&kind==='web'&&session?.refreshToken){
+      response.setHeader('Set-Cookie',cookie(sessionCookie,sessionId,Math.ceil((session.expiresAt-clock())/1000)));
+    }
+    if (['/account/session','/account/phone/session','/account/device/session'].includes(url.pathname) && method === 'GET') return json(200, {
       available:true, signedIn:!!session, name:session?.name,
     });
-    if (url.pathname === '/account/start' && method === 'POST') return beginBrowserLogin(undefined, now+300000);
-    async function beginBrowserLogin(phoneId, expiresAt) {
+    async function beginBrowserLogin(phoneId, expiresAt, stay) {
       if (logins.size >= 128) return json(429, {error:'try_again'});
       const handle = token();
       const transaction = {expiresAt, phoneId};
       logins.set(handle, transaction);
       try {
-        const {url, ...details} = await identity.begin();
+        const {url, ...details} = await identity.begin(stay);
         Object.assign(transaction, details);
         logins.delete(readCookie(request, loginCookie));
         response.setHeader('Set-Cookie', cookie(loginCookie, handle, 300));
@@ -158,7 +160,7 @@ export function accountHandler({identity, origin}) {
           return body('Signed in to Aurea. You can return to the app.');
         }
         if (session) sessions.delete(sessionId);
-        const {id:next,ttl} = issueSession(account,'web');
+        const {id:next,ttl} = sessions.issue(account,'web');
         response.setHeader('Set-Cookie', [cookie(loginCookie, '', 0), cookie(sessionCookie, next, ttl)]);
         return redirect('/?remote=1');
       } catch {
@@ -187,7 +189,7 @@ export function accountHandler({identity, origin}) {
         sessions.delete(sessionId);
         return json(401,{error:'sign_in_required'});
       }
-      if (sessions.get(sessionId) !== session || session.expiresAt <= Date.now()) return json(401,{error:'sign_in_required'});
+      if (!sessions.current(sessionId,session)) return json(401,{error:'sign_in_required'});
       let payload;
       if (method === 'POST') {
         try {payload = await readBody(request);} catch {return json(400,{error:'invalid_request'});}

@@ -17,6 +17,7 @@ export function TVAccountSettings({demo, household, setHousehold, t}: {
   const {account,active:profile}=household;
   const [name,setName]=useState('');
   const [unlink,setUnlink]=useState(false);
+  const [stay,setStay]=useState(false);
   async function update(operation:string,value:Record<string,unknown>) {
     const result=await demo.execute(operation,value);
     if(typeof result.active!=='string'||!Array.isArray(result.profiles))throw new Error('profile_failed');
@@ -98,7 +99,7 @@ export function TVAccountSettings({demo, household, setHousehold, t}: {
   const start=()=>run(async()=>{
     const material=await demo.execute('accountChallenge');
     if(typeof material.proof!=='string'||typeof material.challenge!=='string')throw new Error('unavailable');
-    const result=await request('device/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({challenge:material.challenge})});
+    const result=await request('device/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({challenge:material.challenge,stay})});
     const qr=await demo.execute('accountQr',{code:result.code}).catch(()=>({qr:undefined}));
     const awaiting={id:result.id,code:result.code,expiresIn:result.expiresIn,proof:material.proof,qr:typeof qr.qr==='string'?qr.qr:undefined};
     if(active.current)setApproval(awaiting);
@@ -186,11 +187,11 @@ export function TVAccountSettings({demo, household, setHousehold, t}: {
           const saved=backup.preferences;
           if(!saved||!wallpapers.some(wallpaper=>wallpaper.id===saved.wallpaper))throw new Error('unknown_wallpaper');
           const {language,wallpaper,motion,musicTint,glass,blur}=saved;
-          await demo.execute('preferences',{language,wallpaper,motion,musicTint,glass,blur});
+          await demo.execute('householdAppearance',{id:profile,appearance:{language,wallpaper,motion,musicTint,glass,blur}});
           setStatus('Settings restored on this device.');
         }))}
         {backup&&row('save',backup.preferences?'Replace backup with this TV’s settings':'Save this TV’s settings',()=>void run(async()=>{
-          const {language,wallpaper,motion,musicTint,glass,blur}=demo.prefs;
+          const {language,wallpaper,motion,musicTint,glass,blur}=await demo.execute('householdAppearance',{id:profile}) as Appearance;
           const data={schema:1,language,wallpaper,motion,musicTint:musicTint===true,glass,blur:blur!==false};
           await request('device/preferences',{method:'PUT',headers:{...auth(),'Content-Type':'application/json','If-Match':'"'+backup.revision+'"'},body:JSON.stringify(data)});
           await load();setStatus('TV settings saved.');
@@ -213,7 +214,10 @@ export function TVAccountSettings({demo, household, setHousehold, t}: {
           await cancelInvitation();setStatus('Pairing invitation closed.');
         })) : row('open-invite','Allow a remote to pair',()=>void shareInvitation()))}
         {row('logout','Sign out of Aurea',()=>void run(()=>revokeLogin(false)))}
-      </> : row('link','Sign in with X-Center ID',()=>void start())}
+      </> : <>
+        {row('stay',stay?'Stay signed in: On':'Stay signed in: Off',()=>setStay(!stay))}
+        {row('link','Sign in with X-Center ID',()=>void start())}
+      </>}
     {household.profiles.some(viewer=>viewer.id===profile&&viewer.linked)&&
       row('unlink',unlink?'Confirm unlink account':'Unlink account',()=>{
         if(!unlink){setUnlink(true);return;}

@@ -16,7 +16,7 @@ export function createDeviceLogins(identity) {
     }
   }
 
-  async function begin(challenge) {
+  async function begin(challenge,stay) {
     prune();
     if (typeof challenge !== 'string' || !encoded.test(challenge)) return {status:400, error:'invalid_challenge'};
     if (transactions.size >= 24) return {status:429, error:'try_again'};
@@ -25,7 +25,7 @@ export function createDeviceLogins(identity) {
     const transaction = {challenge, abort, expires:Date.now() + 300000};
     transactions.set(id, transaction);
     try {
-      const login = await identity.beginDevice();
+      const login = await identity.beginDevice(stay);
       const ttl = Math.min(300, Math.floor(Number(login.expiresIn)));
       if (!Number.isFinite(ttl) || ttl < 1 || !/^[A-Z0-9-]{6,10}$/.test(login.code)) throw new Error('Invalid device response');
       transaction.expires = Date.now() + ttl * 1000;

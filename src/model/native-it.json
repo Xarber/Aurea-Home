@@ -239,5 +239,14 @@
   "Waiting for the paired Apple TV…": "In attesa dell’Apple TV abbinata…",
   "No launchable Apple TV apps found.": "Nessuna app avviabile trovata su Apple TV.",
   "Apple TV could not complete this action. Try again.": "Apple TV non ha completato l’azione. Riprova.",
-  "To list and open apps, choose Enable Apple TV apps in Aurea Home’s paired-device settings.": "Per vedere e aprire le app, scegli Abilita le app di Apple TV nelle impostazioni del dispositivo abbinato in Aurea Home."
+  "To list and open apps, choose Enable Apple TV apps in Aurea Home’s paired-device settings.": "Per vedere e aprire le app, scegli Abilita le app di Apple TV nelle impostazioni del dispositivo abbinato in Aurea Home.",
+  "Household profiles": "Profili di casa",
+  "New profile name": "Nome nuovo profilo",
+  "Add household profile": "Aggiungi profilo",
+  "Automatic pairing: On": "Abbinamento automatico: attivo",
+  "Automatic pairing: Off": "Abbinamento automatico: disattivato",
+  "Stay signed in: On": "Mantieni l’accesso: attivo",
+  "Stay signed in: Off": "Mantieni l’accesso: disattivato",
+  "Daylight": "Luce del giorno",
+  "Changes with the local time.": "Cambia in base all’ora locale."
 }

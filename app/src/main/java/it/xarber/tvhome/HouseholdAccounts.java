@@ -11,6 +11,8 @@ import java.util.UUID;
 final class HouseholdAccounts {
     private static HouseholdAccounts instance;
     private final PairingStore store;
+    private final Context context;
+    private volatile String activeId="home";
 
     static synchronized HouseholdAccounts get(Context context) {
         if(instance==null)instance=new HouseholdAccounts(context.getApplicationContext());
@@ -18,7 +20,21 @@ final class HouseholdAccounts {
     }
 
     private HouseholdAccounts(Context context) {
+        this.context=context;
         store = new PairingStore(context, "household-accounts");
+        try {activeId=read().getString("active");}catch(Exception ignored){}
+    }
+
+    String activeId(){return activeId;}
+
+    android.content.SharedPreferences appearance(){
+        String id=activeId;
+        String name=id.equals("home")?"it.xarber.tvhome.MainActivity":"household-appearance-"+id;
+        return context.getSharedPreferences(name,0);
+    }
+
+    String language(){
+        return activeId.equals("home")?AppLanguage.code(context):appearance().getString("language","it");
     }
 
     private JSONObject read() throws Exception {
@@ -80,6 +96,7 @@ final class HouseholdAccounts {
         find(state,id);
         state.put("active",id);
         write(state);
+        activeId=id;
         return view();
     }
 
