@@ -15,6 +15,7 @@ import {HouseholdWidgetSettings} from './HouseholdWidgetSettings';
 import {ProfileFolderSettings} from './ProfileFolderSettings';
 import {PlexSettings} from './PlexSettings';
 import {WatchNextSettings} from './WatchNextSettings';
+import {AndroidMediaSettings} from './AndroidMediaSettings';
 import {HomeAssistantSettings} from './HomeAssistantSettings';
 import {SmartHomeSettings} from './SmartHomeSettings';
 import {idleDelays} from '../model/idle-display';
@@ -136,6 +137,7 @@ export function NativePanels({
     automations: 'Smart home',
     homeAssistant: 'Home Assistant controls',
     watchNext: 'Keep Watching',
+    androidMedia: 'Android media',
     plex: 'Plex Continue Watching',
     layout: 'Home layout',
     folders: 'App folders',
@@ -273,6 +275,7 @@ export function NativePanels({
               demo.remote ? 'Connected' : undefined,
             )}
             {row('Keep Watching','film',()=>demo.setPanel('watchNext'))}
+            {(demo.prefs.householdProfile??'home')==='home'&&row('Android media','music',()=>demo.setPanel('androidMedia'))}
             {row('Household profiles','home',()=>demo.setPanel('account'))}
             {row('Household widgets','sun',()=>demo.setPanel('widgets'))}
             {row('Home layout','apps',()=>demo.setPanel('layout'))}
@@ -496,6 +499,7 @@ export function NativePanels({
           {(demo.prefs.householdProfile??'home')==='home'&&row('Home Assistant controls','home',()=>demo.setPanel('homeAssistant'))}
           <SmartHomeSettings demo={demo} t={t}/>
         </>}
+        {demo.panel==='androidMedia'&&<AndroidMediaSettings demo={demo} t={t}/>}
         {demo.panel==='homeAssistant'&&<HomeAssistantSettings demo={demo} t={t}/>}
         {demo.panel==='account'&&(household?<TVAccountSettings key={household.active} demo={demo} household={household}
           setHousehold={setHousehold} t={t} accountsEnabled={process.env.EXPO_PUBLIC_AUREA_ACCOUNTS_ENABLED==='1'}/>:

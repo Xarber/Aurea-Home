@@ -67,6 +67,7 @@ android {
         minSdk = 26
         targetSdk = 34
         manifestPlaceholders["homeOrientation"] = if (mobileRemote) "unspecified" else "landscape"
+        manifestPlaceholders["mediaAccessAvailable"] = if (mobileRemote) "false" else "true"
         manifestPlaceholders["homeLabel"] = if (mobileRemote) "Aurea Remote" else "Aurea Home"
         manifestPlaceholders["homeExcludeRecents"] = if (mobileRemote) "false" else "true"
         buildConfigField("boolean", "MOBILE_REMOTE", mobileRemote.toString())

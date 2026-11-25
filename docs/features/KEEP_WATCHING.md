@@ -11,3 +11,8 @@ Open **Plex Continue Watching** from Keep Watching to connect a Plex server for 
 Aurea reads up to 20 movies or episodes from the documented Plex Continue Watching endpoint. **Open Plex app** launches the installed Plex app. Opening or resuming an individual Plex title still needs a verified client deep link. [Plex Media Server API](https://developer.plex.tv/pms/)
 
 Per-profile history, Stremio-specific continuation sources, title availability, recommendations and imports remain tracked in the active queue. The observed visibility and playback behavior of any particular streaming app needs verification on that TV. [Android Watch Next reference](https://developer.android.com/reference/android/media/tv/TvContract.WatchNextPrograms)
+
+
+## Active Android media
+
+**Control Center → Android media** lists the playback info apps currently publish through Android's media-session APIs. The Home profile can request Android's notification-listener settings when needed. Enabling that system permission is optional. Aurea does not read notification contents. It queries active media-session controllers while this panel is visible, and playback controls are offered only when the app advertises them. It does not save session metadata as viewing history. Some firmware does not expose the permission screen or the session for particular apps. [Android media session reference](https://developer.android.com/reference/android/media/session/MediaSessionManager)
