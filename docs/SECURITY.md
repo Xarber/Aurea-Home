@@ -60,6 +60,8 @@ Guest Wi-Fi QR creation takes user-entered details through the foreground-only T
 
 The Android media live activity is opt-in for one app on the Home profile and updates only while Home is in the foreground. Android grants notification access through Settings, and the feature uses the media-session service. Its metadata and app selection are excluded from account backups and the paired phone or web remote playback response. A command for a stale app selection is rejected.
 
+The live Home Assistant camera action is available to the Home profile for approved camera entity IDs only. The non-exported viewer reads a single HTTPS MJPEG stream from the configured hub without following redirects. The token and frames stay on the TV. The secure window blocks Android display capture while the camera is visible. Closing or backgrounding the viewer clears the image and stops consumption, with a bounded network-read timeout for a stalled feed.
+
 ## Phone microphone
 
 Recording requires explicit phone OS consent and a visible Listening indicator.

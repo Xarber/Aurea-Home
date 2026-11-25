@@ -113,6 +113,24 @@ final class HomeAssistantControls {
         }finally{image.recycle();}
     }
 
+    void viewCamera(String id,java.util.function.BooleanSupplier open,java.util.function.Consumer<byte[]> frame)throws Exception{
+        if(!id.startsWith("camera."))throw new IllegalArgumentException("unknown_camera");
+        HttpsURLConnection connection=openConnection(authorized(id),"/api/camera_proxy_stream/"+id,"multipart/x-mixed-replace");
+        connection.setReadTimeout(10000);
+        try{
+            if(!open.getAsBoolean())return;
+            if(connection.getResponseCode()!=200)throw new IOException("camera_stream_unavailable");
+            try(InputStream input=new java.io.BufferedInputStream(connection.getInputStream(),8192)){
+                CameraFrames frames=new CameraFrames(input,connection.getContentType(),android.os.SystemClock::elapsedRealtime);
+                while(open.getAsBoolean()){
+                    byte[] image=frames.read();
+                    if(image==null)break;
+                    if(open.getAsBoolean())frame.accept(image);
+                }
+            }
+        }finally{connection.disconnect();}
+    }
+
     JSONObject command(JSONObject input)throws Exception {
         String id=input.getString("id");
         JSONObject entry=authorized(id);
@@ -189,7 +207,7 @@ final class HomeAssistantControls {
         return new String(exchange(entry,path,body,"application/json",131072),StandardCharsets.UTF_8);
     }
 
-    private static byte[] exchange(JSONObject entry,String path,JSONObject body,String accept,int maximum)throws Exception {
+    private static HttpsURLConnection openConnection(JSONObject entry,String path,String accept)throws Exception{
         URI target=new URI(entry.getString("identifier")).resolve(path);
         HttpsURLConnection connection=(HttpsURLConnection)target.toURL().openConnection();
         connection.setInstanceFollowRedirects(false);
@@ -197,6 +215,12 @@ final class HomeAssistantControls {
         connection.setReadTimeout(3000);
         connection.setRequestProperty("Authorization","Bearer "+entry.getString("credentials"));
         connection.setRequestProperty("Accept",accept);
+        connection.setUseCaches(false);
+        return connection;
+    }
+
+    private static byte[] exchange(JSONObject entry,String path,JSONObject body,String accept,int maximum)throws Exception {
+        HttpsURLConnection connection=openConnection(entry,path,accept);
         try{
             if(body!=null){
                 byte[] encoded=body.toString().getBytes(StandardCharsets.UTF_8);

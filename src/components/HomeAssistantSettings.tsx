@@ -126,6 +126,7 @@ export function HomeAssistantSettings({demo,t}:{demo:Launcher;t:(value:string)=>
         })}
       </>}
       {selected.startsWith('camera.')&&<>
+        {row('camera-live',t('View live camera'),()=>void run('haCameraLive',{id:selected}))}
         {camera&&<>
           <Image source={{uri:camera.uri}} accessibilityLabel={t('Camera snapshot')}
             style={{width:'100%',aspectRatio:16/9,borderRadius:12}} resizeMode="contain"/>

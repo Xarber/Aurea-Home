@@ -10,6 +10,9 @@ public final class AppLanguage {
  private AppLanguage() {}
  private static final HashMap<String,String> IT=new HashMap<>();
  static {
+  IT.put("Live camera unavailable. Press Back to return.","Telecamera non disponibile. Premi Indietro per tornare.");
+  IT.put("Opening live camera…","Apertura della telecamera…");
+  IT.put("Live camera","Telecamera in diretta");
   IT.put("Apple TV rejected pairing authorization (HTTP 470). The PIN alone may not resolve this tvOS issue.","Apple TV ha rifiutato l’autorizzazione (HTTP 470). Il solo PIN potrebbe non risolvere questo problema di tvOS.");
   IT.put("Apple TV returned an error","Apple TV ha restituito un errore");
   IT.put("Apple TV could not verify the pairing code. Start a new attempt.","Apple TV non ha verificato il codice. Avvia un nuovo tentativo.");

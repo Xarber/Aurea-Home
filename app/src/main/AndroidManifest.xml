@@ -41,6 +41,7 @@
 
         <activity android:name="it.xarber.tvhome.MainActivity" android:theme="@style/AureaExpoHome" android:exported="true" android:screenOrientation="${homeOrientation}" android:launchMode="singleTask" android:configChanges="orientation|screenSize|keyboard|keyboardHidden|uiMode" android:excludeFromRecents="${homeExcludeRecents}">
         </activity>
+        <activity android:name="it.xarber.tvhome.SmartHomeCameraActivity" android:theme="@style/AppTheme" android:exported="false" android:screenOrientation="landscape" android:excludeFromRecents="true" />
         <activity android:name="it.xarber.tvhome.LegacyHomeActivity" android:theme="@style/AppTheme" android:exported="false" android:screenOrientation="landscape" android:configChanges="orientation|screenSize|keyboard|keyboardHidden|uiMode" />
         <activity
             android:name=".MainActivity"

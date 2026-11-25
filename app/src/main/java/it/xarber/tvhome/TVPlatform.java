@@ -292,7 +292,7 @@ public final class TVPlatform {
             }
             main.post(()->{Activity host=activity.get();if(host instanceof MainActivity)((MainActivity)host).importWallpaperPhotos(photoProfile);});
             return safe("accepted",true);
-        case "haStatus":case "haConnect":case "haDisconnect":case "haEntity":case "haState":case "haCommand":case "haCamera":
+        case "haStatus":case "haConnect":case "haDisconnect":case "haEntity":case "haState":case "haCommand":case "haCamera":case "haCameraLive":
             if(!foreground()||!households.activeId().equals("home"))throw new IllegalStateException("launcher_not_active");
             switch(operation){
                 case "haConnect":return homeAssistant.connect(data.getString("server"),data.getString("token"));
@@ -301,6 +301,12 @@ public final class TVPlatform {
                 case "haState":return homeAssistant.state(data.getString("id"));
                 case "haCommand":return homeAssistant.command(data);
                 case "haCamera":return homeAssistant.camera(data.getString("id"));
+                case "haCameraLive":
+                    String cameraId=data.getString("id");
+                    if(!cameraId.matches("camera\\.[a-z0-9_]{1,120}"))throw new IllegalArgumentException("unknown_camera");
+                    context.startActivity(new Intent(context,SmartHomeCameraActivity.class).putExtra("entity",cameraId)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                    return safe("accepted",true);
                 default:return homeAssistant.status();
             }
         case "automationStatus":
