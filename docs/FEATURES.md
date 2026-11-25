@@ -37,6 +37,8 @@ The shared TV launcher keeps each household profile’s dock, library visibility
 
 In **Control Center → Household widgets**, a profile can save world clocks, minute timers, date countdowns, notes, checklists, and local calendar entries. It also accepts JSON display cards with a title and bounded plain-text rows. They stay on this TV and are separate across profiles. Timer deadlines persist while the panel is closed. The panel shows elapsed deadlines when reopened. The current timer interface has no background alarm.
 
+**Household widgets → Guest Wi-Fi** creates a scannable code for an open or WPA/WPA2 guest network entered by the user, including hidden networks. It generates the QR code locally and discards it when the screen closes or Aurea goes into the background. Anyone who sees the QR code can use the credentials it contains. [ZXing Wi-Fi format](https://github.com/zxing/zxing/wiki/Barcode-Contents#wi-fi-network-config-android-ios-11).
+
 On Android TV, **Wallpapers → Personal photos** imports up to 12 images for the active profile from the system document picker. Aurea copies and resizes the selected images into private storage and strips file metadata during JPEG export. Rotation intervals are 1, 5, 15 or 60 minutes. Photos stay on the TV and the original files are left intact when a photo is removed from Aurea. The built-in wallpaper remains available as a fallback for missing photos. Document-picker availability depends on the TV firmware.
 
 **Wallpapers → Idle display** can dim or cover the launcher or show a low-contrast clock on black. The first remote key wakes the display without also opening a focused app. Music keeps playing. The black cover does not send a hardware power command.

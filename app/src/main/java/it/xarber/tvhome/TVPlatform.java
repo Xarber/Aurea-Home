@@ -128,6 +128,10 @@ public final class TVPlatform {
         case "image":return catalog.image(data.getString("id"),data.optString("kind","icon"));
         case "artwork":return receiverPlayback().artwork();
         case "launch":catalog.launch(data.getString("id"));return safe("accepted",true);
+        case "guestWifiQr":
+            if(!foreground())throw new IllegalStateException("launcher_not_active");
+            return safe("qr",qrImage(GuestWifi.qrText(data.getString("ssid"),data.optString("password"),
+                data.getBoolean("secured"),data.optBoolean("hidden")),true));
         case "kidsExit":
             if(!foreground())throw new IllegalStateException("launcher_not_active");
             households.exitKids(data.getString("pin"));
@@ -592,9 +596,14 @@ public final class TVPlatform {
         return new JSONObject().put("proof", proof)
             .put("challenge", android.util.Base64.encodeToString(hash, flags));
     }
-    private static String qrImage(String url) throws Exception {
+    private static String qrImage(String text) throws Exception {
+        return qrImage(text,false);
+    }
+    private static String qrImage(String text, boolean unicode) throws Exception {
+        java.util.Map<com.google.zxing.EncodeHintType,?> hints = unicode
+            ? Collections.singletonMap(com.google.zxing.EncodeHintType.CHARACTER_SET, "UTF-8") : null;
         com.google.zxing.common.BitMatrix matrix = new com.google.zxing.qrcode.QRCodeWriter()
-            .encode(url, com.google.zxing.BarcodeFormat.QR_CODE, 300, 300);
+            .encode(text, com.google.zxing.BarcodeFormat.QR_CODE, 300, 300, hints);
         Bitmap bitmap = Bitmap.createBitmap(300, 300, Bitmap.Config.ARGB_8888);
         try {
             for (int y = 0; y < 300; y++) for (int x = 0; x < 300; x++)

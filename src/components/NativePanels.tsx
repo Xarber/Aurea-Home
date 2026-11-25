@@ -13,6 +13,7 @@ import { FadedScroll } from './FadedScroll';
 import { Icon } from './Icon';
 import {CityConditionsSettings} from './CityConditionsSettings';
 import {NewsFeedSettings} from './NewsFeedSettings';
+import {GuestWifiSettings} from './GuestWifiSettings';
 import {HouseholdWidgetSettings} from './HouseholdWidgetSettings';
 import {ProfileFolderSettings} from './ProfileFolderSettings';
 import {PlexSettings} from './PlexSettings';
@@ -160,6 +161,7 @@ export function NativePanels({
     layout: 'Home layout',
     folders: 'App folders',
     widgets: 'Household widgets',
+    guestWifi: 'Guest Wi-Fi',
     cityConditions: 'Local conditions',
     newsFeed: 'Headlines',
     kids: 'Kids profile',
@@ -544,8 +546,10 @@ export function NativePanels({
         {demo.panel==='widgets'&&<>
           {row('Local conditions','sun',()=>demo.setPanel('cityConditions'))}
           {row('Headlines','film',()=>demo.setPanel('newsFeed'))}
+          {row('Guest Wi-Fi','wifi',()=>demo.setPanel('guestWifi'))}
           <HouseholdWidgetSettings key={demo.prefs.householdProfile??'home'} demo={demo} t={t}/>
         </>}
+        {demo.panel==='guestWifi'&&<GuestWifiSettings t={t}/>}
         {demo.panel==='cityConditions'&&<CityConditionsSettings demo={demo} t={t}/>}
         {demo.panel==='newsFeed'&&<NewsFeedSettings key={demo.prefs.householdProfile??'home'} demo={demo} t={t}/>}
         {demo.panel==='watchRequests'&&<WatchRequestsSettings key={demo.prefs.householdProfile??'home'} demo={demo} t={t}/>}
