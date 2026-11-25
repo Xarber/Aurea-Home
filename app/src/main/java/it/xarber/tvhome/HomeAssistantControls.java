@@ -44,7 +44,7 @@ final class HomeAssistantControls {
     }
 
     JSONObject changeEntity(String id,boolean add)throws Exception {
-        if(!id.matches("(light|switch|scene|climate|sensor|binary_sensor|camera|media_player|event)\\.[a-z0-9_]{1,120}"))
+        if(!id.matches("(light|switch|scene|climate|sensor|binary_sensor|camera|media_player|event|fan|cover)\\.[a-z0-9_]{1,120}"))
             throw new IllegalArgumentException("invalid_home_entity");
         JSONObject entry=required();
         JSONArray items=new JSONArray(entry.optString("companion","[]"));
@@ -89,6 +89,21 @@ final class HomeAssistantControls {
                 for(String command:new String[]{"media_play","media_pause","media_previous_track","media_next_track","volume_set"})
                     if((permitted&mediaFeature(command))!=0)actions.put(command);
                 visible.put("actions",actions);
+            }
+            if(id.startsWith("fan.")&&(attrs.optLong("supported_features")&1)!=0){
+                visible.put("fanSpeed",attrs.opt("percentage")).put("speedStep",attrs.opt("percentage_step"));
+            }
+            if(id.startsWith("light.")&&dimmable(attrs)){
+                int brightness=attrs.optInt("brightness",-1);
+                if(brightness>=1&&brightness<=255)visible.put("brightness",Math.max(1,Math.round(brightness*100f/255)));
+            }
+            if(id.startsWith("cover.")){
+                String deviceClass=attrs.optString("device_class");
+                long features=attrs.optLong("supported_features");
+                JSONArray actions=new JSONArray();
+                for(String action:new String[]{"open_cover","close_cover","set_cover_position","stop_cover"})
+                    if(HomeDevicePolicy.coverAction(deviceClass,features,action))actions.put(action);
+                visible.put("actions",actions).put("coverPosition",attrs.opt("current_position"));
             }
             if(id.startsWith("climate.")){
                 visible.put("current",attrs.opt("current_temperature"));
@@ -148,8 +163,29 @@ final class HomeAssistantControls {
             case "scene":
                 if(!action.equals("turn_on"))throw new IllegalArgumentException("invalid_home_action");
                 break;
-            case "light":case "switch":
-                if(!action.equals("turn_on")&&!action.equals("turn_off"))throw new IllegalArgumentException("invalid_home_action");
+            case "switch":
+                if(!HomeDevicePolicy.power(action))throw new IllegalArgumentException("invalid_home_action");
+                break;
+            case "light":
+                if(!HomeDevicePolicy.power(action))throw new IllegalArgumentException("invalid_home_action");
+                if(input.has("value")){
+                    if(!action.equals("turn_on")||!dimmable(get(entry,"/api/states/"+id).getJSONObject("attributes")))
+                        throw new IllegalArgumentException("unsupported_brightness");
+                    body.put("brightness_pct",HomeDevicePolicy.percentage(input.opt("value"),1));
+                }
+                break;
+            case "fan":
+                if(action.equals("set_percentage")){
+                    if((get(entry,"/api/states/"+id).getJSONObject("attributes").optLong("supported_features")&1)==0)
+                        throw new IllegalArgumentException("unsupported_fan_speed");
+                    body.put("percentage",HomeDevicePolicy.percentage(input.opt("value"),0));
+                }else if(!HomeDevicePolicy.power(action))throw new IllegalArgumentException("invalid_home_action");
+                break;
+            case "cover":
+                JSONObject cover=get(entry,"/api/states/"+id).getJSONObject("attributes");
+                if(!HomeDevicePolicy.coverAction(cover.optString("device_class"),cover.optLong("supported_features"),action))
+                    throw new IllegalArgumentException("unsupported_cover_action");
+                if(action.equals("set_cover_position"))body.put("position",HomeDevicePolicy.percentage(input.opt("value"),0));
                 break;
             case "media_player":
                 long feature=mediaFeature(action);
@@ -175,6 +211,16 @@ final class HomeAssistantControls {
         }
         response(entry,"/api/services/"+kind+"/"+action,body);
         return state(id);
+    }
+
+    private static boolean dimmable(JSONObject attributes){
+        JSONArray modes=attributes.optJSONArray("supported_color_modes");
+        if(modes==null)return false;
+        for(int i=0;i<modes.length();i++){
+            if(java.util.Arrays.asList("brightness","color_temp","hs","xy","rgb","rgbw","rgbww","white").contains(modes.optString(i)))
+                return true;
+        }
+        return false;
     }
 
     // Home Assistant MediaPlayerEntityFeature flags.

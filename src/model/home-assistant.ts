@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-export const isHomeEntity=(value:string)=>/^(light|switch|scene|climate|sensor|binary_sensor|camera|media_player|event)\.[a-z0-9_]{1,120}$/.test(value);
+export const isHomeEntity=(value:string)=>/^(light|switch|scene|climate|sensor|binary_sensor|camera|media_player|event|fan|cover)\.[a-z0-9_]{1,120}$/.test(value);
 
 export function adjustedTemperature(state:Record<string,unknown>,direction:-1|1) {
   const {target,min,max}=state;
@@ -15,4 +15,11 @@ export function adjustedVolume(volume:unknown,direction:-1|1) {
   if(typeof volume!=='number'||!Number.isFinite(volume)||volume<0||volume>1)return undefined;
   const next=Math.max(0,Math.min(1,Math.round((volume+direction*.05)*100)/100));
   return next===volume?undefined:next;
+}
+
+export function adjustedPercentage(raw:unknown,direction:-1|1,step:unknown=10,minimum=0){
+  if(typeof raw!=='number'||!Number.isFinite(raw)||raw<minimum||raw>100)return undefined;
+  const amount=typeof step==='number'&&Number.isFinite(step)&&step>=1&&step<=100?step:10;
+  const next=Math.min(100,Math.max(minimum,Math.round(raw+amount*direction)));
+  return next===raw?undefined:next;
 }

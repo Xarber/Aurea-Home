@@ -3,7 +3,7 @@ import React,{useCallback,useEffect,useRef,useState} from 'react';
 import {AppState,Image,Text,View} from 'react-native';
 import type {Launcher} from '../launcher/types';
 import {tv} from '../platform/native/tv';
-import {adjustedTemperature,adjustedVolume,isHomeEntity} from '../model/home-assistant';
+import {adjustedPercentage,adjustedTemperature,adjustedVolume,isHomeEntity} from '../model/home-assistant';
 import {FocusButton} from './FocusButton';
 import {Icon} from './Icon';
 import {TVTextInput} from './TVTextInput';
@@ -80,6 +80,15 @@ export function HomeAssistantSettings({demo,t}:{demo:Launcher;t:(value:string)=>
   const detail=(rowState:Record<string,unknown>)=>typeof rowState.state==='string'?
     rowState.state+(typeof rowState.unit==='string'&&rowState.unit?' '+rowState.unit:''):undefined;
   const name=(id:string,r:Record<string,unknown>)=>typeof r.name==='string'?r.name:id;
+  const percentRows=(key:string,current:unknown,low:string,high:string,operation:string,step?:number,minimum=0)=>{
+    if(typeof current!=='number'||!selected)return null;
+    return ([-1,1] as const).map(direction=>{
+      const value=adjustedPercentage(current,direction,step,minimum);
+      return row(key+'-'+direction,t(direction===-1?low:high),
+        ()=>void run('haCommand',{id:selected,action:operation,value}),
+        value===undefined?undefined:value+'%',value===undefined);
+    });
+  };
   return <View style={{gap:7,paddingVertical:7}}>
     {failed&&<Text accessibilityLiveRegion="polite" style={{color:'#f5d0dc',fontSize:16}}>
       {t('Home Assistant could not complete the request. Check the server and permissions.')}
@@ -146,8 +155,20 @@ export function HomeAssistantSettings({demo,t}:{demo:Launcher;t:(value:string)=>
         {camera&&row('hide-image',t('Hide snapshot'),()=>setCamera(undefined))}
       </>}
       {selected.startsWith('scene.')&&row('activate',t('Activate scene'),()=>void run('haCommand',{id:selected,action:'turn_on'}))}
-      {/^(light|switch)\./.test(selected)&&state.state!=='unavailable'&&
+      {/^(light|switch|fan)\./.test(selected)&&state.state!=='unavailable'&&
         row('toggle',t(state.state==='on'?'Turn off':'Turn on'),()=>void run('haCommand',{id:selected,action:state.state==='on'?'turn_off':'turn_on'}))}
+      {selected.startsWith('light.')&&state.state==='on'&&
+        percentRows('brightness',state.brightness,'Lower brightness','Raise brightness','turn_on',10,1)}
+      {selected.startsWith('fan.')&&state.state==='on'&&percentRows('fan',state.fanSpeed,'Lower fan speed','Raise fan speed',
+        'set_percentage',typeof state.speedStep==='number'?state.speedStep:undefined,1)}
+      {selected.startsWith('cover.')&&state.state!=='unavailable'&&<>
+        {(['open_cover','stop_cover','close_cover'] as const)
+          .filter(action=>Array.isArray(state.actions)&&state.actions.includes(action))
+          .map(action=>row('cover-'+action,t({open_cover:'Open covering',stop_cover:'Stop covering',close_cover:'Close covering'}[action]),
+            ()=>void run('haCommand',{id:selected,action})))}
+        {Array.isArray(state.actions)&&state.actions.includes('set_cover_position')&&
+          percentRows('position',state.coverPosition,'Close further','Open further','set_cover_position')}
+      </>}
       {selected.startsWith('climate.')&&typeof state.target==='number'&&<>
         {text(t('Target temperature')+' · '+state.target)}
         {([-1,1] as const).map(direction=>{
