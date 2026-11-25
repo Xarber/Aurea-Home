@@ -161,6 +161,23 @@ final class HomeAssistantControls {
         return new JSONObject().put("events",result);
     }
 
+    JSONObject generateSuggestion(String entity,String prompt,String language)throws Exception {
+        String question=prompt.trim();
+        if(!entity.matches("ai_task\\.[a-z0-9_]{1,120}")||question.length()<2||question.length()>300)
+            throw new IllegalArgumentException("invalid_assistant_request");
+        JSONObject request=new JSONObject().put("entity_id",entity).put("task_name","Aurea viewing suggestions")
+            .put("instructions",(language.equals("it")?"Answer in Italian. ":"Answer in English. ")
+                +"Suggest films or television shows briefly for this request. Do not claim current streaming availability. "
+                +question);
+        byte[] raw=exchange(required(),"/api/services/ai_task/generate_data?return_response",
+            request,"application/json",32768,18000);
+        JSONObject envelope=new JSONObject(new String(raw,StandardCharsets.UTF_8)).optJSONObject("service_response");
+        Object value=envelope==null?null:envelope.opt("data");
+        String answer=value instanceof String?bounded((String)value,1200):"";
+        if(answer.isEmpty())throw new IOException("assistant_answer_unavailable");
+        return new JSONObject().put("answer",answer);
+    }
+
     void viewCamera(String id,java.util.function.BooleanSupplier open,java.util.function.Consumer<byte[]> frame)throws Exception{
         if(!id.startsWith("camera."))throw new IllegalArgumentException("unknown_camera");
         HttpsURLConnection connection=openConnection(authorized(id),"/api/camera_proxy_stream/"+id,"multipart/x-mixed-replace");
@@ -299,7 +316,12 @@ final class HomeAssistantControls {
     }
 
     private static byte[] exchange(JSONObject entry,String path,JSONObject body,String accept,int maximum)throws Exception {
+        return exchange(entry,path,body,accept,maximum,3000);
+    }
+
+    private static byte[] exchange(JSONObject entry,String path,JSONObject body,String accept,int maximum,int readTimeout)throws Exception {
         HttpsURLConnection connection=openConnection(entry,path,accept);
+        connection.setReadTimeout(readTimeout);
         try{
             if(body!=null){
                 byte[] encoded=body.toString().getBytes(StandardCharsets.UTF_8);

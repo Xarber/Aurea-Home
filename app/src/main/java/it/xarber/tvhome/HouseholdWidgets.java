@@ -57,6 +57,10 @@ final class HouseholdWidgets {
                     rows.put(new JSONObject().put("text",text).put("done",false));
                 }
                 value.put("type",operation).put("rows",rows);
+            }else if(operation.equals("anniversary")){
+                java.time.LocalDate date=java.time.LocalDate.parse(request.getString("date"));
+                if(date.getYear()<1900||date.getYear()>9998)throw new IllegalArgumentException("invalid_anniversary_date");
+                value.put("type","anniversary").put("date",date.toString());
             }else if(operation.equals("agenda")||operation.equals("collection")){
                 java.time.LocalDate date=java.time.LocalDate.parse(request.getString("date"));
                 if(date.isBefore(java.time.LocalDate.now())||date.isAfter(java.time.LocalDate.now().plusYears(20)))

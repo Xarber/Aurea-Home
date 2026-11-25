@@ -377,6 +377,10 @@ public final class TVPlatform {
             }
             main.post(()->{Activity host=activity.get();if(host instanceof MainActivity)((MainActivity)host).importWallpaperPhotos(photoProfile);});
             return safe("accepted",true);
+        case "haGenerateSuggestion":
+            if(BuildConfig.MOBILE_REMOTE||!foreground()||!households.activeId().equals("home")
+                ||households.kids.active("home"))throw new IllegalStateException("launcher_not_active");
+            return homeAssistant.generateSuggestion(data.getString("entity"),data.getString("prompt"),households.language());
         case "haStatus":case "haConnect":case "haDisconnect":case "haEntity":case "haState":case "haCommand":case "haCamera":case "haCameraLive":case "haCalendar":case "haDoorbellPoll":case "haDoorbellSet":
             if(!foreground()||!households.activeId().equals("home"))throw new IllegalStateException("launcher_not_active");
             switch(operation){
@@ -451,6 +455,13 @@ public final class TVPlatform {
             if(operation.equals("newsFeedSave"))return NewsFeeds.save(newsPreferences,data.getString("feed"));
             if(operation.equals("newsFeedRefresh"))return NewsFeeds.refresh(newsPreferences.getString("headlines-feed",""));
             return NewsFeeds.state(newsPreferences);
+        case "appUsageSummary":case "appUsageSettings":
+            if(BuildConfig.MOBILE_REMOTE||!foreground()||!households.activeId().equals("home")
+                ||households.kids.active("home"))throw new IllegalStateException("launcher_not_active");
+            if(operation.equals("appUsageSummary"))return AppUsageSummary.read(context,catalog.read(false));
+            Intent usageSettings=new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(usageSettings);
+            return safe("accepted",true);
         case "widgetList":case "widgetChange":
             if(!foreground())throw new IllegalStateException("launcher_not_active");
             SharedPreferences widgetPreferences=households.layoutFor(data.getString("profile"));

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {adjustedPercentage,adjustedTemperature,adjustedVolume,calendarEventLabel,isHomeEntity} from '../../src/model/home-assistant.ts';
+import {adjustedPercentage,adjustedTemperature,adjustedVolume,calendarEventLabel,isHomeEntity,suggestionRequest} from '../../src/model/home-assistant.ts';
 
 test('Home Assistant only offers named supported entities',()=>{
   for(const id of ['light.kitchen','binary_sensor.door','climate.floor_1','scene.late_night','camera.living','media_player.audio','fan.office','cover.blinds','event.doorbell','calendar.family'])assert.equal(isHomeEntity(id),true);
@@ -37,4 +37,13 @@ test('calendar dates retain all-day labels and reject invalid response dates',()
   assert.equal(calendarEventLabel({date:'2026-11-31'},'en-US'),undefined);
   assert.equal(calendarEventLabel({time:'0'},'en-US'),undefined);
   assert.equal(calendarEventLabel({time:1e30},'en-US'),undefined);
+});
+
+test('viewing suggestions accept only a selected AI Task entity and a bounded question',()=>{
+  assert.deepEqual(suggestionRequest(' ai_task.local_agent ',' A light comedy '),
+    {entity:'ai_task.local_agent',prompt:'A light comedy'});
+  assert.equal(suggestionRequest('conversation.home_assistant','A comedy'),undefined);
+  assert.equal(suggestionRequest('ai_task.local_agent',''),undefined);
+  assert.equal(suggestionRequest('ai_task.local_agent','a'.repeat(301)),undefined);
+  assert.equal(suggestionRequest('ai_task.local_agent/../../','A comedy'),undefined);
 });

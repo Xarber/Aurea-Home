@@ -35,7 +35,7 @@ The shared TV launcher keeps each household profile’s dock, library visibility
 
 ### Household widgets
 
-In **Control Center → Household widgets**, a profile can save world clocks, minute timers, date countdowns, notes, checklists, and local calendar entries. It also accepts JSON display cards with a title and bounded plain-text rows. They stay on this TV and are separate across profiles. Timer deadlines persist while the panel is closed. The panel shows elapsed deadlines when reopened. The current timer interface has no background alarm.
+In **Control Center → Household widgets**, a profile can save world clocks, minute timers, date countdowns, notes, checklists, local calendar entries, and annually recurring anniversaries. February 29 anniversaries appear on February 28 in non-leap years. It also accepts JSON display cards with a title and bounded plain-text rows. They stay on this TV and are separate across profiles. Timer deadlines persist while the panel is closed. The panel shows elapsed deadlines when reopened. The current timer interface has no background alarm. The primary TV profile can also open **TV screen time** to read Android’s approximate daily foreground minutes, after choosing to grant Usage Access.
 
 **Household widgets → Guest Wi-Fi** creates a scannable code for an open or WPA/WPA2 guest network entered by the user, including hidden networks. It generates the QR code locally and discards it when the screen closes or Aurea goes into the background. Anyone who sees the QR code can use the credentials it contains. [ZXing Wi-Fi format](https://github.com/zxing/zxing/wiki/Barcode-Contents#wi-fi-network-config-android-ios-11).
 

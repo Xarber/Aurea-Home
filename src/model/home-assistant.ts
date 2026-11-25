@@ -36,3 +36,9 @@ export function calendarEventLabel(event:Record<string,unknown>,language:string)
   }
   return undefined;
 }
+
+export function suggestionRequest(entity:string,prompt:string){
+  const id=entity.trim(),question=prompt.trim();
+  return /^ai_task\.[a-z0-9_]{1,120}$/.test(id)&&question.length>=2&&question.length<=300
+    ?{entity:id,prompt:question}:undefined;
+}

@@ -4,6 +4,7 @@ import {AppState,Image,Text,View} from 'react-native';
 import type {Launcher} from '../launcher/types';
 import {tv} from '../platform/native/tv';
 import {adjustedPercentage,adjustedTemperature,adjustedVolume,calendarEventLabel,isHomeEntity} from '../model/home-assistant';
+import {ViewingAssistantSettings} from './ViewingAssistantSettings';
 import {FocusButton} from './FocusButton';
 import {Icon} from './Icon';
 import {TVTextInput} from './TVTextInput';
@@ -12,6 +13,7 @@ const fieldStyle={color:'#fff',fontSize:17,minHeight:48,paddingHorizontal:12,bor
 const empty:Record<string,unknown>={};
 
 export function HomeAssistantSettings({demo,t}:{demo:Launcher;t:(value:string)=>string}) {
+  const [assistant,setAssistant]=useState(false);
   const [connected,setConnected]=useState<boolean>();
   const [server,setServer]=useState(''),[token,setToken]=useState(''),[entity,setEntity]=useState('');
   const [entities,setEntities]=useState<string[]>([]);
@@ -108,7 +110,8 @@ export function HomeAssistantSettings({demo,t}:{demo:Launcher;t:(value:string)=>
       {row('connect',t('Connect Home Assistant'),()=>void run('haConnect',{server:server.trim(),token:token.trim()}),
         undefined,!server.trim()||!token.trim())}
     </>}
-    {connected===true&&!selected&&<>
+    {connected===true&&!selected&&!assistant&&<>
+      {row('viewing-assistant',t('Viewing suggestions'),()=>setAssistant(true))}
       {entities.map(id=>row(id,name(id,states[id]??empty),()=>setSelected(id),detail(states[id]??empty)))}
       {entities.length<8&&<>
         {text('Add a device by its Home Assistant entity ID. Doorbells use an event entity.')}
@@ -120,6 +123,10 @@ export function HomeAssistantSettings({demo,t}:{demo:Launcher;t:(value:string)=>
       {row('disconnect',t(confirm==='disconnect'?'Confirm disconnect':'Disconnect Home Assistant'),()=>{
         if(confirm==='disconnect')void run('haDisconnect');else setConfirm('disconnect');
       })}
+    </>}
+    {connected===true&&assistant&&<>
+      <ViewingAssistantSettings demo={demo} t={t}/>
+      {row('close-viewing-assistant',t('Back'),()=>setAssistant(false))}
     </>}
     {connected===true&&selected&&<>
       {text(name(selected,state))}

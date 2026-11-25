@@ -11,6 +11,7 @@ import { AnchoredPanel, type Anchor } from './AnchoredPanel';
 import { FocusButton } from './FocusButton';
 import { FadedScroll } from './FadedScroll';
 import { Icon } from './Icon';
+import {AppUsageSettings} from './AppUsageSettings';
 import {CityConditionsSettings} from './CityConditionsSettings';
 import {NewsFeedSettings} from './NewsFeedSettings';
 import {QuietHoursSettings} from './QuietHoursSettings';
@@ -167,6 +168,7 @@ export function NativePanels({
     layout: 'Home layout',
     folders: 'App folders',
     widgets: 'Household widgets',
+    appUsage: 'TV screen time',
     guestWifi: 'Guest Wi-Fi',
     cityConditions: 'Local conditions',
     newsFeed: 'Headlines',
@@ -568,9 +570,11 @@ export function NativePanels({
         {demo.panel==='widgets'&&<>
           {row('Local conditions','sun',()=>demo.setPanel('cityConditions'))}
           {row('Headlines','film',()=>demo.setPanel('newsFeed'))}
+          {demo.native&&(demo.prefs.householdProfile??'home')==='home'&&row('TV screen time','info',()=>demo.setPanel('appUsage'))}
           {row('Guest Wi-Fi','wifi',()=>demo.setPanel('guestWifi'))}
           <HouseholdWidgetSettings key={demo.prefs.householdProfile??'home'} demo={demo} t={t}/>
         </>}
+        {demo.panel==='appUsage'&&demo.native&&(demo.prefs.householdProfile??'home')==='home'&&<AppUsageSettings demo={demo} t={t}/>}
         {demo.panel==='guestWifi'&&<GuestWifiSettings t={t}/>}
         {demo.panel==='cityConditions'&&<CityConditionsSettings demo={demo} t={t}/>}
         {demo.panel==='newsFeed'&&<NewsFeedSettings key={demo.prefs.householdProfile??'home'} demo={demo} t={t}/>}

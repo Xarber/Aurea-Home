@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 type Base={id:string;label:string};
 export type Widget=(Base&{type:'clock';zone:string})|(Base&{type:'timer'|'countdown';until:number})|(Base&{type:'note';body:string})|
- (Base&{type:'list'|'card';rows:{text:string;done:boolean}[]})|(Base&{type:'agenda';date:string})|(Base&{type:'collection';date:string;interval:7|14});
+ (Base&{type:'list'|'card';rows:{text:string;done:boolean}[]})|(Base&{type:'agenda';date:string})|(Base&{type:'anniversary';date:string})|(Base&{type:'collection';date:string;interval:7|14});
 
 export function remainingTime(until:number,now:number) {
  const seconds=Math.max(0,Math.ceil((until-now)/1000));
@@ -49,6 +49,25 @@ export function nextCollectionDate(first:string,interval:7|14,now:number):string
  return new Date(start+Math.max(0,Math.ceil(elapsed/step))*step).toISOString().slice(0,10);
 }
 
+export function nextAnniversary(first:string,now:number):string|undefined {
+ const start=dateStamp(first);
+ if(start===undefined||!Number.isFinite(now))return undefined;
+ const [firstYear,month,day]=first.split('-').map(Number);
+ if(firstYear===undefined||month===undefined||day===undefined||firstYear<1900||firstYear>9998)return undefined;
+ const today=new Date(now);
+ if(!Number.isFinite(today.valueOf()))return undefined;
+ const todayStamp=calendarStamp(today);
+ if(start>todayStamp)return first;
+ const occurrence=(year:number)=>{
+  const lastDay=new Date(Date.UTC(year,month,0)).getUTCDate();
+  return Date.UTC(year,month-1,Math.min(day,lastDay));
+ };
+ const year=today.getFullYear();
+ const current=occurrence(year);
+ const next=new Date(current>=todayStamp?current:occurrence(year+1));
+ return next.getUTCFullYear()<=9999?next.toISOString().slice(0,10):undefined;
+}
+
 const phaseNames=['New moon','Waxing crescent','First quarter','Waxing gibbous','Full moon',
  'Waning gibbous','Last quarter','Waning crescent'] as const;
 const epoch=Date.parse('2026-01-18T19:52:00Z');
@@ -82,7 +101,7 @@ export function parseWidgets(raw:unknown):Widget[] {
  return raw.slice(0,12).filter((widget):widget is Widget=>!!widget&&typeof widget.id==='string'&&
   typeof widget.label==='string'&&(
   widget.type==='clock'&&typeof widget.zone==='string'||
-  widget.type==='agenda'&&typeof widget.date==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(widget.date)||
+  (widget.type==='agenda'||widget.type==='anniversary')&&typeof widget.date==='string'&&dateStamp(widget.date)!==undefined||
   widget.type==='collection'&&typeof widget.date==='string'&&dateStamp(widget.date)!==undefined&&
     (widget.interval===7||widget.interval===14)||
   (widget.type==='list'||widget.type==='card')&&Array.isArray(widget.rows)&&widget.rows.length<=16&&
