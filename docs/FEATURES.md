@@ -76,3 +76,7 @@ Android TV profiles can opt into **Home layout → Allow paired remotes to edit 
 The Headlines widget can open a configured HTTPS RSS or Atom feed on demand. It shows plain-text titles and only opens validated HTTPS article links. It does not run background requests or render feed HTML.
 
 **Household widgets → Local conditions** can show model-estimated temperature, humidity, today’s maximum UV index and European air quality index for the selected city. It fetches only on request and shows missing values without substituting zero. [Open-Meteo forecast API](https://open-meteo.com/en/docs), [Open-Meteo air quality API](https://open-meteo.com/en/docs/air-quality-api).
+
+## Roku remote
+
+On iOS and Android, open **TVs → Roku remote** and enter a Roku’s local IP address. Aurea can control navigation, Home, options and playback when Roku OS permits **Control by mobile apps**. Supported models also expose volume and power off. The phone saves the latest chosen Roku separately from Aurea TV pairing. This adapter runs on the local network and has no web or hosted relay. [Roku External Control Protocol](https://developer.roku.com/dev/docs/external-control-api).

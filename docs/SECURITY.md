@@ -94,3 +94,5 @@ App preview adds runtime TV MediaProjection approval and optional playback-audio
 ## Account and device trust
 
 Aurea works without a user account. The optional X-Center ID integration in development introduces account-scoped preference backups and is gated separately. The account backend keeps the issuer access token server-side, uses single-use sign-in transactions and scopes each backup at the issuer. Existing TV pairing credentials remain local to their current trust paths. Live X-Center passkey/FIDO and revocation checks remain required before release. See [the account feature and trust boundaries](features/ACCOUNT_SYNC.md).
+
+The optional native Roku remote sends only documented fixed commands to a user-entered private IPv4 address at port 8060. It rejects redirects and rereads the device identifier before sending each key. Roku ECP is plain HTTP. The identifier helps catch an IP reassignment and does not authenticate a device against an active attacker on the LAN. No Aurea token or account credential is sent to Roku, and saved Roku addresses remain in phone-local secure storage.
