@@ -3,7 +3,7 @@ import React,{useCallback,useEffect,useRef,useState} from 'react';
 import {AppState,Image,Text,View} from 'react-native';
 import type {Launcher} from '../launcher/types';
 import {tv} from '../platform/native/tv';
-import {adjustedTemperature,isHomeEntity} from '../model/home-assistant';
+import {adjustedTemperature,adjustedVolume,isHomeEntity} from '../model/home-assistant';
 import {FocusButton} from './FocusButton';
 import {Icon} from './Icon';
 import {TVTextInput} from './TVTextInput';
@@ -97,7 +97,7 @@ export function HomeAssistantSettings({demo,t}:{demo:Launcher;t:(value:string)=>
     {connected===true&&!selected&&<>
       {entities.map(id=>row(id,name(id,states[id]??empty),()=>setSelected(id),detail(states[id]??empty)))}
       {entities.length<8&&<>
-        {text('Add a light, switch, scene, thermostat, sensor, or camera by its entity ID.')}
+        {text('Add a light, switch, scene, thermostat, sensor, camera, or speaker by its entity ID.')}
         <TVTextInput id="ha-entity-edit" t={t} value={entity} onChangeText={setEntity} maxLength={135}
           autoCapitalize="none" autoCorrect={false} accessibilityLabel={t('Entity ID')} placeholder="light.living_room"
           placeholderTextColor="#aeb9c9" style={fieldStyle}/>
@@ -110,6 +110,21 @@ export function HomeAssistantSettings({demo,t}:{demo:Launcher;t:(value:string)=>
     {connected===true&&selected&&<>
       {text(name(selected,state))}
       {!!detail(state)&&text(detail(state)!)}
+      {selected.startsWith('media_player.')&&<>
+        {typeof state.mediaTitle==='string'&&!!state.mediaTitle&&text(state.mediaTitle)}
+        {typeof state.mediaArtist==='string'&&!!state.mediaArtist&&text(state.mediaArtist)}
+        {(['media_previous_track',state.state==='playing'?'media_pause':'media_play','media_next_track'] as const)
+          .filter(action=>Array.isArray(state.actions)&&state.actions.includes(action)).map(action=>row(
+            'speaker-'+action,t({media_previous_track:'Previous',media_pause:'Pause',media_play:'Play',media_next_track:'Next'}[action]),
+            ()=>void run('haCommand',{id:selected,action}),
+          ))}
+        {Array.isArray(state.actions)&&state.actions.includes('volume_set')&&([-1,1] as const).map(direction=>{
+          const value=adjustedVolume(state.volume,direction);
+          return row('speaker-volume-'+direction,t(direction===-1?'Lower volume':'Raise volume'),
+            ()=>void run('haCommand',{id:selected,action:'volume_set',value}),
+            value===undefined?undefined:Math.round(value*100)+'%',value===undefined);
+        })}
+      </>}
       {selected.startsWith('camera.')&&<>
         {camera&&<>
           <Image source={{uri:camera.uri}} accessibilityLabel={t('Camera snapshot')}

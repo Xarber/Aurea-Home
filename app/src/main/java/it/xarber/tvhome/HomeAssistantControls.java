@@ -44,7 +44,7 @@ final class HomeAssistantControls {
     }
 
     JSONObject changeEntity(String id,boolean add)throws Exception {
-        if(!id.matches("(light|switch|scene|climate|sensor|binary_sensor|camera)\\.[a-z0-9_]{1,120}"))
+        if(!id.matches("(light|switch|scene|climate|sensor|binary_sensor|camera|media_player)\\.[a-z0-9_]{1,120}"))
             throw new IllegalArgumentException("invalid_home_entity");
         JSONObject entry=required();
         JSONArray items=new JSONArray(entry.optString("companion","[]"));
@@ -72,6 +72,16 @@ final class HomeAssistantControls {
             .put("name",bounded(attrs==null?id:attrs.optString("friendly_name",id),96));
         if(attrs!=null){
             visible.put("unit",bounded(attrs.optString("unit_of_measurement"),20));
+            if(id.startsWith("media_player.")){
+                visible.put("mediaTitle",bounded(attrs.optString("media_title"),140));
+                visible.put("mediaArtist",bounded(attrs.optString("media_artist"),100));
+                visible.put("volume",attrs.opt("volume_level"));
+                long permitted=attrs.optLong("supported_features");
+                JSONArray actions=new JSONArray();
+                for(String command:new String[]{"media_play","media_pause","media_previous_track","media_next_track","volume_set"})
+                    if((permitted&mediaFeature(command))!=0)actions.put(command);
+                visible.put("actions",actions);
+            }
             if(id.startsWith("climate.")){
                 visible.put("current",attrs.opt("current_temperature"));
                 visible.put("target",attrs.opt("temperature"));
@@ -115,6 +125,17 @@ final class HomeAssistantControls {
             case "light":case "switch":
                 if(!action.equals("turn_on")&&!action.equals("turn_off"))throw new IllegalArgumentException("invalid_home_action");
                 break;
+            case "media_player":
+                long feature=mediaFeature(action);
+                JSONObject media=get(entry,"/api/states/"+id).getJSONObject("attributes");
+                if(feature==0||(media.optLong("supported_features")&feature)==0)
+                    throw new IllegalArgumentException("unsupported_speaker_action");
+                if(action.equals("volume_set")){
+                    double level=input.getDouble("value");
+                    if(!Double.isFinite(level)||level<0||level>1)throw new IllegalArgumentException("invalid_speaker_volume");
+                    body.put("volume_level",level);
+                }
+                break;
             case "climate":
                 if(!action.equals("set_temperature"))throw new IllegalArgumentException("invalid_home_action");
                 double target=input.getDouble("value");
@@ -128,6 +149,18 @@ final class HomeAssistantControls {
         }
         response(entry,"/api/services/"+kind+"/"+action,body);
         return state(id);
+    }
+
+    // Home Assistant MediaPlayerEntityFeature flags.
+    private static long mediaFeature(String action){
+        switch(action){
+            case "media_pause":return 1;
+            case "volume_set":return 4;
+            case "media_previous_track":return 16;
+            case "media_next_track":return 32;
+            case "media_play":return 16384;
+            default:return 0;
+        }
     }
 
     private JSONObject required()throws Exception {
