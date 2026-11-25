@@ -30,6 +30,7 @@ import {SmartHomeSettings} from './SmartHomeSettings';
 import {idleDelays,sleepCoverDelays} from '../model/idle-display';
 import {WallpaperVideoSettings} from './WallpaperVideoSettings';
 import {PhotoWallpaperSettings} from './PhotoWallpaperSettings';
+import {quickActions,type QuickAction} from '../model/quick-actions';
 import {WallpaperScheduleSettings} from './WallpaperScheduleSettings';
 import {WallpaperWeatherSettings} from './WallpaperWeatherSettings';
 import { Wallpaper } from './Wallpaper';
@@ -135,6 +136,8 @@ export function NativePanels({
       {t(value)}
     </Text>
   );
+  const shortcuts=demo.prefs.quickActions??[];
+  const canUseShortcut=(id:QuickAction)=>id!=='automations'||(demo.prefs.householdProfile??'home')==='home';
   const id = panel.includes(':') ? panel.slice(panel.indexOf(':') + 1) : '';
   const app = demo.entry(id);
   const titles: Record<string, string> = {
@@ -148,6 +151,7 @@ export function NativePanels({
     remote: 'Remote',
     sound: 'Sound',
     quietHours: 'Quiet hours',
+    quickActions: 'Quick actions',
     airplay: 'AirPlay',
     about: 'About Aurea Home',
     account: 'Household profiles',
@@ -265,6 +269,9 @@ export function NativePanels({
         )}
         {panel === 'control' && (
           <>
+            {shortcuts.filter(canUseShortcut).map(id=>row(quickActions[id].label,quickActions[id].icon,
+              ()=>demo.setPanel(id),undefined,'quick-'+id))}
+
             {row(
               'Network',
               'wifi',
@@ -513,9 +520,20 @@ export function NativePanels({
         {demo.panel&&(panel==='folders'||panel.startsWith('folder:')||panel.startsWith('folder-app:'))&&
           <ProfileFolderSettings key={panel} demo={demo} t={t} launch={launch} folderId={panel.startsWith('folder:')?id:undefined}
             assignApp={panel.startsWith('folder-app:')?id:undefined}/>}
+        {panel==='quickActions'&&<>
+          {text('Choose up to three actions to show at the top of Control Center.')}
+          {(Object.keys(quickActions) as QuickAction[]).filter(canUseShortcut).map(id=>{
+            const entry=quickActions[id];
+            return row(entry.label,entry.icon,()=>{
+              if(shortcuts.includes(id))demo.change({quickActions:shortcuts.filter(item=>item!==id)});
+              else if(shortcuts.length<3)demo.change({quickActions:[...shortcuts,id]});
+            },shortcuts.includes(id)?'✓':undefined);
+          })}
+        </>}
         {panel==='layout'&&<>
           {row('Allow paired remotes to edit this layout','remote',()=>demo.change({remoteLayoutEnabled:!demo.prefs.remoteLayoutEnabled}),
             demo.prefs.remoteLayoutEnabled?'On':'Off')}
+          {row('Quick actions','apps',()=>demo.setPanel('quickActions'),String(shortcuts.length)+'/3')}
           {row('App folders','apps',()=>demo.setPanel('folders'))}
           {row('Export library layout','apps',()=>action('exportProfileLayout',{profile:demo.prefs.householdProfile??'home'}))}
           {row('Import library layout','apps',()=>action('importProfileLayout',{profile:demo.prefs.householdProfile??'home'}))}

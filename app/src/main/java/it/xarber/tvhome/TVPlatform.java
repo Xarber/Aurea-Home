@@ -132,6 +132,8 @@ public final class TVPlatform {
         JSONObject music=homeMusic(receiverPlayback().state());Bitmap cover=music.optString("source").equals("android-session")?null:receiverPlayback().cover();if(cover!=paletteArtwork){paletteArtwork=cover;palette=new JSONArray();for(int color:WavePalette.from(cover))palette.put(String.format(java.util.Locale.US,"#%06x",color&0xffffff));}music.put("colors",palette).put("dominance",WavePalette.dominance(cover));HomeRemoteServer remote=HomeRemoteService.server();
         result.put("preferences",preferences).put("music",music).put("network",network()).put("volume",volume).put("remoteConnected",remote!=null&&remote.hasActiveRemote()).put("paired",pairedState()).put("receiver",ReceiverSettings.state(context)).put("updates",updateState())
           .put("introductionPending",introductionPending()).put("releasePending",ReleaseHistory.pending(context)).put("lastSeenRelease",ReleaseHistory.lastSeenRelease(context)).put("build",new JSONObject().put("version",BuildConfig.VERSION_NAME).put("code",BuildConfig.VERSION_CODE).put("commit",BuildConfig.SOURCE_COMMIT).put("channel",BuildConfig.BUILD_CHANNEL));
+        try{preferences.put("quickActions",new JSONArray(layout.getString("quick-actions","[]")));}
+        catch(org.json.JSONException invalid){/* Ignore invalid custom actions and show the default menu. */}
         int quietStart=layout.getInt("quiet-start",-1),quietEnd=layout.getInt("quiet-end",-1);
         if(QuietHours.valid(quietStart,quietEnd))
             preferences.put("quietHours",new JSONObject().put("start",quietStart).put("end",quietEnd));
@@ -636,6 +638,17 @@ public final class TVPlatform {
             int minutes=data.getInt("idleDisplayMinutes");
             if(!java.util.Arrays.asList(2,5,15,30).contains(minutes))throw new IllegalArgumentException("invalid_idle_delay");
             edit.putInt("idle-display-minutes",minutes);
+        }
+        if(data.has("quickActions")){
+            JSONArray incoming=data.getJSONArray("quickActions");
+            java.util.Set<String> unique=new java.util.HashSet<>();
+            if(incoming.length()>3)throw new IllegalArgumentException("invalid_quick_actions");
+            for(int index=0;index<incoming.length();index++){
+                String id=incoming.getString(index);
+                if(!java.util.Arrays.asList("network","sound","remote","airplay","wallpapers","watchNext","widgets","automations").contains(id)||
+                    !unique.add(id)||id.equals("automations")&&!primary)throw new IllegalArgumentException("invalid_quick_actions");
+            }
+            edit.putString("quick-actions",incoming.toString());
         }
         if(data.has("quietHours")){
             if(data.isNull("quietHours"))edit.remove("quiet-start").remove("quiet-end");

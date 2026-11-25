@@ -353,6 +353,8 @@
   "Only rows with this exact Netflix profile name will be imported.": "Verranno importate solo le righe con questo nome esatto del profilo Netflix.",
   "Netflix profile name": "Nome del profilo Netflix",
   "Enter your Netflix profile name before importing a detailed export.": "Inserisci il nome del profilo Netflix prima di importare un’esportazione dettagliata.",
+  "Quick actions": "Azioni rapide",
+  "Choose up to three actions to show at the top of Control Center.": "Scegli fino a tre azioni da mostrare in cima al Centro di Controllo.",
   "Idle display": "Schermo in inattività",
   "Idle after": "Attiva dopo",
   "Dim": "Attenua",

@@ -2,6 +2,7 @@
 import {validateWallpaperSchedule} from '../model/catalog.ts';
 import {idleDelay,idleMode} from '../model/idle-display.ts';
 import {localWallpaperPhotos,localWallpaperVideo,photoIntervals} from '../model/photo-wallpapers.ts';
+import {cleanQuickActions} from '../model/quick-actions.ts';
 import {quietHours} from '../model/quiet-hours.ts';
 import {weatherCity} from '../model/weather.ts';
 import type { NativeSnapshot } from './types';
@@ -50,6 +51,7 @@ export function nativeSnapshot(value: Record<string, unknown>): NativeSnapshot {
   prefs.focusSway=prefs.focusSway===true;
   prefs.navigationSound=prefs.navigationSound===true;
   prefs.quietHours=quietHours(prefs.quietHours);
+  prefs.quickActions=cleanQuickActions(prefs.quickActions);
   prefs.startFocus=prefs.startFocus==='apps'||prefs.startFocus==='inputs'?prefs.startFocus:'dock';
   const installed=new Set(value.catalog.filter(entry=>entry.kind==='app').map(entry=>entry.id));
   prefs.kidsProfile=prefs.kidsProfile===true;
