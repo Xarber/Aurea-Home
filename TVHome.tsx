@@ -708,6 +708,7 @@ function LauncherView({ demo,onTarget,onOpenRemote }: { demo: Launcher;onOpenRem
                 )}
                 {demo.prefs.dock.map((id) => (
                   <Tile
+                    sway={demo.prefs.focusSway}
                     native={demo.native}
                     key={id}
                     app={{ ...entry(id), name: t(entry(id).name) }}
@@ -779,6 +780,7 @@ function LauncherView({ demo,onTarget,onOpenRemote }: { demo: Launcher;onOpenRem
                       .filter((a) => a.category === 'inputs')
                       .map((a) => (
                         <Tile
+                          sway={demo.prefs.focusSway}
                           native={demo.native}
                           key={a.id}
                           app={{ ...a, name: t(a.name) }}
@@ -865,6 +867,7 @@ function LauncherView({ demo,onTarget,onOpenRemote }: { demo: Launcher;onOpenRem
                         }}
                       >
                         <Tile
+                          sway={demo.prefs.focusSway}
                           native={demo.native}
                           app={{ ...a, name: t(a.name) }}
                           id={`app:${a.id}`}

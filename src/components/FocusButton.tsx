@@ -2,9 +2,10 @@
 import React,{useState,useRef,useEffect,useSyncExternalStore} from 'react';
 import {Pressable,StyleSheet,ViewStyle,StyleProp,Platform} from 'react-native';
 import {nativeFocus,type NativeHandle} from '../platform/native/focus';
+import {tileFocusTransform} from '../model/tile-focus';
 import Animated,{useReducedMotion} from 'react-native-reanimated';
 const AnimatedPressable=Animated.createAnimatedComponent(Pressable);
-export function FocusButton({id,children,onPress,onSelect,onLongPress,onDeselect,style,label,group='main',selected=false,disabled=false}:{id:string;children:React.ReactNode;onPress:()=>void;onSelect?:()=>void;onDeselect?:()=>void;onLongPress?:()=>void;style?:StyleProp<ViewStyle>;label:string;group?:string;selected?:boolean;disabled?:boolean}){
+export function FocusButton({id,children,onPress,onSelect,onLongPress,onDeselect,style,label,group='main',selected=false,disabled=false,sway=false}:{id:string;children:React.ReactNode;onPress:()=>void;onSelect?:()=>void;onDeselect?:()=>void;onLongPress?:()=>void;style?:StyleProp<ViewStyle>;label:string;group?:string;selected?:boolean;disabled?:boolean;sway?:boolean}){
  const reference=useRef<React.ComponentRef<typeof AnimatedPressable>>(null);
  const callbacks=useRef({onPress,onLongPress});callbacks.current={onPress,onLongPress};
  useSyncExternalStore(nativeFocus.subscribe,()=>nativeFocus.revision,()=>0);
@@ -14,7 +15,7 @@ export function FocusButton({id,children,onPress,onSelect,onLongPress,onDeselect
  return <AnimatedPressable ref={reference} onLayout={()=>{if(Platform.OS!=='web')nativeFocus.measure(id);}} focusable={allowed&&!disabled} accessibilityRole="button" accessibilityLabel={label} accessibilityState={{selected,disabled}} disabled={disabled} tabIndex={disabled?-1:0}
  {...(Platform.OS==='web'?{dataSet:{nav:id,group}}:{})} onFocus={()=>{if(Platform.OS!=='web')nativeFocus.focused(id);setFocus(true);onSelect?.();}} onBlur={()=>{setFocus(false);onDeselect?.();}} onHoverOut={onDeselect} onHoverIn={onSelect} onPress={onPress} onLongPress={onLongPress} delayLongPress={550}
  onPressIn={()=>setPressed(true)} onPressOut={()=>setPressed(false)}
- style={[styles.base,style,{opacity:disabled?.35:1},{outlineWidth:0},focus?styles.focus:null,{transform:[{scale:reduced?1:pressed?.97:focus?1.045:1}],transitionProperty:['transform','backgroundColor','borderColor'],transitionDuration:reduced?0:120}]}>
+ style={[styles.base,style,{opacity:disabled?.35:1},{outlineWidth:0},focus?styles.focus:null,{transform:tileFocusTransform(focus,pressed,reduced,sway),transitionProperty:['transform','backgroundColor','borderColor'],transitionDuration:reduced?0:120}]}>
  {children}
  </AnimatedPressable>;
 }

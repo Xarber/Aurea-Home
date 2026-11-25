@@ -492,6 +492,7 @@ export function NativePanels({
             const next={compact:'standard',standard:'large',large:'compact'} as const;
             demo.change({dockSize:next[demo.prefs.dockSize??'standard']});
           },{compact:'Compact',standard:'Standard',large:'Large'}[demo.prefs.dockSize??'standard'])}
+          {row('Focus sway','apps',()=>demo.change({focusSway:!demo.prefs.focusSway}),demo.prefs.focusSway?'On':'Off')}
           {row('Navigation sound','volume',()=>demo.change({navigationSound:!demo.prefs.navigationSound}),
             demo.prefs.navigationSound?'On':'Off')}
           {text('Open Aurea on')}

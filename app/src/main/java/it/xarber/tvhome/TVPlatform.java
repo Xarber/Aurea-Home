@@ -331,7 +331,7 @@ public final class TVPlatform {
             if(!foreground()||!households.activeId().equals(data.getString("id")))throw new IllegalStateException("profile_changed");
             if(data.has("appearance")){
                 JSONObject incoming=data.getJSONObject("appearance");
-                if(incoming.has("dock")||incoming.has("weatherCity")||incoming.has("startFocus")||incoming.has("dockSize")||incoming.has("wallpaperClock")||incoming.has("navigationSound")||incoming.has("wallpaperSchedule")||incoming.has("wallpaperScheduleEnabled")||incoming.has("photoWallpaperEnabled")||incoming.has("photoWallpaperMinutes")||incoming.has("idleDisplay")||incoming.has("idleDisplayMinutes")||incoming.has("wallpaperVideoEnabled")||incoming.has("remoteLayoutEnabled"))throw new IllegalArgumentException("invalid_appearance");
+                if(incoming.has("dock")||incoming.has("weatherCity")||incoming.has("startFocus")||incoming.has("dockSize")||incoming.has("wallpaperClock")||incoming.has("navigationSound")||incoming.has("wallpaperSchedule")||incoming.has("wallpaperScheduleEnabled")||incoming.has("photoWallpaperEnabled")||incoming.has("photoWallpaperMinutes")||incoming.has("idleDisplay")||incoming.has("idleDisplayMinutes")||incoming.has("wallpaperVideoEnabled")||incoming.has("remoteLayoutEnabled")||incoming.has("focusSway"))throw new IllegalArgumentException("invalid_appearance");
                 savePreferences(incoming);
             }
             return data.has("appearance")?snapshot(false):appearance();
@@ -505,6 +505,7 @@ public final class TVPlatform {
             .put("language",households.language())
             .put("dockSize",settings.getString("dock-size","standard"))
             .put("wallpaperClock",settings.getString("wallpaper-clock","off"))
+            .put("focusSway",settings.getBoolean("focus-sway",false))
             .put("navigationSound",settings.getBoolean("navigation-sound",false));
     }
 
@@ -548,6 +549,7 @@ public final class TVPlatform {
             if(!java.util.Arrays.asList("off","minimal","stacked").contains(clock))throw new IllegalArgumentException("invalid_clock");
             edit.putString("wallpaper-clock",clock);
         }
+        if(data.has("focusSway"))edit.putBoolean("focus-sway",data.getBoolean("focusSway"));
         if(data.has("navigationSound"))edit.putBoolean("navigation-sound",data.getBoolean("navigationSound"));
         String language=data.has("language")?data.getString("language"):null;
         if(language!=null&&!language.equals("it")&&!language.equals("en"))throw new IllegalArgumentException("invalid_language");
