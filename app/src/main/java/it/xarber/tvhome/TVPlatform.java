@@ -132,6 +132,9 @@ public final class TVPlatform {
         JSONObject music=homeMusic(receiverPlayback().state());Bitmap cover=music.optString("source").equals("android-session")?null:receiverPlayback().cover();if(cover!=paletteArtwork){paletteArtwork=cover;palette=new JSONArray();for(int color:WavePalette.from(cover))palette.put(String.format(java.util.Locale.US,"#%06x",color&0xffffff));}music.put("colors",palette).put("dominance",WavePalette.dominance(cover));HomeRemoteServer remote=HomeRemoteService.server();
         result.put("preferences",preferences).put("music",music).put("network",network()).put("volume",volume).put("remoteConnected",remote!=null&&remote.hasActiveRemote()).put("paired",pairedState()).put("receiver",ReceiverSettings.state(context)).put("updates",updateState())
           .put("introductionPending",introductionPending()).put("releasePending",ReleaseHistory.pending(context)).put("lastSeenRelease",ReleaseHistory.lastSeenRelease(context)).put("build",new JSONObject().put("version",BuildConfig.VERSION_NAME).put("code",BuildConfig.VERSION_CODE).put("commit",BuildConfig.SOURCE_COMMIT).put("channel",BuildConfig.BUILD_CHANNEL));
+        int quietStart=layout.getInt("quiet-start",-1),quietEnd=layout.getInt("quiet-end",-1);
+        if(QuietHours.valid(quietStart,quietEnd))
+            preferences.put("quietHours",new JSONObject().put("start",quietStart).put("end",quietEnd));
         if(households.activeId().equals("home"))result.put("doorbell",prefs.getString(DOORBELL,""));
         return result;
     }
@@ -342,7 +345,8 @@ public final class TVPlatform {
             if(!foreground()||!households.activeId().equals("home"))throw new IllegalStateException("launcher_not_active");
             return automationAddress(AutomationAccess.get(context).configure(data.getString("platform"),data.getBoolean("enabled")));
         case "navigationSound":
-            if(foreground()&&households.appearance().getBoolean("navigation-sound",false)){
+            SharedPreferences navigation=households.appearance();
+            if(foreground()&&navigation.getBoolean("navigation-sound",false)&&!quietNow(navigation)){
                 AudioManager navigationAudio=context.getSystemService(AudioManager.class);
                 if(navigationAudio!=null)navigationAudio.playSoundEffect(AudioManager.FX_KEYPRESS_STANDARD);
             }
@@ -407,7 +411,7 @@ public final class TVPlatform {
             if(!foreground()||!households.activeId().equals(data.getString("id")))throw new IllegalStateException("profile_changed");
             if(data.has("appearance")){
                 JSONObject incoming=data.getJSONObject("appearance");
-                if(incoming.has("dock")||incoming.has("weatherCity")||incoming.has("startFocus")||incoming.has("dockSize")||incoming.has("wallpaperClock")||incoming.has("navigationSound")||incoming.has("wallpaperSchedule")||incoming.has("wallpaperScheduleEnabled")||incoming.has("photoWallpaperEnabled")||incoming.has("photoWallpaperMinutes")||incoming.has("idleDisplay")||incoming.has("idleDisplayMinutes")||incoming.has("wallpaperVideoEnabled")||incoming.has("remoteLayoutEnabled")||incoming.has("focusSway"))throw new IllegalArgumentException("invalid_appearance");
+                if(incoming.has("dock")||incoming.has("weatherCity")||incoming.has("startFocus")||incoming.has("dockSize")||incoming.has("wallpaperClock")||incoming.has("navigationSound")||incoming.has("wallpaperSchedule")||incoming.has("wallpaperScheduleEnabled")||incoming.has("photoWallpaperEnabled")||incoming.has("photoWallpaperMinutes")||incoming.has("idleDisplay")||incoming.has("idleDisplayMinutes")||incoming.has("wallpaperVideoEnabled")||incoming.has("remoteLayoutEnabled")||incoming.has("focusSway")||incoming.has("quietHours"))throw new IllegalArgumentException("invalid_appearance");
                 savePreferences(incoming);
             }
             return data.has("appearance")?snapshot(false):appearance();
@@ -610,6 +614,16 @@ public final class TVPlatform {
             if(!java.util.Arrays.asList(2,5,15,30).contains(minutes))throw new IllegalArgumentException("invalid_idle_delay");
             edit.putInt("idle-display-minutes",minutes);
         }
+        if(data.has("quietHours")){
+            if(data.isNull("quietHours"))edit.remove("quiet-start").remove("quiet-end");
+            else {
+                JSONObject schedule=data.getJSONObject("quietHours");
+                Object start=schedule.opt("start"),end=schedule.opt("end");
+                if(!(start instanceof Integer)||!(end instanceof Integer)||!QuietHours.valid((Integer)start,(Integer)end))
+                    throw new IllegalArgumentException("invalid_quiet_hours");
+                edit.putInt("quiet-start",(Integer)start).putInt("quiet-end",(Integer)end);
+            }
+        }
         if(data.has("wallpaperVideoEnabled"))edit.putBoolean("wallpaper-video-enabled",data.getBoolean("wallpaperVideoEnabled"));
         if(data.has("photoWallpaperEnabled"))edit.putBoolean("photo-wallpaper-enabled",data.getBoolean("photoWallpaperEnabled"));
         if(data.has("photoWallpaperMinutes")){
@@ -655,6 +669,12 @@ public final class TVPlatform {
         if(language!=null&&!primary)edit.putString("language",language);
         if(!edit.commit())throw new IllegalStateException("storage_failed");
         if(language!=null&&primary)AppLanguage.set(context,language);
+    }
+    private static boolean quietNow(SharedPreferences preferences){
+        int start=preferences.getInt("quiet-start",-1),end=preferences.getInt("quiet-end",-1);
+        if(!QuietHours.valid(start,end))return false;
+        java.util.Calendar local=java.util.Calendar.getInstance();
+        return QuietHours.active(start,end,local.get(java.util.Calendar.HOUR_OF_DAY)*60+local.get(java.util.Calendar.MINUTE));
     }
     private void setDoorbell(String id){
         if(!prefs.edit().putString(DOORBELL,id).commit())throw new IllegalStateException("storage_failed");

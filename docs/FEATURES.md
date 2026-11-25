@@ -53,6 +53,8 @@ A Home Assistant camera added to **Smart home → Home Assistant controls** can 
 
 A Home Assistant doorbell that exposes a standard `event.*` entity can show a notice in the Home profile. Add it to **Home Assistant controls**, open the entity, and turn on doorbell alerts. Aurea checks for new rings while Home is in the foreground. The first read establishes a baseline, so an earlier ring does not reappear on return. The hub exposes the latest event only, so multiple rings between checks may produce one notice. Camera viewing remains an explicit action. [Home Assistant doorbell event](https://contributors.home-assistant.io/core/entities/event/).
 
+**Sound → Quiet hours** mutes Aurea’s navigation sounds for the active TV profile during a daily local-time interval. The interval can cross midnight. TV volume, media playback and visual alerts keep their regular behavior. Quiet hours are off until configured and stay on this TV.
+
 **Wallpapers → Blank screen now / Screen timer** cover the launcher with black immediately or after 15, 30 or 60 minutes. The timer can be canceled in the same menu and clears when Home leaves the foreground. The overlay preserves audio and wakes on the first remote press. This is a software cover and does not change panel power or control the display while another app is open.
 
 **Wallpapers → Video wallpaper** copies an MP4 into the active profile’s private storage. It loops without audio on Home and releases the decoder when Home is hidden, an idle display is active, or Reduced Motion is enabled. Clips are limited to 30 seconds, 48 MB and 1080p. A rejected replacement preserves the existing clip. Photos or a built-in wallpaper remain visible below the video.

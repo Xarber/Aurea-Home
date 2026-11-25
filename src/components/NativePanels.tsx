@@ -13,6 +13,7 @@ import { FadedScroll } from './FadedScroll';
 import { Icon } from './Icon';
 import {CityConditionsSettings} from './CityConditionsSettings';
 import {NewsFeedSettings} from './NewsFeedSettings';
+import {QuietHoursSettings} from './QuietHoursSettings';
 import {GuestWifiSettings} from './GuestWifiSettings';
 import {HouseholdWidgetSettings} from './HouseholdWidgetSettings';
 import {ProfileFolderSettings} from './ProfileFolderSettings';
@@ -146,6 +147,7 @@ export function NativePanels({
     network: 'Network',
     remote: 'Remote',
     sound: 'Sound',
+    quietHours: 'Quiet hours',
     airplay: 'AirPlay',
     about: 'About Aurea Home',
     account: 'Household profiles',
@@ -346,8 +348,10 @@ export function NativePanels({
             )}
           </>
         )}
+        {demo.panel==='quietHours'&&<QuietHoursSettings key={demo.prefs.householdProfile??'home'} demo={demo} t={t}/>}
         {panel === 'sound' && (
           <>
+            {row('Quiet hours','volume',()=>demo.setPanel('quietHours'),demo.prefs.quietHours?'On':'Off')}
             {row(
               'Volume −',
               'volume',
