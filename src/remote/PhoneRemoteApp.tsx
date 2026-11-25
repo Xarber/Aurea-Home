@@ -196,7 +196,7 @@ function PhoneRemoteScreen({preview, developerEndpoint, setDeveloperEndpoint}:{
  {displayed&&<AnchoredPanel key={displayed==='music'?'music':'settings'} kind={displayed==='music'?'music':'settings'} phone safeInsets={{...insets,bottom:Math.max(insets.bottom,keyboardHeight)}} anchor={anchor} bounds={bounds} visible={!!panel} close={()=>setPanel(null)}>
  {displayed!=='music'&&<View style={s.panelHeader}><Text style={[s.sectionTitle,{flex:1,marginVertical:0}]}>{displayed==='preview-feed'?'Private app preview':displayed==='keyboard'?'TV keyboard':displayed==='ideas'?'Ideas':displayed==='developer-notes'?'Developer changelog':displayed==='signaling'?'Signaling server':displayed==='screenshots'?'Render Screenshots':displayed==='whatsnew'?'What’s New':displayed==='changelog'?'Release history':displayed.startsWith('release:')?'Full changelog':displayed==='watch-request'?'Suggest a title':displayed==='home-layout'?'TV Home layout':displayed==='controls'?'TV controls':displayed==='system'?'System controls':displayed==='paired'?'Connected':'Your televisions'}</Text><FocusButton id="phone-panel-close" group="phone-modal" label={navigation.canGoBack?"Back":"Close"} onPress={navigation.canGoBack?navigation.back:navigation.close} style={s.roundButton}><Icon name={navigation.canGoBack?"back":"close"} size={20}/></FocusButton></View>}
  <FadedScroll>
- {displayed==='watch-request'&&<PhoneWatchRequest key={state.selected?.address} client={client}/>}
+ {displayed==='watch-request'&&<PhoneWatchRequest key={state.selected?.address} active={state.selected?.address} tvs={remote.tvs} send={remote.requestOnTV}/>}
  {displayed==='home-layout'&&<PhoneHomeLayout key={state.selected?.address} client={client}/>}
  {displayed==='controls'&&<RemoteHandset full group="phone-modal" client={client} connected={connected} paired={!!system?.paired} ready={!!(system?.voiceReady??system?.ready)} command={command} pair={()=>setPanel('system')}/>}
  {displayed==='music'&&music&&<PhonePlayer music={music} artwork={state.artwork} connected={connected} action={(action,value)=>{void client.media(action,value);}}/>}
@@ -208,7 +208,7 @@ function PhoneRemoteScreen({preview, developerEndpoint, setDeveloperEndpoint}:{
  {row('phone-touchpad','Touchpad navigation','inputs',toggleTouchpad,touchpad?'On':'Off')}
  <Text style={s.groupTitle}>TOOLS</Text>
  {developerEndpoint&&row('phone-restore-signaling','Exit developer server','wifi',()=>setDeveloperEndpoint())}
- {launcherConnected&&!remote.preview&&row('phone-watch-request','Suggest a title','film',()=>setPanel('watch-request'))}
+ {remote.tvs.some(tv=>!!tv.id)&&!remote.preview&&row('phone-watch-request','Suggest a title','film',()=>setPanel('watch-request'))}
  {launcherConnected&&!remote.preview&&row('phone-home-layout','TV Home layout','apps',()=>setPanel('home-layout'))}
  {system?.keyboard?.available&&row('phone-keyboard','TV keyboard','code',()=>setPanel('keyboard'))}
 

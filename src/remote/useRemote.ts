@@ -9,7 +9,8 @@ import {RemoteClient} from './client';
 import {LocalTransport} from './transport';
 import {PreviewTransport} from './preview';
 import {loadTVs,saveTV,forgetTV,PairedTV} from './credentials';
-import {localAddress} from './validation';
+import {localAddress,RemoteError} from './validation';
+import {sendSavedWatchRequest} from './watchRequest';
 export function useRemote(initialPreview:boolean, developerEndpoint?:string){
  const isolated = developerEndpoint !== undefined || configuredPeerEndpoint !== productionPeerEndpoint;
  const transport=(address:string)=>address.startsWith('aurea://')?new PeerTransport(address.slice(8),developerEndpoint):new LocalTransport(address);
@@ -49,5 +50,10 @@ export function useRemote(initialPreview:boolean, developerEndpoint?:string){
   await client.beginPair(transport(target),target,{device,grant});
  };
  const select=(tv:PairedTV)=>{chosen.current=true;setAddress(tv.address);setPreview(false);client.connect(transport(tv.address),tv);};
- return {client,state,canAutoPair:loaded&&!isolated&&!preview,autoPairIdle:()=>!chosen.current&&!client.snapshot.selected,tvs,address,setAddress,preview,setPreview:changePreview,storageError,formError,connect,select,pairApproved};
+ const requestOnTV=(target:string,title:string,signal:AbortSignal)=>{
+  const saved=tvs.find(tv=>tv.address===target);
+  if(preview||!saved)throw new RemoteError('not_connected');
+  return sendSavedWatchRequest(transport(target),saved,title,signal);
+ };
+ return {client,state,canAutoPair:loaded&&!isolated&&!preview,autoPairIdle:()=>!chosen.current&&!client.snapshot.selected,tvs,address,setAddress,preview,setPreview:changePreview,storageError,formError,connect,select,pairApproved,requestOnTV};
 }

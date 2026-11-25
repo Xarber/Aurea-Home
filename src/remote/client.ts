@@ -142,13 +142,6 @@ export class RemoteClient {
   if(generation!==this.generation)throw new RemoteError('disconnected');
   return result;
  }
- async watchRequest(title:string){
-  if(this.fixture||this.snapshot.status!=='connected')throw new RemoteError('not_connected');
-  const generation=this.generation;
-  const result=await this.rpc('watch_request',{title});
-  if(generation!==this.generation)throw new RemoteError('disconnected');
-  if(result.accepted!==true)throw new RemoteError('invalid_response');
- }
  async homeLayout(payload:Record<string,unknown>={}){
   if(this.fixture||this.snapshot.status!=='connected')throw new RemoteError('not_connected');
   const generation=this.generation;
