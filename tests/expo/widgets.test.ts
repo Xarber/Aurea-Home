@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {countdownDate,daysUntil,remainingTime,timerMinutes,parseWidgets} from '../../src/model/widgets.ts';
+import {countdownDate,daysUntil,displayCard,listRows,remainingTime,timerMinutes,parseWidgets} from '../../src/model/widgets.ts';
 
 test('household timers handle partial seconds, expiry and long durations',()=>{
   assert.equal(remainingTime(1,0),'0:01');
@@ -27,4 +27,13 @@ test('date countdowns reject invalid dates and count calendar days',()=>{
 test('household notes preserve their text and reject oversized imports',()=>{
  const note={id:'1',type:'note',label:'Tomorrow',body:'Pick up groceries'};
  assert.deepEqual(parseWidgets([note,{...note,body:'x'.repeat(601)}]),[note]);
+});
+
+
+test('custom display cards accept bounded text rows only',()=>{
+ assert.deepEqual(listRows('One\n\nTwo'),['One','Two']);
+ assert.deepEqual(displayCard('{"schema":1,"label":"Weekend","rows":["Groceries at 10"]}'),
+  {label:'Weekend',rows:['Groceries at 10']});
+ assert.equal(displayCard('{"schema":1,"label":"Weekend","rows":[{"script":"x"}]}'),undefined);
+ assert.equal(displayCard('{"schema":2,"label":"Weekend","rows":["Groceries"]}'),undefined);
 });

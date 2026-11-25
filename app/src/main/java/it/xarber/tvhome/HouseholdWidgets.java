@@ -24,6 +24,18 @@ final class HouseholdWidgets {
                 widgets.remove(i);
                 break;
             }
+        }else if(operation.equals("toggle-item")){
+            String id=request.getString("id");
+            int index=request.getInt("index");
+            for(int i=0;i<widgets.length();i++){
+                JSONObject widget=widgets.getJSONObject(i);
+                if(!id.equals(widget.optString("id"))||!"list".equals(widget.optString("type")))continue;
+                JSONArray rows=widget.getJSONArray("rows");
+                if(index<0||index>=rows.length())throw new IllegalArgumentException("invalid_list_item");
+                JSONObject row=rows.getJSONObject(index);
+                row.put("done",!row.optBoolean("done"));
+                break;
+            }
         }else{
             if(widgets.length()>=12)throw new IllegalArgumentException("widget_limit");
             String label=request.getString("label").trim();
@@ -34,6 +46,22 @@ final class HouseholdWidgets {
                 String zone=request.getString("zone");
                 if(zone.length()>80||!ZoneId.getAvailableZoneIds().contains(zone))throw new IllegalArgumentException("invalid_zone");
                 value.put("type","clock").put("zone",zone);
+            }else if(operation.equals("list")||operation.equals("card")){
+                JSONArray requested=request.getJSONArray("rows");
+                if(requested.length()<1||requested.length()>16)throw new IllegalArgumentException("invalid_widget_rows");
+                JSONArray rows=new JSONArray();
+                for(int i=0;i<requested.length();i++){
+                    String text=requested.getString(i).trim();
+                    if(text.isEmpty()||text.length()>100||text.matches("(?s).*[\\p{Cc}\\p{Cf}].*"))
+                        throw new IllegalArgumentException("invalid_widget_row");
+                    rows.put(new JSONObject().put("text",text).put("done",false));
+                }
+                value.put("type",operation).put("rows",rows);
+            }else if(operation.equals("agenda")){
+                java.time.LocalDate date=java.time.LocalDate.parse(request.getString("date"));
+                if(date.isBefore(java.time.LocalDate.now())||date.isAfter(java.time.LocalDate.now().plusYears(20)))
+                    throw new IllegalArgumentException("invalid_agenda_date");
+                value.put("type","agenda").put("date",date.toString());
             }else if(operation.equals("note")){
                 String body=request.getString("body").trim();
                 if(body.isEmpty()||body.length()>600||body.replace("\n","").matches("(?s).*[\\p{Cc}\\p{Cf}].*"))

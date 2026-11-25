@@ -3,7 +3,7 @@ import {TVTextInput} from './TVTextInput';
 import React,{useEffect,useState} from 'react';
 import {AppState,Text,View} from 'react-native';
 import type {Launcher} from '../launcher/types';
-import {countdownDate,daysUntil,parseWidgets,remainingTime,timerMinutes,type Widget} from '../model/widgets';
+import {countdownDate,daysUntil,displayCard,listRows,parseWidgets,remainingTime,timerMinutes,type Widget} from '../model/widgets';
 import {FocusButton} from './FocusButton';
 import {Icon} from './Icon';
 
@@ -19,7 +19,7 @@ function clock(now:number,zone:string,language:string) {
 export function HouseholdWidgetSettings({demo,t}:{demo:Launcher;t:(text:string)=>string}) {
  const profile=demo.prefs.householdProfile??'home';
  const [widgets,setWidgets]=useState<Widget[]>([]);
- const [form,setForm]=useState<'timer'|'clock'|'countdown'|'note'>();
+ const [form,setForm]=useState<'timer'|'clock'|'countdown'|'note'|'list'|'card'|'agenda'>();
  const [name,setName]=useState(''),[value,setValue]=useState('');
  const [loading,setLoading]=useState(true),[error,setError]=useState(false);
  const [now,setNow]=useState(Date.now);
@@ -53,19 +53,25 @@ export function HouseholdWidgetSettings({demo,t}:{demo:Launcher;t:(text:string)=
  const [remove,setRemove]=useState<string>();
  const minutes=timerMinutes(value);
  const date=countdownDate(value,now);
+ const rows=listRows(value),card=displayCard(value);
  const inputStyle={minHeight:48,borderColor:'#8e99ab',borderWidth:1,borderRadius:12,paddingHorizontal:12,color:'#fff',fontSize:16};
  return <View style={{gap:7,paddingVertical:8}}>
   {error&&<Text accessibilityLiveRegion="polite" style={{color:'#ffd4e0'}}>{t('Could not update household widgets.')}</Text>}
   {!form&&<>
-   {widgets.map(widget=><View key={widget.id}>
+   {[...widgets.filter(widget=>widget.type!=='agenda'),
+      ...widgets.filter(widget=>widget.type==='agenda').sort((first,second)=>first.date.localeCompare(second.date))].map(widget=><View key={widget.id}>
     {row(widget.id,remove===widget.id?t('Remove')+' · '+widget.label:widget.label,()=>{
     if(remove!==widget.id){setRemove(widget.id);return;}
     setRemove(undefined);
     void change({action:'remove',id:widget.id});
    },widget.type==='clock'?clock(now,widget.zone,demo.prefs.language):
-      widget.type==='note'?undefined:widget.type==='countdown'?(now>=widget.until?t('Reached date'):new Intl.NumberFormat(demo.prefs.language,
+      widget.type==='note'||widget.type==='card'||widget.type==='list'?undefined:
+      widget.type==='agenda'?new Date(widget.date+'T12:00:00').toLocaleDateString(demo.prefs.language):widget.type==='countdown'?(now>=widget.until?t('Reached date'):new Intl.NumberFormat(demo.prefs.language,
         {style:'unit',unit:'day',unitDisplay:'long'}).format(daysUntil(widget.until,now))):
-      now>=widget.until?t('Finished'):remainingTime(widget.until,now))}
+      widget.type==='timer'?(now>=widget.until?t('Finished'):remainingTime(widget.until,now)):undefined)}
+    {(widget.type==='list'||widget.type==='card')&&widget.rows.map((item,index)=>widget.type==='list'?
+      row(widget.id+'-item-'+index,(item.done?'✓ ':'')+item.text,()=>void change({action:'toggle-item',id:widget.id,index})):
+      <Text key={index} style={{color:'#dee8fc',paddingHorizontal:14,paddingBottom:5,fontSize:16}}>{item.text}</Text>)}
     {widget.type==='note'&&<Text style={{color:'#dee8fc',lineHeight:23,paddingHorizontal:12,paddingBottom:8}}>{widget.body}</Text>}
    </View>)}
    {widgets.length<12&&<>
@@ -73,6 +79,9 @@ export function HouseholdWidgetSettings({demo,t}:{demo:Launcher;t:(text:string)=
     {row('clock',t('Add world clock'),()=>setForm('clock'))}
     {row('countdown',t('Add date countdown'),()=>setForm('countdown'))}
     {row('note',t('Add note'),()=>setForm('note'))}
+    {row('list',t('Add household list'),()=>setForm('list'))}
+    {row('agenda',t('Add calendar entry'),()=>setForm('agenda'))}
+    {row('card',t('Add a JSON display card'),()=>setForm('card'))}
    </>}
   </>}
   {form==='timer'&&<>
@@ -104,6 +113,27 @@ export function HouseholdWidgetSettings({demo,t}:{demo:Launcher;t:(text:string)=
    <TVTextInput id="note-body" t={t} value={value} onChangeText={setValue} maxLength={600} multiline
     placeholder={t('Note')} accessibilityLabel={t('Note')} placeholderTextColor="#aeb9c9" style={[inputStyle,{minHeight:80}]}/>
    {row('save-note',t('Save note'),()=>void change({action:'note',label:name.trim()||t('Note'),body:value.trim()}),undefined,!value.trim())}
+  </>}
+  {form==='list'&&<>
+   <TVTextInput id="widget-list-title" t={t} value={name} onChangeText={setName} maxLength={48}
+    placeholder={t('List title')} accessibilityLabel={t('List title')} placeholderTextColor="#aeb9c9" style={inputStyle}/>
+   <TVTextInput id="widget-list-rows" t={t} value={value} onChangeText={setValue} maxLength={1600} multiline
+    placeholder={t('One item per line')} accessibilityLabel={t('One item per line')} placeholderTextColor="#aeb9c9" style={inputStyle}/>
+   {row('save-list',t('Save list'),()=>void change({action:'list',label:name.trim()||t('Household list'),rows}),undefined,!rows)}
+  </>}
+  {form==='agenda'&&<>
+   <TVTextInput id="agenda-title" t={t} value={name} onChangeText={setName} maxLength={48}
+    placeholder={t('Event title')} accessibilityLabel={t('Event title')} placeholderTextColor="#aeb9c9" style={inputStyle}/>
+   <TVTextInput id="agenda-date" t={t} value={value} onChangeText={setValue} maxLength={10}
+    placeholder="YYYY-MM-DD" accessibilityLabel={t('Event date')} placeholderTextColor="#aeb9c9" style={inputStyle}/>
+   {row('save-agenda',t('Save event'),()=>void change({action:'agenda',label:name.trim(),date}),undefined,!date||!name.trim())}
+  </>}
+  {form==='card'&&<>
+   <Text style={{color:'#d6e3ff',fontSize:15}}>{t('Use a title and up to 16 plain text rows.')}</Text>
+   <TVTextInput id="widget-card-json" t={t} value={value} onChangeText={setValue} maxLength={4096} multiline
+    autoCorrect={false} autoCapitalize="none" accessibilityLabel={t('Display card JSON')}
+    placeholder={'{"schema":1,"label":"Weekend","rows":["Groceries at 10"]}'} placeholderTextColor="#aeb9c9" style={inputStyle}/>
+   {row('save-card',t('Save display card'),()=>void change({action:'card',...card}),undefined,!card)}
   </>}
   {!!form&&row('cancel',t('Cancel'),()=>{setForm(undefined);setName('');setValue('');})}
  </View>;
