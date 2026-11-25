@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import React,{useEffect,useState} from 'react';
+import React,{useEffect,useRef,useState} from 'react';
 import {Linking,Text,View} from 'react-native';
 import type {Launcher} from '../launcher/types';
 import {FocusButton} from './FocusButton';
 import {TVTextInput} from './TVTextInput';
 import {Icon} from './Icon';
-import {discoveryHistory} from '../model/discovery-history';
+import {discoveryHistory,exactDiscoveryTitle,rankRelatedTitles,type DiscoveryTitle as Title} from '../model/discovery-history';
+import {tv} from '../platform/native/tv';
 
-type Title={id:number;kind:'tv'|'movie';title:string;year:string};
 const categories={flatrate:'Subscription',free:'Free',ads:'With ads',rent:'Rent',buy:'Buy'} as const;
 const style={color:'#fff',fontSize:17,minHeight:48,paddingHorizontal:12,borderRadius:12,borderWidth:1,borderColor:'#919bad'};
 
@@ -19,6 +19,8 @@ export function TitleDiscoverySettings({demo,t}:{demo:Launcher;t:(value:string)=
   const [query,setQuery]=useState(''),[titles,setTitles]=useState<Title[]>();
   const [related,setRelated]=useState<Title[]>();
   const [history,setHistory]=useState<string[]>();
+  const [suggestions,setSuggestions]=useState(false);
+  const live=useRef(true);
   const [selected,setSelected]=useState<Title>(),[availability,setAvailability]=useState<Record<string,unknown>>();
   const [pending,setPending]=useState(false),[error,setError]=useState(false),[setup,setSetup]=useState(false);
   const [confirm,setConfirm]=useState(false);
@@ -27,16 +29,16 @@ export function TitleDiscoverySettings({demo,t}:{demo:Launcher;t:(value:string)=
     if(typeof result.region==='string'&&result.region)setRegion(result.region);
   };
   useEffect(()=>{
-    let live=true;
-    void demo.execute('titleDiscoveryStatus').then(result=>{if(live)settings(result);}).catch(()=>{if(live)setError(true);});
-    return()=>{live=false;};
+    live.current=true;
+    void demo.execute('titleDiscoveryStatus').then(result=>{if(live.current)settings(result);}).catch(()=>{if(live.current)setError(true);});
+    return()=>{live.current=false;};
   },[demo.execute]);
   async function run(operation:string,payload:Record<string,unknown>={}){
     setPending(true);setError(false);
     try {
       const result=await demo.execute(operation,payload);
       settings(result);
-      if(operation==='titleDiscoverySearch')setTitles(Array.isArray(result.titles)?result.titles:[]);
+      if(operation==='titleDiscoverySearch'){setSuggestions(false);setTitles(Array.isArray(result.titles)?result.titles:[]);}
       if(operation==='titleDiscoveryProviders')setAvailability(result);
       if(operation==='titleDiscoveryRelated')setRelated(Array.isArray(result.titles)?result.titles:[]);
       if(operation==='titleDiscoveryStremio')demo.close();
@@ -52,6 +54,27 @@ export function TitleDiscoverySettings({demo,t}:{demo:Launcher;t:(value:string)=
       ]);
       setHistory(discoveryHistory(local.records,imported.entries));
     }catch{setError(true);}finally{setPending(false);}
+  }
+  async function recommend(){
+    if(!history?.length)return;
+    setPending(true);setError(false);
+    try{
+      const seeds:Title[]=[];
+      for(const query of history.slice(0,3)){
+        if(!live.current)return;
+        const result=await tv.execute('titleDiscoverySearch',{query});
+        const match=exactDiscoveryTitle(Array.isArray(result.titles)?result.titles:[],query);
+        if(match&&!seeds.some(item=>item.id===match.id&&item.kind===match.kind))seeds.push(match);
+      }
+      const related:Title[][]=[];
+      for(const seed of seeds){
+        if(!live.current)return;
+        const result=await tv.execute('titleDiscoveryRelated',{id:seed.id,kind:seed.kind});
+        if(Array.isArray(result.titles))related.push(result.titles);
+      }
+      if(!live.current)return;
+      setSuggestions(true);setTitles(rankRelatedTitles(seeds,related));setHistory(undefined);
+    }catch{if(live.current)setError(true);}finally{if(live.current)setPending(false);}
   }
   const field=(id:string,label:string,value:string,update:(value:string)=>void,limit:number,secret=false)=><TVTextInput
     id={id} t={t} value={value} onChangeText={update} maxLength={limit} secureTextEntry={secret} autoCorrect={false}
@@ -100,16 +123,19 @@ export function TitleDiscoverySettings({demo,t}:{demo:Launcher;t:(value:string)=
     </>:<>
       {history===undefined&&row('history',t('Start from viewing history'),()=>void openHistory())}
       {history!==undefined&&<>
-        {text('Choose a title from this profile. Only the search text you submit is sent to TMDB.')}
+        {text('Choose a title to search, or send the listed recent titles to TMDB for suggestions.')}
         {history.length===0&&text('No movie or series titles found in this profile’s history.')}
+        {history.length>0&&row('recommend',t('Suggest titles from the latest three'),()=>void recommend(),
+          history.slice(0,3).join(' · '))}
         {history.map((title,index)=>row('history-'+index,title,()=>{
-          setQuery(title);setTitles(undefined);setHistory(undefined);
+          setQuery(title);setSuggestions(false);setTitles(undefined);setHistory(undefined);
         }))}
         {row('close-history',t('Back to search'),()=>setHistory(undefined))}
       </>}
       {history===undefined&&field('discovery-query','Movie or series',query,setQuery,120)}
       {history===undefined&&row('search',t('Search'),()=>void run('titleDiscoverySearch',{query:query.trim()}),undefined,query.trim().length<2)}
-      {history===undefined&&titles?.length===0&&text('No matching titles.')}
+      {history===undefined&&suggestions&&text('Suggested for this profile')}
+      {history===undefined&&titles?.length===0&&text(suggestions?'No suggestions for these titles.':'No matching titles.')}
       {history===undefined&&titles?.map(item=>row(item.kind+'-'+item.id,item.title,()=>choose(item),
         [t(item.kind==='movie'?'Movie':'Series'),item.year].filter(Boolean).join(' · ')))}
       {primary&&row('settings',t('Title search settings'),()=>setSetup(true),region)}

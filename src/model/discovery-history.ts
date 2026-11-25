@@ -25,3 +25,29 @@ export function discoveryHistory(records:unknown,imports:unknown):string[] {
   }
   return [...titles.values()];
 }
+
+export type DiscoveryTitle={id:number;kind:'tv'|'movie';title:string;year:string};
+const keyFor=(item:DiscoveryTitle)=>item.kind+'-'+item.id;
+const comparable=(value:string)=>value.normalize('NFKC').trim().replace(/\s+/g,' ').toLowerCase();
+
+export function exactDiscoveryTitle(titles:DiscoveryTitle[],query:string){
+  const comparison=comparable(query);
+  const exact=new Map(titles.filter(item=>comparable(item.title)===comparison).map(item=>[keyFor(item),item]));
+  return exact.size===1?[...exact.values()][0]:undefined;
+}
+
+export function rankRelatedTitles(seeds:DiscoveryTitle[],related:DiscoveryTitle[][]){
+  const known=new Set(seeds.map(keyFor));
+  const scores=new Map<string,{item:DiscoveryTitle;score:number}>();
+  for(const group of related){
+    const seen=new Set<string>();
+    group.forEach((item,index)=>{
+      const key=keyFor(item);
+      if(known.has(key)||seen.has(key))return;
+      seen.add(key);
+      const previous=scores.get(key)?.score??0;
+      scores.set(key,{item,score:previous+1/(index+1)});
+    });
+  }
+  return [...scores.values()].sort((a,b)=>b.score-a.score).slice(0,12).map(value=>value.item);
+}
