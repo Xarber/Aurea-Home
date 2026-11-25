@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {idleDelay,idleMode,IdleWakeKey} from '../../src/model/idle-display.ts';
+import {idleDelay,idleMode,IdleWakeKey,sleepCoverDelay} from '../../src/model/idle-display.ts';
 
 test('waking consumes the first remote press, including repeats and its release',()=>{
   const key=new IdleWakeKey();
@@ -20,4 +20,11 @@ test('old and invalid preferences disable the idle cover and use the standard de
   assert.equal(idleMode('hardware-power'),'off');
   assert.equal(idleDelay('30'),5);
   assert.equal(idleDelay(15),15);
+});
+
+test('the screen timer accepts immediate blanking and only the offered delays',()=>{
+  assert.equal(sleepCoverDelay(0),0);
+  assert.equal(sleepCoverDelay(15),900000);
+  assert.equal(sleepCoverDelay(60),3600000);
+  for(const invalid of [-1,14,61,'30',NaN,undefined])assert.equal(sleepCoverDelay(invalid),undefined);
 });

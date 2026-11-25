@@ -25,7 +25,7 @@ import {KidsProfileSettings} from './KidsProfile';
 import {AndroidMediaSettings} from './AndroidMediaSettings';
 import {HomeAssistantSettings} from './HomeAssistantSettings';
 import {SmartHomeSettings} from './SmartHomeSettings';
-import {idleDelays} from '../model/idle-display';
+import {idleDelays,sleepCoverDelays} from '../model/idle-display';
 import {WallpaperVideoSettings} from './WallpaperVideoSettings';
 import {PhotoWallpaperSettings} from './PhotoWallpaperSettings';
 import {WallpaperScheduleSettings} from './WallpaperScheduleSettings';
@@ -46,12 +46,18 @@ export function NativePanels({
   launch,
   musicAnchor,
   settingsAnchor,
+  scheduleScreenCover,
+  scheduledScreenCoverMinutes,
+  cancelScreenCover,
 }: {
   demo: Launcher;
   t: (s: string) => string;
   launch: (id: string) => void;
   musicAnchor: Anchor;
   settingsAnchor: Anchor;
+  scheduleScreenCover:(minutes:number)=>void;
+  scheduledScreenCoverMinutes?:number;
+  cancelScreenCover:()=>void;
 }) {
   const {household,setHousehold}=useTVHousehold(demo.ready,process.env.EXPO_PUBLIC_AUREA_ACCOUNTS_ENABLED==='1');
   const [retained, setRetained] = useState<string | null>(null),
@@ -135,6 +141,7 @@ export function NativePanels({
     introductionControls: 'Explore Aurea Home',
     whatsnew: 'What’s New',
     wallpapers: 'Wallpapers',
+    'screen-timer': 'Screen timer',
     network: 'Network',
     remote: 'Remote',
     sound: 'Sound',
@@ -459,6 +466,13 @@ export function NativePanels({
               const index=idleDelays.findIndex(value=>value===(demo.prefs.idleDisplayMinutes??5));
               demo.change({idleDisplayMinutes:idleDelays[(index+1)%idleDelays.length]});
             },(demo.prefs.idleDisplayMinutes??5)+' '+t('min'))}
+            {row('Blank screen now','sun',()=>{
+              demo.close();
+              scheduleScreenCover(0);
+            })}
+            {row('Screen timer','sun',()=>{
+              demo.setPanel('screen-timer');
+            },scheduledScreenCoverMinutes===undefined?'Off':scheduledScreenCoverMinutes+' '+t('min'))}
             {row('Wallpaper clock','sun',()=>{
               const next={off:'minimal',minimal:'stacked',stacked:'off'} as const;
               demo.change({wallpaperClock:next[demo.prefs.wallpaperClock??'off']});
@@ -477,6 +491,19 @@ export function NativePanels({
             )}
           </>
         )}
+        {panel==='screen-timer'&&<>
+          {text('The launcher covers the display while Home is open. Audio continues. Press any remote button to wake the display.')}
+          {sleepCoverDelays.filter(minutes=>minutes>0).map(minutes=>row(
+            minutes+' '+t('min'),'sun',()=>{
+              scheduleScreenCover(minutes);
+              demo.back();
+            },scheduledScreenCoverMinutes===minutes?'✓':undefined,
+          ))}
+          {scheduledScreenCoverMinutes!==undefined&&row('Cancel screen timer','close',()=>{
+            cancelScreenCover();
+            demo.back();
+          })}
+        </>}
         {demo.panel&&(panel==='folders'||panel.startsWith('folder:')||panel.startsWith('folder-app:'))&&
           <ProfileFolderSettings key={panel} demo={demo} t={t} launch={launch} folderId={panel.startsWith('folder:')?id:undefined}
             assignApp={panel.startsWith('folder-app:')?id:undefined}/>}

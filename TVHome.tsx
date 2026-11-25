@@ -216,7 +216,7 @@ function LauncherView({ demo,onTarget,onOpenRemote }: { demo: Launcher;onOpenRem
     [catalog],
   );
   const idleMode=demo.prefs.idleDisplay??'off';
-  const idleDisplay=useIdleDisplay(demo.native&&demo.ready&&!demo.panel,idleMode,demo.prefs.idleDisplayMinutes??5);
+  const idleDisplay=useIdleDisplay(demo.native&&demo.ready,!!demo.panel,idleMode,demo.prefs.idleDisplayMinutes??5);
   useKeyboard({
     panel: demo.panel,
     close: demo.back,
@@ -947,6 +947,9 @@ function LauncherView({ demo,onTarget,onOpenRemote }: { demo: Launcher;onOpenRem
             launch={launch}
             musicAnchor={musicAnchor}
             settingsAnchor={settingsAnchor}
+            scheduleScreenCover={idleDisplay.schedule}
+            scheduledScreenCoverMinutes={idleDisplay.scheduledMinutes}
+            cancelScreenCover={idleDisplay.cancelSchedule}
           />
         ) : (
           <Panels
@@ -960,8 +963,8 @@ function LauncherView({ demo,onTarget,onOpenRemote }: { demo: Launcher;onOpenRem
           />
         )}
         {idleDisplay.idle&&<Pressable onPress={idleDisplay.wake} accessibilityRole="button" accessibilityLabel={t('Wake display')}
-          style={[StyleSheet.absoluteFill,{zIndex:90,backgroundColor:idleMode==='dim'?'#000b':'#000'}]}>
-          {idleMode==='clock'&&<Text style={{position:'absolute',left:now.getMinutes()%2?'22%':'58%',
+          style={[StyleSheet.absoluteFill,{zIndex:90,backgroundColor:idleDisplay.cover==='dim'?'#000b':'#000'}]}>
+          {idleDisplay.cover==='clock'&&<Text style={{position:'absolute',left:now.getMinutes()%2?'22%':'58%',
             top:now.getMinutes()%3===0?'34%':'58%',color:'#b2b7c3',fontSize:Math.max(36,width*.05),
             fontWeight:'300',fontVariant:['tabular-nums']}}>{time}</Text>}
         </Pressable>}

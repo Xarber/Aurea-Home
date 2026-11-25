@@ -1,5 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 export const idleDelays=[2,5,15,30] as const;
+export const sleepCoverDelays=[0,15,30,60] as const;
+
+export function sleepCoverDelay(minutes:unknown):number|undefined {
+  const selected=sleepCoverDelays.find(delay=>delay===minutes);
+  return selected===undefined?undefined:selected*60000;
+}
+
 export type IdleDisplayMode='off'|'dim'|'clock'|'black';
 
 export function idleDelay(value:unknown) {
