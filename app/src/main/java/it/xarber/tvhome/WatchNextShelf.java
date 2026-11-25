@@ -19,6 +19,9 @@ import org.json.JSONObject;
 final class WatchNextShelf {
     private static final String[] COLUMNS={"_id","package_name","title","episode_title","intent_uri",
         "last_engagement_time_utc_millis","last_playback_position_millis","duration_millis","watch_next_type"};
+    private static final String STREMIO="com.stremio.one";
+    private static final String[] PREVIEW_COLUMNS={"_id","package_name","title","episode_title","intent_uri",
+        "last_playback_position_millis","duration_millis"};
     private static final int MAX_SCANNED=256,MAX_VISIBLE=32;
     private final Context context;
     private final SharedPreferences prefs;
@@ -33,9 +36,11 @@ final class WatchNextShelf {
     JSONObject read()throws Exception{
         programs.clear();
         ArrayList<Program> rows=new ArrayList<>();
+        boolean available=false;
         try(Cursor cursor=context.getContentResolver().query(WatchNextPrograms.CONTENT_URI,COLUMNS,null,null,
                 "last_engagement_time_utc_millis DESC")){
-            if(cursor==null)return new JSONObject().put("available",false);
+            if(cursor!=null){
+            available=true;
             int scanned=0;
             while(scanned++<MAX_SCANNED&&cursor.moveToNext()){
                 if(cursor.getInt(8)!=WatchNextPrograms.WATCH_NEXT_TYPE_CONTINUE&&
@@ -55,15 +60,41 @@ final class WatchNextShelf {
                     entry.put("positionMs",position).put("durationMs",duration);
                 rows.add(new Program(key,engagement,intent,entry));
                 if(rows.size()>=MAX_VISIBLE)break;
-            }
+            }}
         }catch(IllegalArgumentException|SecurityException unsupported){
-            return new JSONObject().put("available",false);
+            /* Some Android TV builds only expose preview rows. */
         }
-        rows.sort(Comparator.comparingLong((Program item)->item.engagement).reversed());
+        if(rows.size()<MAX_VISIBLE)available=addStremio(rows)||available;
+        rows.sort(Comparator.comparingLong((Program item)->item.id.startsWith("preview:")?0:item.engagement).reversed());
         JSONArray visible=new JSONArray();
         for(Program program:rows){programs.put(program.id,program);visible.put(program.entry);}
         validUntil=SystemClock.elapsedRealtime()+5*60*1000;
-        return new JSONObject().put("available",true).put("entries",visible);
+        return new JSONObject().put("available",available).put("entries",visible);
+    }
+
+    private boolean addStremio(ArrayList<Program> rows)throws Exception{
+        if(context.getPackageManager().getLeanbackLaunchIntentForPackage(STREMIO)==null)return false;
+        try(Cursor cursor=context.getContentResolver().query(android.media.tv.TvContract.PreviewPrograms.CONTENT_URI,
+                PREVIEW_COLUMNS,"package_name=?",new String[]{STREMIO},"_id DESC")){
+            if(cursor==null)return false;
+            int scanned=0;
+            while(rows.size()<MAX_VISIBLE&&scanned++<MAX_SCANNED&&cursor.moveToNext()){
+                if(!STREMIO.equals(cursor.getString(1)))continue;
+                long position=cursor.getLong(5),duration=cursor.getLong(6);
+                if(position<=0||duration<=position)continue;
+                String id=cursor.getString(0),title=display(cursor.getString(2),160);
+                if(id==null||!id.matches("[0-9]{1,19}")||title.isEmpty())continue;
+                Intent open=target(STREMIO,cursor.getString(4));
+                if(open==null)continue;
+                String key="preview:"+STREMIO+":"+id;
+                if(prefs.contains(key)&&prefs.getLong(key,0)>=position)continue;
+                JSONObject entry=new JSONObject().put("id",key).put("title",title)
+                    .put("episode",display(cursor.getString(3),160)).put("source","Stremio")
+                    .put("positionMs",position).put("durationMs",duration);
+                rows.add(new Program(key,position,open,entry));
+            }
+            return true;
+        }catch(IllegalArgumentException|SecurityException unsupported){return false;}
     }
 
     private String label(String publisher){

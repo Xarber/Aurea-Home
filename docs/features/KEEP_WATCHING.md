@@ -10,7 +10,7 @@ Open **Plex Continue Watching** from Keep Watching to connect a Plex server for 
 
 Aurea reads up to 20 movies or episodes from the documented Plex Continue Watching endpoint. **Open Plex app** launches the installed Plex app. Opening or resuming an individual Plex title still needs a verified client deep link. [Plex Media Server API](https://developer.plex.tv/pms/)
 
-Stremio-specific continuation sources, title availability, recommendations and imports remain tracked in the active queue. The observed visibility and playback behavior of any particular streaming app needs verification on that TV. [Android Watch Next reference](https://developer.android.com/reference/android/media/tv/TvContract.WatchNextPrograms)
+Android’s Preview Programs may also expose Stremio rows. Aurea shows only Stremio rows with a valid handoff and reported playback progress. Other app-published continuation channels may remain inaccessible without a vendor-supported route. The observed visibility and playback behavior of any particular streaming app needs verification on that TV. [Android Watch Next reference](https://developer.android.com/reference/android/media/tv/TvContract.WatchNextPrograms)
 
 
 ## Active Android media
@@ -36,3 +36,5 @@ Imported entries show the source viewing date and have no playback position. Net
 Availability separates subscription, ads, free, rental and purchase results as reported by JustWatch through TMDB. An empty regional result means the provider returned no listings. The availability page opens through the device’s browser when available. Availability and native streaming-app resume links are separate capabilities. [TMDB multi-search](https://developer.themoviedb.org/reference/search-multi), [movie providers](https://developer.themoviedb.org/reference/movie-watch-providers), [series providers](https://developer.themoviedb.org/reference/tv-series-watch-providers).
 
 Enable **Watch requests** in Keep Watching for an adult profile to accept suggested titles from paired Aurea remotes. Suggestions stay on the TV, are deduplicated, and can be dismissed. Sending a title does not search a catalog or start playback.
+
+On a TMDB title, **Related titles** requests TMDB recommendations for that title. **Open in Stremio** uses the official Stremio detail link when a supported IMDb ID and Android TV client are available. It opens title details without selecting a stream or forcing playback. [Stremio deep links](https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/deep-links.md)

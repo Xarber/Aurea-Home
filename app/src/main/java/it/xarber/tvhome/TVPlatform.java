@@ -157,7 +157,7 @@ public final class TVPlatform {
                 if(operation.equals("watchRequestsDismiss"))WatchRequests.dismiss(requests,data.getString("id"));
                 return WatchRequests.state(requests);
             }
-        case "titleDiscoveryStatus":case "titleDiscoveryConfigure":case "titleDiscoveryDisconnect":case "titleDiscoverySearch":case "titleDiscoveryProviders":
+        case "titleDiscoveryStatus":case "titleDiscoveryConfigure":case "titleDiscoveryDisconnect":case "titleDiscoverySearch":case "titleDiscoveryProviders":case "titleDiscoveryRelated":case "titleDiscoveryStremio":
             if(!foreground())throw new IllegalStateException("launcher_not_active");
             switch(operation){
                 case "titleDiscoveryConfigure":
@@ -168,6 +168,10 @@ public final class TVPlatform {
                     return titleDiscovery.disconnect();
                 case "titleDiscoverySearch":return titleDiscovery.search(data.getString("query"),households.language().equals("it"));
                 case "titleDiscoveryProviders":return titleDiscovery.providers(data.getString("kind"),data.getInt("id"));
+                case "titleDiscoveryRelated":return titleDiscovery.related(data.getString("kind"),data.getInt("id"),households.language().equals("it"));
+                case "titleDiscoveryStremio":
+                    titleDiscovery.openStremio(context,data.getString("kind"),data.getInt("id"));
+                    return safe("accepted",true);
                 default:return titleDiscovery.settings();
             }
         case "viewingExports":case "clearViewingExports":case "importViewingExport":case "viewingExportOpen":

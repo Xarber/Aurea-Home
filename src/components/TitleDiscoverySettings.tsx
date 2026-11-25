@@ -15,6 +15,7 @@ export function TitleDiscoverySettings({demo,t}:{demo:Launcher;t:(value:string)=
   const [ready,setReady]=useState<boolean>();
   const [token,setToken]=useState(''),[region,setRegion]=useState(demo.prefs.language==='it'?'IT':'US');
   const [query,setQuery]=useState(''),[titles,setTitles]=useState<Title[]>();
+  const [related,setRelated]=useState<Title[]>();
   const [selected,setSelected]=useState<Title>(),[availability,setAvailability]=useState<Record<string,unknown>>();
   const [pending,setPending]=useState(false),[error,setError]=useState(false),[setup,setSetup]=useState(false);
   const [confirm,setConfirm]=useState(false);
@@ -34,6 +35,8 @@ export function TitleDiscoverySettings({demo,t}:{demo:Launcher;t:(value:string)=
       settings(result);
       if(operation==='titleDiscoverySearch')setTitles(Array.isArray(result.titles)?result.titles:[]);
       if(operation==='titleDiscoveryProviders')setAvailability(result);
+      if(operation==='titleDiscoveryRelated')setRelated(Array.isArray(result.titles)?result.titles:[]);
+      if(operation==='titleDiscoveryStremio')demo.close();
       if(operation==='titleDiscoveryConfigure'){setSetup(false);setToken('');setConfirm(false);}
       if(operation==='titleDiscoveryDisconnect'){setTitles(undefined);setConfirm(false);}
     }catch{setError(true);}finally{setPending(false);}
@@ -47,6 +50,10 @@ export function TitleDiscoverySettings({demo,t}:{demo:Launcher;t:(value:string)=
     <Icon name="film" size={21}/><View style={{flex:1,gap:4}}><Text style={{color:'#eef2ff',fontSize:17}}>{label}</Text>
     {!!detail&&<Text style={{color:'#c4d1e8',fontSize:15}}>{detail}</Text>}</View>
   </FocusButton>;
+  function choose(item:Title) {
+    setSelected(item);setAvailability(undefined);setRelated(undefined);
+    void run('titleDiscoveryProviders',{kind:item.kind,id:item.id});
+  }
   const text=(value:string)=><Text style={{fontSize:16,color:'#d6e3ff'}}>{t(value)}</Text>;
   const providers=availability?.providers as Record<string,string[]>|undefined;
   return <View style={{gap:8,paddingVertical:8}}>
@@ -72,15 +79,18 @@ export function TitleDiscoverySettings({demo,t}:{demo:Launcher;t:(value:string)=
       {!!availability&&row('availability',t('Open availability page'),()=>{
         void Linking.openURL('https://www.themoviedb.org/'+selected.kind+'/'+selected.id+'/watch').catch(()=>setError(true));
       },region)}
+      {demo.catalog.some(app=>app.id==='com.stremio.one')&&row('stremio',t('Open in Stremio'),
+        ()=>void run('titleDiscoveryStremio',{kind:selected.kind,id:selected.id}))}
+      {row('related',t('Related titles'),()=>void run('titleDiscoveryRelated',{kind:selected.kind,id:selected.id}))}
+      {related?.length===0&&text('No related titles were returned.')}
+      {related?.map(item=>row('related-'+item.kind+'-'+item.id,item.title,()=>choose(item),item.year))}
       {row('back',t('Back to search'),()=>{setSelected(undefined);setAvailability(undefined);})}
     </>:<>
       {field('discovery-query','Movie or series',query,setQuery,120)}
       {row('search',t('Search'),()=>void run('titleDiscoverySearch',{query:query.trim()}),undefined,query.trim().length<2)}
       {titles?.length===0&&text('No matching titles.')}
-      {titles?.map(item=>row(item.kind+'-'+item.id,item.title,()=>{
-        setSelected(item);setAvailability(undefined);
-        void run('titleDiscoveryProviders',{kind:item.kind,id:item.id});
-      },[t(item.kind==='movie'?'Movie':'Series'),item.year].filter(Boolean).join(' · ')))}
+      {titles?.map(item=>row(item.kind+'-'+item.id,item.title,()=>choose(item),
+        [t(item.kind==='movie'?'Movie':'Series'),item.year].filter(Boolean).join(' · ')))}
       {primary&&row('settings',t('Title search settings'),()=>setSetup(true),region)}
     </>}
     <Text style={{fontSize:13,color:'#d6e3ff'}}>{t('This product uses the TMDB API but is not endorsed or certified by TMDB. Streaming availability provided by JustWatch.')}</Text>

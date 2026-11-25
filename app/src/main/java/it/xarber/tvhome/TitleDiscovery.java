@@ -42,11 +42,35 @@ final class TitleDiscovery {
         String lang=italian?"it-IT":"en-US";
         JSONArray raw=request(saved.getString("credentials"),"/search/multi?include_adult=false&language="+lang+
             "&query="+java.net.URLEncoder.encode(query,"UTF-8")).optJSONArray("results");
+        return titles(raw,null);
+    }
+
+    JSONObject related(String kind,int id,boolean italian)throws Exception {
+        verifyTitle(kind,id);
+        String language=italian?"it-IT":"en-US";
+        JSONArray result=request(required().getString("credentials"),"/"+kind+"/"+id+"/recommendations?language="+language)
+            .optJSONArray("results");
+        return titles(result,kind);
+    }
+
+    void openStremio(Context context,String kind,int id)throws Exception {
+        verifyTitle(kind,id);
+        String imdb=request(required().getString("credentials"),"/"+kind+"/"+id+"/external_ids").optString("imdb_id");
+        if(!imdb.matches("tt[0-9]{5,12}"))throw new IllegalArgumentException("stremio_metadata_unavailable");
+        String path="stremio:///detail/"+(kind.equals("movie")?"movie":"series")+"/"+imdb;
+        if(kind.equals("movie"))path+="/"+imdb;
+        android.content.Intent intent=new android.content.Intent(android.content.Intent.ACTION_VIEW,android.net.Uri.parse(path))
+            .setPackage("com.stremio.one").addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+        if(intent.resolveActivity(context.getPackageManager())==null)throw new IllegalStateException("stremio_link_unavailable");
+        context.startActivity(intent);
+    }
+
+    private static JSONObject titles(JSONArray raw,String fallbackKind)throws Exception {
         JSONArray visible=new JSONArray();
         if(raw!=null)for(int i=0;i<raw.length()&&visible.length()<15;i++){
             JSONObject title=raw.optJSONObject(i);
             if(title==null||title.optBoolean("adult"))continue;
-            String kind=title.optString("media_type");
+            String kind=title.optString("media_type",fallbackKind==null?"":fallbackKind);
             int id=title.optInt("id");
             if(id<=0||!kind.equals("tv")&&!kind.equals("movie"))continue;
             String name=clean(title.optString(kind.equals("tv")?"name":"title"),140);
@@ -59,7 +83,7 @@ final class TitleDiscovery {
     }
 
     JSONObject providers(String kind,int id)throws Exception {
-        if(id<1||!kind.equals("tv")&&!kind.equals("movie"))throw new IllegalArgumentException("unknown_discovery_title");
+        verifyTitle(kind,id);
         JSONObject saved=required();
         String region=saved.getString("identifier");
         JSONObject payload=request(saved.getString("credentials"),"/"+kind+"/"+id+"/watch/providers");
@@ -80,6 +104,10 @@ final class TitleDiscovery {
         }
         return new JSONObject().put("region",region).put("providers",visible)
             .put("details","https://www.themoviedb.org/"+kind+"/"+id+"/watch");
+    }
+
+    private static void verifyTitle(String kind,int id){
+        if(id<1||!kind.equals("tv")&&!kind.equals("movie"))throw new IllegalArgumentException("unknown_discovery_title");
     }
 
     private JSONObject required()throws Exception {
