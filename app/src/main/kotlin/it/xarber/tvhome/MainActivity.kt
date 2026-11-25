@@ -145,39 +145,43 @@ class MainActivity : ReactActivity() {
             AureaTVModule.event("notice", TVPlatform.safe("message", "No document picker is available on this TV."))
         }
     }
-    private var viewingExportProfile: String? = null
+    private data class ViewingImport(val profile: String, val netflixProfile: String)
+    private var viewingImport: ViewingImport? = null
     private val viewingExport = registerForActivityResult(ActivityResultContracts.OpenDocument()) { source ->
-        val expected = viewingExportProfile
-        if (expected != null && source != null) {
+        val request = viewingImport
+        if (request != null && source != null) {
             val application = applicationContext
             Thread({
-                val success = try {
-                    val records = contentResolver.openInputStream(source).use { ViewingExports.parse(it) }
+                val message = try {
+                    val records = contentResolver.openInputStream(source).use { ViewingExports.parse(it, request.netflixProfile) }
                     val accounts = HouseholdAccounts.get(application)
                     synchronized(accounts) {
-                        ViewingExports.merge(accounts.layoutFor(expected), records)
+                        ViewingExports.merge(accounts.layoutFor(request.profile), records)
                     }
-                    true
-                } catch (_: Exception) { false }
+                    "Viewing export imported"
+                } catch (_: NetflixExport.ProfileRequired) {
+                    "Enter your Netflix profile name before importing a detailed export."
+                } catch (_: Exception) {
+                    "Could not read the viewing export."
+                }
                 main.post {
-                    viewingExportProfile = null
+                    viewingImport = null
                     if (!isFinishing && !isDestroyed) {
-                        val message = if (success) "Viewing export imported" else "Could not read the viewing export."
                         AureaTVModule.event("notice", TVPlatform.safe("message", message))
                         AureaTVModule.event("viewing-import", org.json.JSONObject())
                     }
                 }
             }, "AureaViewingExport").start()
         } else {
-            viewingExportProfile = null
+            viewingImport = null
         }
     }
-    fun importViewingExport(profile: String) {
-        if (viewingExportProfile != null) return
-        viewingExportProfile = profile
+    fun importViewingExport(profile: String, netflixProfile: String) {
+        if (viewingImport != null) return
+        viewingImport = ViewingImport(profile, netflixProfile)
         try { viewingExport.launch(arrayOf("text/csv", "text/plain", "application/json", "application/octet-stream")) }
         catch (_: Exception) {
-            viewingExportProfile = null
+            viewingImport = null
             AureaTVModule.event("notice", TVPlatform.safe("message", "No document picker is available on this TV."))
         }
     }

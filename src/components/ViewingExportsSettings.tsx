@@ -5,6 +5,7 @@ import type {Launcher} from '../launcher/types';
 import {tv} from '../platform/native/tv';
 import {FocusButton} from './FocusButton';
 import {Icon} from './Icon';
+import {TVTextInput} from './TVTextInput';
 import {ViewingSourceFilter} from './ViewingSourceFilter';
 import {filterViewingEntries,viewingSources} from '../model/viewing-source';
 
@@ -14,6 +15,7 @@ export function ViewingExportsSettings({demo,t}:{demo:Launcher;t:(value:string)=
   const profile=demo.prefs.householdProfile??'home';
   const [entries,setEntries]=useState<Entry[]>([]);
   const [service,setService]=useState<string>();
+  const [detailed,setDetailed]=useState(false),[netflixProfile,setNetflixProfile]=useState('');
   const [confirm,setConfirm]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(false);
   const apply=(result:Record<string,unknown>)=>{
     if(Array.isArray(result.entries))setEntries(result.entries.filter((item)=>
@@ -30,14 +32,15 @@ export function ViewingExportsSettings({demo,t}:{demo:Launcher;t:(value:string)=
   async function run(operation:string,entry?:Entry){
     setBusy(true);setError(false);
     try{
-      const result=await demo.execute(operation,{profile,service:entry?.service,video:entry?.video});
+      const result=await demo.execute(operation,{profile,service:entry?.service,video:entry?.video,
+        ...(operation==='importViewingExport'&&detailed?{netflixProfile}:{})});
       apply(result);
       setConfirm(false);
       if(operation==='viewingExportOpen')demo.close();
     }catch{setError(true);}finally{setBusy(false);}
   }
-  const row=(id:string,label:string,press:()=>void,value?:string)=><FocusButton key={id} id={'viewing-export-'+id}
-    group="modal" label={label} disabled={busy} onPress={press}
+  const row=(id:string,label:string,press:()=>void,value?:string,disabled=false)=><FocusButton key={id} id={'viewing-export-'+id}
+    group="modal" label={label} disabled={busy||disabled} onPress={press}
     style={{minHeight:46,flexDirection:'row',justifyContent:'flex-start',paddingHorizontal:10,gap:10}}>
     <Icon name={value?'film':'settings'} size={20}/><View style={{flex:1,gap:4}}>
       <Text style={{color:'#eef2ff',fontSize:17}}>{label}</Text>
@@ -50,7 +53,15 @@ export function ViewingExportsSettings({demo,t}:{demo:Launcher;t:(value:string)=
   const visible=filterViewingEntries(entries,source,sourceId);
   return <View style={{gap:7,paddingVertical:8}}>
     <Text style={{color:'#d6e3ff',fontSize:16}}>{t('Import a Netflix profile CSV or YouTube Takeout watch-history JSON. Imported titles stay in this profile.')}</Text>
-    {row('choose',t('Choose viewing export'),()=>void run('importViewingExport'))}
+    {row('detailed',t('Detailed Netflix export'),()=>{setDetailed(!detailed);setNetflixProfile('');},t(detailed?'On':'Off'))}
+    {detailed&&<>
+      <Text style={{color:'#d6e3ff',fontSize:15}}>{t('Only rows with this exact Netflix profile name will be imported.')}</Text>
+      <TVTextInput id="netflix-export-profile" t={t} value={netflixProfile} onChangeText={setNetflixProfile}
+        accessibilityLabel={t('Netflix profile name')} placeholder={t('Netflix profile name')}
+        maxLength={80} autoCorrect={false} placeholderTextColor="#aeb9c9"
+        style={{color:'#fff',fontSize:17,minHeight:48,borderWidth:1,borderColor:'#919bad',borderRadius:12,paddingHorizontal:12}}/>
+    </>}
+    {row('choose',t('Choose viewing export'),()=>void run('importViewingExport'),undefined,detailed&&!netflixProfile.trim())}
     {error&&<Text accessibilityLiveRegion="polite" style={{color:'#f5d0dc'}}>{t('The import or viewing action could not be completed.')}</Text>}
     {entries.length>0&&<>
       <ViewingSourceFilter id="viewing-exports-source" sources={sources} value={sourceId} onChange={setService} t={t}/>

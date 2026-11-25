@@ -249,7 +249,11 @@ public final class TVPlatform {
             }
             if(operation.equals("clearViewingExports"))ViewingExports.clear(importPrefs);
             if(operation.equals("importViewingExport")){
-                main.post(()->{Activity host=activity.get();if(host instanceof MainActivity)((MainActivity)host).importViewingExport(importProfile);});
+                String exportedProfile=data.optString("netflixProfile");
+                if(exportedProfile.length()>80||exportedProfile.matches("(?s).*[\\p{Cc}\\p{Cf}].*"))
+                    throw new IllegalArgumentException("invalid_export_profile");
+                main.post(()->{Activity host=activity.get();if(host instanceof MainActivity)
+                    ((MainActivity)host).importViewingExport(importProfile,exportedProfile);});
                 return safe("accepted",true);
             }
             return new JSONObject().put("entries",ViewingExports.read(importPrefs));

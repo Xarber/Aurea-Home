@@ -5,16 +5,11 @@ import android.content.SharedPreferences;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringReader;
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -23,18 +18,11 @@ final class ViewingExports {
     private static final int MAX_BYTES=4*1024*1024,MAX_RECORDS=120;
     private static final java.util.regex.Pattern YOUTUBE_VIDEO=java.util.regex.Pattern.compile(
         "^https://(?:www\\.|music\\.)?youtube\\.com/watch\\?v=([A-Za-z0-9_-]{11})(?:&[^#]*)?$");
-    private static final DateTimeFormatter NETFLIX_DATE=DateTimeFormatter.ofPattern("M/d/uuuu",Locale.US)
-        .withResolverStyle(java.time.format.ResolverStyle.STRICT);
-
-    private static final DateTimeFormatter NETFLIX_SHORT_DATE=new java.time.format.DateTimeFormatterBuilder()
-        .appendPattern("M/d/").appendValueReduced(java.time.temporal.ChronoField.YEAR,2,2,2000)
-        .toFormatter(Locale.US).withResolverStyle(java.time.format.ResolverStyle.STRICT);
-
     static JSONArray read(SharedPreferences preferences)throws Exception {
         return new JSONArray(preferences.getString(STORE,"[]"));
     }
 
-    static List<JSONObject> parse(InputStream input)throws Exception{
+    static List<JSONObject> parse(InputStream input,String netflixProfile)throws Exception{
         if(input==null)throw new IOException("history_file_unavailable");
         ByteArrayOutputStream data=new ByteArrayOutputStream();
         byte[] buffer=new byte[16384];
@@ -44,27 +32,14 @@ final class ViewingExports {
             data.write(buffer,0,count);
         }
         String document=data.toString("UTF-8").replaceFirst("^\ufeff","").trim();
-        List<JSONObject> rows=document.startsWith("[")?youtube(document):netflix(document);
+        List<JSONObject> rows=document.startsWith("[")?youtube(document):netflix(document,netflixProfile);
         if(rows.isEmpty())throw new IOException("history_no_entries");
         return rows;
     }
 
-    private static List<JSONObject> netflix(String document)throws Exception {
+    private static List<JSONObject> netflix(String document,String profile)throws Exception {
         List<JSONObject> output=new ArrayList<>();
-        ViewingExportCsv reader=new ViewingExportCsv(new StringReader(document));
-        List<String> header=reader.row();
-        if(header==null||header.size()!=2||!header.get(0).equalsIgnoreCase("Title")||!header.get(1).equalsIgnoreCase("Date"))
-            throw new IOException("netflix_profile_csv_required");
-        List<String> row;
-        while((row=reader.row())!=null){
-            if(row.size()!=2)continue;
-            try{
-                String date=row.get(1).trim();
-                DateTimeFormatter format=date.length()-date.lastIndexOf('/')==3?NETFLIX_SHORT_DATE:NETFLIX_DATE;
-                long time=LocalDate.parse(date,format).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
-                append(output,"Netflix",row.get(0),"",time,true);
-            }catch(java.time.DateTimeException ignored){}
-        }
+        NetflixExport.read(document,profile,(title,time,dateOnly)->append(output,"Netflix",title,"",time,dateOnly));
         return output;
     }
 
