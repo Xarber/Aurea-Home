@@ -48,3 +48,5 @@ In the Home profile, **Household profiles → Kids profile** configures a second
 Android TV profiles can opt into **Home layout → Allow paired remotes to edit this layout**. In Aurea Remote, open **Settings → TV Home layout** to move dock apps or choose a built-in wallpaper. The option is off by default, applies only to the active profile and is unavailable in Kids. If the TV layout changes after the remote loads it, Aurea rejects the stale edit.
 
 The Headlines widget can open a configured HTTPS RSS or Atom feed on demand. It shows plain-text titles and only opens validated HTTPS article links. It does not run background requests or render feed HTML.
+
+**Household widgets → Local conditions** can show model-estimated temperature, humidity, today’s maximum UV index and European air quality index for the selected city. It fetches only on request and shows missing values without substituting zero. [Open-Meteo forecast API](https://open-meteo.com/en/docs), [Open-Meteo air quality API](https://open-meteo.com/en/docs/air-quality-api).

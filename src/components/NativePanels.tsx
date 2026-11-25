@@ -11,6 +11,7 @@ import { AnchoredPanel, type Anchor } from './AnchoredPanel';
 import { FocusButton } from './FocusButton';
 import { FadedScroll } from './FadedScroll';
 import { Icon } from './Icon';
+import {CityConditionsSettings} from './CityConditionsSettings';
 import {NewsFeedSettings} from './NewsFeedSettings';
 import {HouseholdWidgetSettings} from './HouseholdWidgetSettings';
 import {ProfileFolderSettings} from './ProfileFolderSettings';
@@ -152,6 +153,7 @@ export function NativePanels({
     layout: 'Home layout',
     folders: 'App folders',
     widgets: 'Household widgets',
+    cityConditions: 'Local conditions',
     newsFeed: 'Headlines',
     kids: 'Kids profile',
     changelog: 'Changelog',
@@ -512,9 +514,11 @@ export function NativePanels({
           {row('Plex Continue Watching','film',()=>demo.setPanel('plex'))}
         </>}
         {demo.panel==='widgets'&&<>
+          {row('Local conditions','sun',()=>demo.setPanel('cityConditions'))}
           {row('Headlines','film',()=>demo.setPanel('newsFeed'))}
           <HouseholdWidgetSettings key={demo.prefs.householdProfile??'home'} demo={demo} t={t}/>
         </>}
+        {demo.panel==='cityConditions'&&<CityConditionsSettings demo={demo} t={t}/>}
         {demo.panel==='newsFeed'&&<NewsFeedSettings key={demo.prefs.householdProfile??'home'} demo={demo} t={t}/>}
         {demo.panel==='watchRequests'&&<WatchRequestsSettings key={demo.prefs.householdProfile??'home'} demo={demo} t={t}/>}
         {demo.panel==='titleDiscovery'&&<TitleDiscoverySettings demo={demo} t={t}/>}

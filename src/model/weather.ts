@@ -73,3 +73,32 @@ export async function fetchWeather(city:WeatherCity,signal:AbortSignal) {
     current:'weather_code',daily:'sunrise,sunset',timeformat:'unixtime',timezone:'auto',forecast_days:'1'});
   return weatherObservation(await readJson('https://api.open-meteo.com/v1/forecast?'+params,signal));
 }
+
+export type CityConditions={temp?:number;humidity?:number;uvMax?:number;aqi?:number;weatherAt?:number;airAt?:number};
+
+export function parseCityConditions(weather:unknown,air:unknown):CityConditions {
+  const forecast=record(weather),daily=record(forecast.daily),now=record(forecast.current);
+  const quality=record(record(air).current);
+  const valid=(value:unknown,min:number,max:number)=>typeof value==='number'&&Number.isFinite(value)&&value>=min&&value<=max?value:undefined;
+  const peak=Array.isArray(daily.uv_index_max)?daily.uv_index_max[0]:undefined;
+  return {
+    temp:valid(now.temperature_2m,-100,80),
+    humidity:valid(now.relative_humidity_2m,0,100),
+    uvMax:valid(peak,0,45),
+    aqi:valid(quality.european_aqi,0,1000),
+    weatherAt:valid(now.time,1,4102444800),
+    airAt:valid(quality.time,1,4102444800),
+  };
+}
+
+export async function cityConditions(city:WeatherCity,signal:AbortSignal) {
+  const coordinates={latitude:String(city.latitude),longitude:String(city.longitude),timeformat:'unixtime',timezone:'auto'};
+  const forecast=new URLSearchParams({...coordinates,current:'temperature_2m,relative_humidity_2m',daily:'uv_index_max',forecast_days:'1'});
+  const air=new URLSearchParams({...coordinates,current:'european_aqi'});
+  const [weather,quality]=await Promise.allSettled([
+    readJson('https://api.open-meteo.com/v1/forecast?'+forecast,signal),
+    readJson('https://air-quality-api.open-meteo.com/v1/air-quality?'+air,signal),
+  ]);
+  if(weather.status==='rejected'&&quality.status==='rejected')throw new Error('weather_unavailable');
+  return parseCityConditions(weather.status==='fulfilled'?weather.value:undefined,quality.status==='fulfilled'?quality.value:undefined);
+}

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {searchResults,weatherAccent,weatherEffect,weatherObservation,weatherPhase} from '../../src/model/weather.ts';
+import {parseCityConditions,searchResults,weatherAccent,weatherEffect,weatherObservation,weatherPhase} from '../../src/model/weather.ts';
 
 test('weather city search skips invalid results and rounds city coordinates',()=>{
   assert.deepEqual(searchResults({results:[
@@ -33,4 +33,15 @@ test('weather overlays follow their observed condition',()=>{
   assert.equal(weatherEffect(45),'fog');
   assert.equal(weatherEffect(61),'rain');
   assert.equal(weatherEffect(0),undefined);
+});
+
+
+test('weather widgets distinguish zero from missing and invalid model values',()=>{
+  const row=parseCityConditions({current:{temperature_2m:0,relative_humidity_2m:null,time:1795520400},
+    daily:{uv_index_max:[0]}},{current:{european_aqi:'12',time:1795520400}});
+  assert.equal(row.temp,0);
+  assert.equal(row.uvMax,0);
+  assert.equal(row.humidity,undefined);
+  assert.equal(row.aqi,undefined);
+  assert.equal(row.weatherAt,1795520400);
 });
