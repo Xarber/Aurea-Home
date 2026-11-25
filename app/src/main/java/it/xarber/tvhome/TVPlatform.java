@@ -46,12 +46,13 @@ public final class TVPlatform {
     private final LocalWatchHistory watchHistory;
     private final HomeAssistantControls homeAssistant;
     private final VideoWallpaper videoWallpaper;
+    private final TitleDiscovery titleDiscovery;
     private final WatchNextShelf watchNext;
     private final PlexShelf plex;
     private Bitmap paletteArtwork;
     private JSONArray palette=new JSONArray().put("#e6eaf0").put("#929aa8");
     private final Handler main=new Handler(Looper.getMainLooper());
-    private TVPlatform(Context context){this.context=context;households=HouseholdAccounts.get(context);photos=PhotoWallpapers.get(context);androidSessions=new AndroidMediaSessions(context);watchHistory=new LocalWatchHistory(context,androidSessions);homeAssistant=new HomeAssistantControls(context);videoWallpaper=new VideoWallpaper(context);watchNext=new WatchNextShelf(context);plex=new PlexShelf(context);prefs=context.getSharedPreferences("it.xarber.tvhome.MainActivity",0);catalog=new TVHomeCatalog(context,prefs);paired=PairedPlayback.get(context);playback=new RemotePlayback(context,false);if(!BuildConfig.APPLICATION_ID.endsWith(".preview"))playback.start();updates=UpdateController.get(context);}
+    private TVPlatform(Context context){this.context=context;households=HouseholdAccounts.get(context);photos=PhotoWallpapers.get(context);androidSessions=new AndroidMediaSessions(context);watchHistory=new LocalWatchHistory(context,androidSessions);homeAssistant=new HomeAssistantControls(context);videoWallpaper=new VideoWallpaper(context);titleDiscovery=new TitleDiscovery(context);watchNext=new WatchNextShelf(context);plex=new PlexShelf(context);prefs=context.getSharedPreferences("it.xarber.tvhome.MainActivity",0);catalog=new TVHomeCatalog(context,prefs);paired=PairedPlayback.get(context);playback=new RemotePlayback(context,false);if(!BuildConfig.APPLICATION_ID.endsWith(".preview"))playback.start();updates=UpdateController.get(context);}
     public void resume(Activity host){activity=new WeakReference<>(host);foreground=true;paired.resume();if(!BuildConfig.MOBILE_REMOTE){updates.observe(this::notifyUpdate);updates.resume();}if(!BuildConfig.MOBILE_REMOTE&&!BuildConfig.APPLICATION_ID.endsWith(".preview")){HomeRemoteService.ensure(context);ensureReceiver();}main.post(()->AureaTVModule.event("home-resumed",safe("pairing",paired.pairingPending())));}
     public void pause(Activity host){if(activity.get()!=host)return;foreground=false;paired.pause();updates.pause();}
     private void ensureReceiver(){if(!ReceiverSettings.enabled(context))return;context.getSharedPreferences("settings",0).edit().putBoolean("auto_start",true).putBoolean("boot_auto_start",true).putBoolean("run_in_background",true).putBoolean("launch_on_connect",true).putBoolean("auto_fullscreen",true).apply();try{context.startForegroundService(new Intent(context,io.github.jqssun.airplay.service.AirPlayService.class).setAction(io.github.jqssun.airplay.service.AirPlayService.ACTION_START_SERVER));}catch(Exception failure){AureaTVModule.event("notice",safe("message","AirPlay service could not start"));}}
@@ -147,6 +148,19 @@ public final class TVPlatform {
                 households.kids.configure(child,verified,data.optString("oldPin"),data.getString("pin"));
             }
             return households.kids.status();
+        case "titleDiscoveryStatus":case "titleDiscoveryConfigure":case "titleDiscoveryDisconnect":case "titleDiscoverySearch":case "titleDiscoveryProviders":
+            if(!foreground())throw new IllegalStateException("launcher_not_active");
+            switch(operation){
+                case "titleDiscoveryConfigure":
+                    if(!households.activeId().equals("home"))throw new IllegalStateException("configuration_home_only");
+                    return titleDiscovery.configure(data.getString("token"),data.getString("region"));
+                case "titleDiscoveryDisconnect":
+                    if(!households.activeId().equals("home"))throw new IllegalStateException("configuration_home_only");
+                    return titleDiscovery.disconnect();
+                case "titleDiscoverySearch":return titleDiscovery.search(data.getString("query"),households.language().equals("it"));
+                case "titleDiscoveryProviders":return titleDiscovery.providers(data.getString("kind"),data.getInt("id"));
+                default:return titleDiscovery.settings();
+            }
         case "viewingExports":case "clearViewingExports":case "importViewingExport":case "viewingExportOpen":
             if(!foreground())throw new IllegalStateException("launcher_not_active");
             String importProfile=data.getString("profile");
