@@ -553,7 +553,7 @@ export function NativePanels({
         {demo.panel==='cityConditions'&&<CityConditionsSettings demo={demo} t={t}/>}
         {demo.panel==='newsFeed'&&<NewsFeedSettings key={demo.prefs.householdProfile??'home'} demo={demo} t={t}/>}
         {demo.panel==='watchRequests'&&<WatchRequestsSettings key={demo.prefs.householdProfile??'home'} demo={demo} t={t}/>}
-        {demo.panel==='titleDiscovery'&&<TitleDiscoverySettings demo={demo} t={t}/>}
+        {demo.panel==='titleDiscovery'&&<TitleDiscoverySettings key={demo.prefs.householdProfile??'home'} demo={demo} t={t}/>}
         {demo.panel==='viewingExports'&&<ViewingExportsSettings key={demo.prefs.householdProfile??'home'} demo={demo} t={t}/>}
         {demo.panel==='watchHistory'&&<WatchHistorySettings key={demo.prefs.householdProfile??'home'} demo={demo} t={t}/>}
         {demo.panel==='plex'&&<PlexSettings key={demo.prefs.householdProfile??'home'} demo={demo} t={t}/>}

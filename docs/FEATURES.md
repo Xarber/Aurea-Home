@@ -45,6 +45,8 @@ On Android TV, **Wallpapers → Personal photos** imports up to 12 images for th
 
 Keep Watching, Local watch history and Imported viewing history offer an app filter when more than one source is present. Filtering only changes the current view. Selecting All apps restores the full shelf. If a source disappears after hiding its last entry, the shelf shows the remaining sources.
 
+In **Find a title → Start from viewing history**, the launcher offers up to eight recent unique titles from local video history and imported Netflix records in the active profile. Selecting a title fills the search field so the user can edit it before searching. Only a submitted query goes to TMDB. Pick the matching result and open **Related titles** for suggestions. [TMDB title search workflow](https://developer.themoviedb.org/docs/search-and-query-for-details).
+
 **Wallpapers → Blank screen now / Screen timer** cover the launcher with black immediately or after 15, 30 or 60 minutes. The timer can be canceled in the same menu and clears when Home leaves the foreground. The overlay preserves audio and wakes on the first remote press. This is a software cover and does not change panel power or control the display while another app is open.
 
 **Wallpapers → Video wallpaper** copies an MP4 into the active profile’s private storage. It loops without audio on Home and releases the decoder when Home is hidden, an idle display is active, or Reduced Motion is enabled. Clips are limited to 30 seconds, 48 MB and 1080p. A rejected replacement preserves the existing clip. Photos or a built-in wallpaper remain visible below the video.

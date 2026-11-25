@@ -5,17 +5,20 @@ import type {Launcher} from '../launcher/types';
 import {FocusButton} from './FocusButton';
 import {TVTextInput} from './TVTextInput';
 import {Icon} from './Icon';
+import {discoveryHistory} from '../model/discovery-history';
 
 type Title={id:number;kind:'tv'|'movie';title:string;year:string};
 const categories={flatrate:'Subscription',free:'Free',ads:'With ads',rent:'Rent',buy:'Buy'} as const;
 const style={color:'#fff',fontSize:17,minHeight:48,paddingHorizontal:12,borderRadius:12,borderWidth:1,borderColor:'#919bad'};
 
 export function TitleDiscoverySettings({demo,t}:{demo:Launcher;t:(value:string)=>string}){
-  const primary=(demo.prefs.householdProfile??'home')==='home';
+  const profile=demo.prefs.householdProfile??'home';
+  const primary=profile==='home';
   const [ready,setReady]=useState<boolean>();
   const [token,setToken]=useState(''),[region,setRegion]=useState(demo.prefs.language==='it'?'IT':'US');
   const [query,setQuery]=useState(''),[titles,setTitles]=useState<Title[]>();
   const [related,setRelated]=useState<Title[]>();
+  const [history,setHistory]=useState<string[]>();
   const [selected,setSelected]=useState<Title>(),[availability,setAvailability]=useState<Record<string,unknown>>();
   const [pending,setPending]=useState(false),[error,setError]=useState(false),[setup,setSetup]=useState(false);
   const [confirm,setConfirm]=useState(false);
@@ -39,6 +42,15 @@ export function TitleDiscoverySettings({demo,t}:{demo:Launcher;t:(value:string)=
       if(operation==='titleDiscoveryStremio')demo.close();
       if(operation==='titleDiscoveryConfigure'){setSetup(false);setToken('');setConfirm(false);}
       if(operation==='titleDiscoveryDisconnect'){setTitles(undefined);setConfirm(false);}
+    }catch{setError(true);}finally{setPending(false);}
+  }
+  async function openHistory(){
+    setPending(true);setError(false);
+    try {
+      const [local,imported]=await Promise.all([
+        demo.execute('localWatchHistory'),demo.execute('viewingExports',{profile}),
+      ]);
+      setHistory(discoveryHistory(local.records,imported.entries));
     }catch{setError(true);}finally{setPending(false);}
   }
   const field=(id:string,label:string,value:string,update:(value:string)=>void,limit:number,secret=false)=><TVTextInput
@@ -86,10 +98,19 @@ export function TitleDiscoverySettings({demo,t}:{demo:Launcher;t:(value:string)=
       {related?.map(item=>row('related-'+item.kind+'-'+item.id,item.title,()=>choose(item),item.year))}
       {row('back',t('Back to search'),()=>{setSelected(undefined);setAvailability(undefined);})}
     </>:<>
-      {field('discovery-query','Movie or series',query,setQuery,120)}
-      {row('search',t('Search'),()=>void run('titleDiscoverySearch',{query:query.trim()}),undefined,query.trim().length<2)}
-      {titles?.length===0&&text('No matching titles.')}
-      {titles?.map(item=>row(item.kind+'-'+item.id,item.title,()=>choose(item),
+      {history===undefined&&row('history',t('Start from viewing history'),()=>void openHistory())}
+      {history!==undefined&&<>
+        {text('Choose a title from this profile. Only the search text you submit is sent to TMDB.')}
+        {history.length===0&&text('No movie or series titles found in this profile’s history.')}
+        {history.map((title,index)=>row('history-'+index,title,()=>{
+          setQuery(title);setTitles(undefined);setHistory(undefined);
+        }))}
+        {row('close-history',t('Back to search'),()=>setHistory(undefined))}
+      </>}
+      {history===undefined&&field('discovery-query','Movie or series',query,setQuery,120)}
+      {history===undefined&&row('search',t('Search'),()=>void run('titleDiscoverySearch',{query:query.trim()}),undefined,query.trim().length<2)}
+      {history===undefined&&titles?.length===0&&text('No matching titles.')}
+      {history===undefined&&titles?.map(item=>row(item.kind+'-'+item.id,item.title,()=>choose(item),
         [t(item.kind==='movie'?'Movie':'Series'),item.year].filter(Boolean).join(' · ')))}
       {primary&&row('settings',t('Title search settings'),()=>setSetup(true),region)}
     </>}
