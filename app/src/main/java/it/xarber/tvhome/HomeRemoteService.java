@@ -95,6 +95,7 @@ public final class HomeRemoteService extends Service {
             apple.request(action,args,result::complete);
             try{return result.get(15,TimeUnit.SECONDS);}catch(Exception failure){return SystemRemoteController.error("timeout");}
         }
+        if(operation.equals("watch_request"))return TVPlatform.get(this).remoteWatchRequest(payload);
         if(operation.equals("home_layout"))return TVPlatform.get(this).remoteLayout(payload);
         if(operation.equals("automation"))return automation(payload);
         if(operation.equals("state"))return new JSONObject().put("schema",1).put("name",DeviceName.read(this)).put("observedAt",System.currentTimeMillis()).put("homeActive",home()!=null||TVPlatform.foreground()).put("systemRemote",systemState()).put("localAdb",localAdb.state()).put("appleTV",new JSONObject().put("paired",apple.paired()).put("name",apple.name()).put("connected",apple.connected()).put("appsPaired",apple.companionPaired())).put("music",playback.state()).put("wallpaper",wallpaper());

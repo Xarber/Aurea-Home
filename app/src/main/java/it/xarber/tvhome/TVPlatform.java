@@ -149,6 +149,14 @@ public final class TVPlatform {
                 households.kids.configure(child,verified,data.optString("oldPin"),data.getString("pin"));
             }
             return households.kids.status();
+        case "watchRequests":case "watchRequestsEnable":case "watchRequestsDismiss":
+            if(!foreground())throw new IllegalStateException("launcher_not_active");
+            synchronized(households){
+                SharedPreferences requests=households.layoutFor(data.getString("profile"));
+                if(operation.equals("watchRequestsEnable"))WatchRequests.enable(requests,data.getBoolean("enabled"));
+                if(operation.equals("watchRequestsDismiss"))WatchRequests.dismiss(requests,data.getString("id"));
+                return WatchRequests.state(requests);
+            }
         case "titleDiscoveryStatus":case "titleDiscoveryConfigure":case "titleDiscoveryDisconnect":case "titleDiscoverySearch":case "titleDiscoveryProviders":
             if(!foreground())throw new IllegalStateException("launcher_not_active");
             switch(operation){
@@ -410,6 +418,13 @@ public final class TVPlatform {
         }
     }
     private static byte[] read(java.io.InputStream input)throws Exception{java.io.ByteArrayOutputStream output=new java.io.ByteArrayOutputStream();byte[] buffer=new byte[4096];int count;while((count=input.read(buffer))!=-1)output.write(buffer,0,count);return output.toByteArray();}
+    JSONObject remoteWatchRequest(JSONObject data)throws Exception {
+        synchronized(households){
+            if(households.kids.active(households.activeId()))return SystemRemoteController.error("watch_requests_disabled");
+            return WatchRequests.submit(households.appearance(),data.optString("title"));
+        }
+    }
+
     JSONObject remoteLayout(JSONObject input)throws Exception{
         synchronized(households){
             String profile=households.activeId();

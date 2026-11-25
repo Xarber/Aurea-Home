@@ -77,3 +77,23 @@ test('account pairing verifies the approved TV before sending the grant and stor
   assert.deepEqual(devices,[{address:'aurea://'+first,id:first,token}]);
  }finally{await client.disconnect();}
 });
+
+test('watch requests use the paired TV transport and reject an unconfirmed result',async()=>{
+  class RequestMock extends Mock{
+    async rpc(op:string,payload:Record<string,unknown>,provided?:string){
+      if(op==='watch_request'){
+        assert.equal(provided,token);
+        return {accepted:payload.title==='Example film'};
+      }
+      return super.rpc(op,payload,provided);
+    }
+  }
+  const client=new RemoteClient(trust);
+  await assert.rejects(client.watchRequest('Example film'),/not_connected/);
+  try{
+    client.connect(new RequestMock(),{address:'http://192.168.1.8',token,id:first});
+    await sleep();
+    await client.watchRequest('Example film');
+    await assert.rejects(client.watchRequest('Other title'),/invalid_response/);
+  }finally{await client.disconnect();}
+});

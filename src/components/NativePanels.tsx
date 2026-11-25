@@ -14,6 +14,7 @@ import { Icon } from './Icon';
 import {HouseholdWidgetSettings} from './HouseholdWidgetSettings';
 import {ProfileFolderSettings} from './ProfileFolderSettings';
 import {PlexSettings} from './PlexSettings';
+import {WatchRequestsSettings} from './WatchRequestsSettings';
 import {TitleDiscoverySettings} from './TitleDiscoverySettings';
 import {ViewingExportsSettings} from './ViewingExportsSettings';
 import {WatchHistorySettings} from './WatchHistorySettings';
@@ -141,6 +142,7 @@ export function NativePanels({
     automations: 'Smart home',
     homeAssistant: 'Home Assistant controls',
     watchNext: 'Keep Watching',
+    watchRequests: 'Watch requests',
     titleDiscovery: 'Find a title',
     watchHistory: 'Local watch history',
     viewingExports: 'Imported viewing history',
@@ -501,12 +503,14 @@ export function NativePanels({
         </>}
         {panel==='watchNext'&&<>
           {(demo.prefs.householdProfile??'home')==='home'&&demo.panel==='watchNext'&&<WatchNextSettings demo={demo} t={t}/>}
+          {row('Watch requests','film',()=>demo.setPanel('watchRequests'))}
           {row('Find a title','film',()=>demo.setPanel('titleDiscovery'))}
           {row('Imported viewing history','film',()=>demo.setPanel('viewingExports'))}
           {row('Local watch history','film',()=>demo.setPanel('watchHistory'))}
           {row('Plex Continue Watching','film',()=>demo.setPanel('plex'))}
         </>}
         {demo.panel==='widgets'&&<HouseholdWidgetSettings key={demo.prefs.householdProfile??'home'} demo={demo} t={t}/>}
+        {demo.panel==='watchRequests'&&<WatchRequestsSettings key={demo.prefs.householdProfile??'home'} demo={demo} t={t}/>}
         {demo.panel==='titleDiscovery'&&<TitleDiscoverySettings demo={demo} t={t}/>}
         {demo.panel==='viewingExports'&&<ViewingExportsSettings key={demo.prefs.householdProfile??'home'} demo={demo} t={t}/>}
         {demo.panel==='watchHistory'&&<WatchHistorySettings key={demo.prefs.householdProfile??'home'} demo={demo} t={t}/>}
