@@ -70,3 +70,5 @@ See [phone remote](features/PHONE_REMOTE.md), [PWA](features/PWA.md), and [brand
 - [X-Center ID and Aurea settings](features/ACCOUNT_SYNC.md)
 
 - [What’s New and the release archive](features/RELEASE_HISTORY.md)
+
+- [TV and player compatibility](platforms/TV_SUPPORT.md)
