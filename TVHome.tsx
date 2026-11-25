@@ -404,7 +404,7 @@ function LauncherView({ demo,onTarget,onOpenRemote }: { demo: Launcher;onOpenRem
               minutes={demo.prefs.photoWallpaperMinutes??5}/>}
           {demo.native&&demo.page===0&&!demo.panel&&!idleDisplay.idle&&demo.prefs.wallpaperVideoEnabled&&demo.prefs.wallpaperVideo&&
             <WallpaperVideo clip={demo.prefs.wallpaperVideo}/>}
-          <MusicTint dominance={demo.snapshot?.music.dominance} enabled={demo.prefs.musicTint===true&&demo.snapshot?.music.source!=='android-session'} playing={demo.playing&&demo.music} colors={demo.native?(demo.snapshot?.music.colors??['#e6eaf0','#929aa8']):tracks[demo.track]!.colors}/>
+          <MusicTint dominance={demo.snapshot?.music.dominance} enabled={demo.prefs.musicTint===true&&(demo.snapshot?.music.source!=='android-session'||!!demo.snapshot.music.artworkId)} playing={demo.playing&&demo.music} colors={demo.native?(demo.snapshot?.music.colors??['#e6eaf0','#929aa8']):tracks[demo.track]!.colors}/>
 
           {demo.native&&demo.page===0&&demo.prefs.wallpaperClock&&demo.prefs.wallpaperClock!=='off'&&
             <View pointerEvents="none" accessible={false} accessibilityElementsHidden

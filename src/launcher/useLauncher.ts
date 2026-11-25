@@ -92,7 +92,7 @@ export function useNativeLauncher(): Launcher {
               .execute('artwork')
               .then((art) => {
                 if (
-                  artworkId.current === id &&
+                  artworkId.current === id && art.id === id &&
                   typeof art.image === 'string' &&
                   /^data:image\/(png|jpeg);base64,/.test(art.image)
                 )

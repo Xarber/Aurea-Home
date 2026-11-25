@@ -50,9 +50,24 @@ final class AndroidMediaSessions {
                 .put("next",info.getBoolean("canNext")).put("previous",info.getBoolean("canPrevious"));
             JSONObject result=new JSONObject().put("active",true).put("source","android-session")
                 .put("androidPackage",id).put("title",info.getString("title"))
-                .put("artist",info.getString("artist")).put("playing",playing).put("controls",controls);
+                .put("artist",info.getString("artist")).put("album",info.getString("album")).put("playing",playing).put("controls",controls);
             if(info.has("position"))result.put("positionMs",info.getLong("position")).put("durationMs",info.getLong("duration"));
             return result;
+        }
+        return null;
+    }
+
+    android.graphics.Bitmap artwork(String id,String title,String artist,String album){
+        List<MediaController> connected=controllers();
+        if(connected==null)return null;
+        for(MediaController controller:connected){
+            if(!id.equals(controller.getPackageName()))continue;
+            MediaMetadata metadata=controller.getMetadata();
+            if(metadata==null||!title.equals(label(metadata.getString(MediaMetadata.METADATA_KEY_TITLE)))||
+                !artist.equals(label(metadata.getString(MediaMetadata.METADATA_KEY_ARTIST)))||
+                !album.equals(label(metadata.getString(MediaMetadata.METADATA_KEY_ALBUM))))continue;
+            android.graphics.Bitmap image=metadata.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART);
+            return image!=null?image:metadata.getBitmap(MediaMetadata.METADATA_KEY_ART);
         }
         return null;
     }
@@ -66,6 +81,7 @@ final class AndroidMediaSessions {
         String title=label(metadata.getString(MediaMetadata.METADATA_KEY_TITLE));
         if(title.isEmpty())return null;
         JSONObject card=new JSONObject().put("package",controller.getPackageName()).put("title",title)
+            .put("album",label(metadata.getString(MediaMetadata.METADATA_KEY_ALBUM)))
             .put("artist",label(metadata.getString(MediaMetadata.METADATA_KEY_ARTIST)))
             .put("playing",state.getState()==PlaybackState.STATE_PLAYING)
             .put("canPlay",can(state,PlaybackState.ACTION_PLAY|PlaybackState.ACTION_PLAY_PAUSE))

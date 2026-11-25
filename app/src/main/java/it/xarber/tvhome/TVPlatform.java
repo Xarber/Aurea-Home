@@ -46,6 +46,10 @@ public final class TVPlatform {
     private final LocalWatchHistory watchHistory;
     private final it.xarber.tvhome.playback.MusicActivityClock androidMusicClock=new it.xarber.tvhome.playback.MusicActivityClock();
     private String androidMusicSource="";
+    private Bitmap localArtwork;
+    private String localArtworkTrack="",localArtworkId="",localArtworkImage="";
+    private long nextArtworkAttempt;
+
     private static final String ANDROID_ACTIVITY_APP="android-activity-app";
     private static final String DOORBELL="home-assistant-doorbell";
     private final HomeAssistantControls homeAssistant;
@@ -59,7 +63,7 @@ public final class TVPlatform {
     private final Handler main=new Handler(Looper.getMainLooper());
     private TVPlatform(Context context){this.context=context;households=HouseholdAccounts.get(context);photos=PhotoWallpapers.get(context);androidSessions=new AndroidMediaSessions(context);watchHistory=new LocalWatchHistory(context,androidSessions);homeAssistant=new HomeAssistantControls(context);videoWallpaper=new VideoWallpaper(context);titleDiscovery=new TitleDiscovery(context);watchNext=new WatchNextShelf(context);plex=new PlexShelf(context);prefs=context.getSharedPreferences("it.xarber.tvhome.MainActivity",0);catalog=new TVHomeCatalog(context,prefs);paired=PairedPlayback.get(context);playback=new RemotePlayback(context,false);if(!BuildConfig.APPLICATION_ID.endsWith(".preview"))playback.start();updates=UpdateController.get(context);}
     public void resume(Activity host){activity=new WeakReference<>(host);foreground=true;paired.resume();if(!BuildConfig.MOBILE_REMOTE){updates.observe(this::notifyUpdate);updates.resume();}if(!BuildConfig.MOBILE_REMOTE&&!BuildConfig.APPLICATION_ID.endsWith(".preview")){HomeRemoteService.ensure(context);ensureReceiver();}main.post(()->AureaTVModule.event("home-resumed",safe("pairing",paired.pairingPending())));}
-    public void pause(Activity host){if(activity.get()!=host)return;foreground=false;cancelWatchStart();paired.pause();updates.pause();}
+    public void pause(Activity host){if(activity.get()!=host)return;foreground=false;cancelWatchStart();clearLocalArtwork();paired.pause();updates.pause();}
     private void ensureReceiver(){if(!ReceiverSettings.enabled(context))return;context.getSharedPreferences("settings",0).edit().putBoolean("auto_start",true).putBoolean("boot_auto_start",true).putBoolean("run_in_background",true).putBoolean("launch_on_connect",true).putBoolean("auto_fullscreen",true).apply();try{context.startForegroundService(new Intent(context,io.github.jqssun.airplay.service.AirPlayService.class).setAction(io.github.jqssun.airplay.service.AirPlayService.ACTION_START_SERVER));}catch(Exception failure){AureaTVModule.event("notice",safe("message","AirPlay service could not start"));}}
     private RemotePlayback receiverPlayback(){RemotePlayback shared=HomeRemoteService.sharedPlayback();return shared!=null?shared:playback;}
     private synchronized JSONObject homeMusic(JSONObject receiver)throws Exception{
@@ -69,6 +73,7 @@ public final class TVPlatform {
         if(!app.equals(androidMusicSource)){
             androidMusicClock.visible(false,false,now);
             androidMusicSource=app;
+            clearLocalArtwork();
         }
         if(app.isEmpty()||receiver.optBoolean("active"))return receiver;
         JSONObject media;
@@ -78,7 +83,51 @@ public final class TVPlatform {
             return receiver;
         }
         boolean visible=androidMusicClock.visible(media!=null,media!=null&&media.optBoolean("playing"),now);
-        return media==null?receiver:media.put("activityVisible",visible);
+        if(media==null){
+            clearLocalArtwork();
+            return receiver;
+        }
+        updateLocalArtwork(media);
+        return media.put("activityVisible",visible);
+    }
+
+    private synchronized void clearLocalArtwork(){
+        localArtwork=null;
+        localArtworkTrack="";
+        localArtworkId="";
+        localArtworkImage="";
+        nextArtworkAttempt=0;
+    }
+
+    private void updateLocalArtwork(JSONObject media)throws Exception{
+        String app=media.getString("androidPackage"),title=media.getString("title"),
+            artist=media.getString("artist"),album=media.getString("album");
+        String key=app+"\n"+title+"\n"+artist+"\n"+album;
+        if(!key.equals(localArtworkTrack)){
+            clearLocalArtwork();
+            localArtworkTrack=key;
+        }
+        long now=android.os.SystemClock.elapsedRealtime();
+        if(localArtwork==null&&now>=nextArtworkAttempt){
+            nextArtworkAttempt=now+6000;
+            try{
+                Bitmap cover=androidSessions.artwork(app,title,artist,album);
+                if(cover!=null&&!cover.isRecycled()){
+                    float scale=Math.min(1f,256f/Math.max(cover.getWidth(),cover.getHeight()));
+                    Bitmap reduced=Bitmap.createScaledBitmap(cover,Math.max(1,Math.round(cover.getWidth()*scale)),
+                        Math.max(1,Math.round(cover.getHeight()*scale)),true);
+                    ByteArrayOutputStream bytes=new ByteArrayOutputStream();
+                    if(reduced.compress(Bitmap.CompressFormat.JPEG,82,bytes)&&bytes.size()<=100000){
+                        localArtwork=reduced;
+                        localArtworkImage="data:image/jpeg;base64,"+
+                            android.util.Base64.encodeToString(bytes.toByteArray(),android.util.Base64.NO_WRAP);
+                        localArtworkId="android-"+java.util.UUID.randomUUID();
+                    }else if(reduced!=cover)reduced.recycle();
+                }
+            }catch(RuntimeException unavailable){/* Playback remains available if its cover is unreadable. */}
+        }
+        if(!localArtworkId.isEmpty())media.put("artworkId",localArtworkId);
+
     }
     private JSONObject homeMediaCommand(JSONObject request)throws Exception{
         if(!request.optString("source").equals("android-session"))return receiverPlayback().command(request);
@@ -130,7 +179,7 @@ public final class TVPlatform {
             .put("photoWallpaperEnabled",layout.getBoolean("photo-wallpaper-enabled",false))
             .put("photoWallpaperMinutes",layout.getInt("photo-wallpaper-minutes",5));
         AudioManager audio=context.getSystemService(AudioManager.class);int maximum=audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC);int volume=Math.round(100f*audio.getStreamVolume(AudioManager.STREAM_MUSIC)/Math.max(1,maximum));
-        JSONObject music=homeMusic(receiverPlayback().state());Bitmap cover=music.optString("source").equals("android-session")?null:receiverPlayback().cover();if(cover!=paletteArtwork){paletteArtwork=cover;palette=new JSONArray();for(int color:WavePalette.from(cover))palette.put(String.format(java.util.Locale.US,"#%06x",color&0xffffff));}music.put("colors",palette).put("dominance",WavePalette.dominance(cover));HomeRemoteServer remote=HomeRemoteService.server();
+        JSONObject music=homeMusic(receiverPlayback().state());Bitmap cover=music.optString("source").equals("android-session")?localArtwork:receiverPlayback().cover();if(cover!=paletteArtwork){paletteArtwork=cover;palette=new JSONArray();for(int color:WavePalette.from(cover))palette.put(String.format(java.util.Locale.US,"#%06x",color&0xffffff));}music.put("colors",palette).put("dominance",WavePalette.dominance(cover));HomeRemoteServer remote=HomeRemoteService.server();
         result.put("preferences",preferences).put("music",music).put("network",network()).put("volume",volume).put("remoteConnected",remote!=null&&remote.hasActiveRemote()).put("paired",pairedState()).put("receiver",ReceiverSettings.state(context)).put("updates",updateState())
           .put("introductionPending",introductionPending()).put("releasePending",ReleaseHistory.pending(context)).put("lastSeenRelease",ReleaseHistory.lastSeenRelease(context)).put("build",new JSONObject().put("version",BuildConfig.VERSION_NAME).put("code",BuildConfig.VERSION_CODE).put("commit",BuildConfig.SOURCE_COMMIT).put("channel",BuildConfig.BUILD_CHANNEL));
         try{preferences.put("quickActions",new JSONArray(layout.getString("quick-actions","[]")));}
@@ -167,7 +216,11 @@ public final class TVPlatform {
         switch(operation){
         case "snapshot":return snapshot(data.optBoolean("refresh"));
         case "image":return catalog.image(data.getString("id"),data.optString("kind","icon"));
-        case "artwork":return receiverPlayback().artwork();
+        case "artwork":
+            RemotePlayback artworkPlayback=receiverPlayback();
+            if(artworkPlayback.state().optBoolean("active"))return artworkPlayback.artwork();
+            if(!foreground()||!households.activeId().equals("home"))return new JSONObject();
+            return new JSONObject().put("id",localArtworkId).put("image",localArtworkImage);
         case "launch":catalog.launch(data.getString("id"));return safe("accepted",true);
         case "guestWifiQr":
             if(!foreground())throw new IllegalStateException("launcher_not_active");
