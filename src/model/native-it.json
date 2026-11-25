@@ -306,6 +306,8 @@
   "Start from viewing history": "Parti dalla cronologia",
   "Choose a title from this profile. Only the search text you submit is sent to TMDB.": "Scegli un titolo da questo profilo. Solo il testo che cerchi viene inviato a TMDB.",
   "No movie or series titles found in this profile’s history.": "Non ci sono film o serie nella cronologia di questo profilo.",
+  "Show this app on Home": "Mostra questa app sulla Home",
+  "Hide Android media from Home": "Nascondi i contenuti Android dalla Home",
   "Idle display": "Schermo in inattività",
   "Idle after": "Attiva dopo",
   "Dim": "Attenua",

@@ -32,25 +32,49 @@ final class AndroidMediaSessions {
         java.util.Set<String> seen=new java.util.HashSet<>();
         if(connected!=null)for(MediaController controller:connected){
             if(values.length()>=12)break;
-            if(controller.getPackageName().equals(context.getPackageName()))continue;
-            PlaybackState state=controller.getPlaybackState();
-            MediaMetadata metadata=controller.getMetadata();
-            if(state==null||metadata==null||state.getState()==PlaybackState.STATE_NONE||
-                state.getState()==PlaybackState.STATE_STOPPED||state.getState()==PlaybackState.STATE_ERROR)continue;
-            String title=label(metadata.getString(MediaMetadata.METADATA_KEY_TITLE));
-            if(title.isEmpty()||!seen.add(controller.getPackageName()))continue;
-            JSONObject card=new JSONObject().put("package",controller.getPackageName()).put("title",title)
-                .put("artist",label(metadata.getString(MediaMetadata.METADATA_KEY_ARTIST)))
-                .put("playing",state.getState()==PlaybackState.STATE_PLAYING)
-                .put("canPlay",can(state,PlaybackState.ACTION_PLAY|PlaybackState.ACTION_PLAY_PAUSE))
-                .put("canPause",can(state,PlaybackState.ACTION_PAUSE|PlaybackState.ACTION_PLAY_PAUSE))
-                .put("canNext",can(state,PlaybackState.ACTION_SKIP_TO_NEXT))
-                .put("canPrevious",can(state,PlaybackState.ACTION_SKIP_TO_PREVIOUS));
-            long duration=metadata.getLong(MediaMetadata.METADATA_KEY_DURATION),position=state.getPosition();
-            if(duration>0&&position>=0&&position<=duration)card.put("duration",duration).put("position",position);
-            values.put(card);
+            JSONObject card=describe(controller);
+            if(card!=null&&seen.add(controller.getPackageName()))values.put(card);
         }
         return new JSONObject().put("available",connected!=null).put("sessions",values);
+    }
+
+    JSONObject activity(String id)throws Exception{
+        List<MediaController> connected=controllers();
+        if(connected==null)return null;
+        for(MediaController controller:connected){
+            if(!id.equals(controller.getPackageName()))continue;
+            JSONObject info=describe(controller);
+            if(info==null)continue;
+            boolean playing=info.getBoolean("playing");
+            JSONObject controls=new JSONObject().put("play_pause",info.getBoolean(playing?"canPause":"canPlay"))
+                .put("next",info.getBoolean("canNext")).put("previous",info.getBoolean("canPrevious"));
+            JSONObject result=new JSONObject().put("active",true).put("source","android-session")
+                .put("androidPackage",id).put("title",info.getString("title"))
+                .put("artist",info.getString("artist")).put("playing",playing).put("controls",controls);
+            if(info.has("position"))result.put("positionMs",info.getLong("position")).put("durationMs",info.getLong("duration"));
+            return result;
+        }
+        return null;
+    }
+
+    private JSONObject describe(MediaController controller)throws Exception{
+        if(controller.getPackageName().equals(context.getPackageName()))return null;
+        PlaybackState state=controller.getPlaybackState();
+        MediaMetadata metadata=controller.getMetadata();
+        if(state==null||metadata==null||state.getState()==PlaybackState.STATE_NONE||
+            state.getState()==PlaybackState.STATE_STOPPED||state.getState()==PlaybackState.STATE_ERROR)return null;
+        String title=label(metadata.getString(MediaMetadata.METADATA_KEY_TITLE));
+        if(title.isEmpty())return null;
+        JSONObject card=new JSONObject().put("package",controller.getPackageName()).put("title",title)
+            .put("artist",label(metadata.getString(MediaMetadata.METADATA_KEY_ARTIST)))
+            .put("playing",state.getState()==PlaybackState.STATE_PLAYING)
+            .put("canPlay",can(state,PlaybackState.ACTION_PLAY|PlaybackState.ACTION_PLAY_PAUSE))
+            .put("canPause",can(state,PlaybackState.ACTION_PAUSE|PlaybackState.ACTION_PLAY_PAUSE))
+            .put("canNext",can(state,PlaybackState.ACTION_SKIP_TO_NEXT))
+            .put("canPrevious",can(state,PlaybackState.ACTION_SKIP_TO_PREVIOUS));
+        long duration=metadata.getLong(MediaMetadata.METADATA_KEY_DURATION),position=state.getPosition();
+        if(duration>0&&position>=0&&position<=duration)card.put("duration",duration).put("position",position);
+        return card;
     }
 
     void control(String id,String action){

@@ -214,6 +214,7 @@ export function useNativeLauncher(): Launcher {
     if (!music?.active) return;
     void execute('media', {
       source: music.source,
+      ...(music.androidPackage?{androidPackage:music.androidPackage}:{}),
       action,
       ...(value === undefined ? {} : { value }),
     }).catch(() => {});

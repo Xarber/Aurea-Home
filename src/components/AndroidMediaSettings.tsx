@@ -14,10 +14,12 @@ export function AndroidMediaSettings({demo,t}:{demo:Launcher;t:(value:string)=>s
   const [available,setAvailable]=useState<boolean>();
   const [items,setItems]=useState<Media[]>([]);
   const [selected,setSelected]=useState('');
+  const [activityApp,setActivityApp]=useState('');
   const [error,setError]=useState(false);
   const [busy,setBusy]=useState(false);
   function apply(result:Record<string,unknown>){
     setAvailable(result.available===true);
+    setActivityApp(typeof result.activityApp==='string'?result.activityApp:'');
     setItems(Array.isArray(result.sessions)?result.sessions.filter(item=>
       typeof item?.package==='string'&&typeof item.title==='string'):[]);
   }
@@ -60,6 +62,8 @@ export function AndroidMediaSettings({demo,t}:{demo:Launcher;t:(value:string)=>s
       {row('access',t('Open Android notification access'),'settings',()=>void action('mediaAccessSettings'))}
     </>}
     {available===true&&items.length===0&&body('No active Android media sessions.')}
+    {!card&&activityApp&&row('activity-disable',t('Hide Android media from Home'),'close',
+      ()=>void action('mediaActivityApp',{id:''}))}
     {!card&&items.map(item=>row(item.package,item.title,'music',()=>setSelected(item.package),item.artist||item.package))}
     {card&&<>
       <Text style={{color:'#fff',fontSize:22,fontWeight:'600'}}>{card.title}</Text>
@@ -70,6 +74,8 @@ export function AndroidMediaSettings({demo,t}:{demo:Launcher;t:(value:string)=>s
       {card.playing&&card.canPause&&row('pause',t('Pause'),'pause',()=>void action('mediaSessionCommand',{id:card.package,action:'pause'}))}
       {!card.playing&&card.canPlay&&row('play',t('Play'),'play',()=>void action('mediaSessionCommand',{id:card.package,action:'play'}))}
       {card.canNext&&row('next',t('Next'),'next',()=>void action('mediaSessionCommand',{id:card.package,action:'next'}))}
+      {row('activity',t(activityApp===card.package?'Hide Android media from Home':'Show this app on Home'),'home',
+        ()=>void action('mediaActivityApp',{id:activityApp===card.package?'':card.package}))}
       {row('back',t('Back to Android media'),'back',()=>setSelected(''))}
     </>}
   </View>;

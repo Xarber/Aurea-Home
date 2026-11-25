@@ -58,6 +58,8 @@ movement/group names, not app labels, pairing codes, SSIDs or media metadata.
 
 Guest Wi-Fi QR creation takes user-entered details through the foreground-only TV bridge. It has no HTTP or account endpoint. Aurea does not read stored Android Wi-Fi passwords or retain the supplied password or generated QR across panel exit or backgrounding. A person who sees or photographs the QR can recover the credentials, which is disclosed before generation. Device scanner interoperability requires physical verification.
 
+The Android media live activity is opt-in for one app on the Home profile and updates only while Home is in the foreground. Android grants notification access through Settings, and the feature uses the media-session service. Its metadata and app selection are excluded from account backups and the paired phone or web remote playback response. A command for a stale app selection is rejected.
+
 ## Phone microphone
 
 Recording requires explicit phone OS consent and a visible Listening indicator.

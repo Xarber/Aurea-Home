@@ -44,6 +44,9 @@ public final class TVPlatform {
     private final PhotoWallpapers photos;
     private final AndroidMediaSessions androidSessions;
     private final LocalWatchHistory watchHistory;
+    private final it.xarber.tvhome.playback.MusicActivityClock androidMusicClock=new it.xarber.tvhome.playback.MusicActivityClock();
+    private String androidMusicSource="";
+    private static final String ANDROID_ACTIVITY_APP="android-activity-app";
     private final HomeAssistantControls homeAssistant;
     private final VideoWallpaper videoWallpaper;
     private final TitleDiscovery titleDiscovery;
@@ -57,6 +60,36 @@ public final class TVPlatform {
     public void pause(Activity host){if(activity.get()!=host)return;foreground=false;paired.pause();updates.pause();}
     private void ensureReceiver(){if(!ReceiverSettings.enabled(context))return;context.getSharedPreferences("settings",0).edit().putBoolean("auto_start",true).putBoolean("boot_auto_start",true).putBoolean("run_in_background",true).putBoolean("launch_on_connect",true).putBoolean("auto_fullscreen",true).apply();try{context.startForegroundService(new Intent(context,io.github.jqssun.airplay.service.AirPlayService.class).setAction(io.github.jqssun.airplay.service.AirPlayService.ACTION_START_SERVER));}catch(Exception failure){AureaTVModule.event("notice",safe("message","AirPlay service could not start"));}}
     private RemotePlayback receiverPlayback(){RemotePlayback shared=HomeRemoteService.sharedPlayback();return shared!=null?shared:playback;}
+    private synchronized JSONObject homeMusic(JSONObject receiver)throws Exception{
+        String app=foreground()&&!BuildConfig.MOBILE_REMOTE&&households.activeId().equals("home")
+            ?prefs.getString(ANDROID_ACTIVITY_APP,""):"";
+        long now=android.os.SystemClock.elapsedRealtime();
+        if(!app.equals(androidMusicSource)){
+            androidMusicClock.visible(false,false,now);
+            androidMusicSource=app;
+        }
+        if(app.isEmpty()||receiver.optBoolean("active"))return receiver;
+        JSONObject media;
+        try{media=androidSessions.activity(app);}
+        catch(RuntimeException unavailable){
+            androidMusicClock.visible(false,false,now);
+            return receiver;
+        }
+        boolean visible=androidMusicClock.visible(media!=null,media!=null&&media.optBoolean("playing"),now);
+        return media==null?receiver:media.put("activityVisible",visible);
+    }
+    private JSONObject homeMediaCommand(JSONObject request)throws Exception{
+        if(!request.optString("source").equals("android-session"))return receiverPlayback().command(request);
+        JSONObject music=homeMusic(receiverPlayback().state());
+        if(!music.optString("source").equals("android-session")||
+            !music.optString("androidPackage").equals(request.optString("androidPackage")))
+            return SystemRemoteController.error("source_changed");
+        String action=request.optString("action");
+        if(!music.getJSONObject("controls").optBoolean(action))return SystemRemoteController.error("unsupported");
+        if(action.equals("play_pause"))action=music.optBoolean("playing")?"pause":"play";
+        androidSessions.control(music.getString("androidPackage"),action);
+        return safe("accepted",true);
+    }
     static JSONObject safe(String key,Object value){JSONObject result=new JSONObject();try{result.put(key,value);}catch(Exception ignored){}return result;}
     public static boolean key(KeyEvent event){if(!foreground()||!AureaTVModule.listening())return false;String key;
         switch(event.getKeyCode()){case KeyEvent.KEYCODE_DPAD_UP:key="up";break;case KeyEvent.KEYCODE_DPAD_DOWN:key="down";break;case KeyEvent.KEYCODE_DPAD_LEFT:key="left";break;case KeyEvent.KEYCODE_DPAD_RIGHT:key="right";break;case KeyEvent.KEYCODE_ENTER:case KeyEvent.KEYCODE_NUMPAD_ENTER:case KeyEvent.KEYCODE_DPAD_CENTER:key="select";break;case KeyEvent.KEYCODE_ESCAPE:case KeyEvent.KEYCODE_BACK:key="back";break;case KeyEvent.KEYCODE_MENU:key="control";break;case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:key="playpause";break;default:return false;}
@@ -95,7 +128,7 @@ public final class TVPlatform {
             .put("photoWallpaperEnabled",layout.getBoolean("photo-wallpaper-enabled",false))
             .put("photoWallpaperMinutes",layout.getInt("photo-wallpaper-minutes",5));
         AudioManager audio=context.getSystemService(AudioManager.class);int maximum=audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC);int volume=Math.round(100f*audio.getStreamVolume(AudioManager.STREAM_MUSIC)/Math.max(1,maximum));
-        JSONObject music=receiverPlayback().state();Bitmap cover=receiverPlayback().cover();if(cover!=paletteArtwork){paletteArtwork=cover;palette=new JSONArray();for(int color:WavePalette.from(cover))palette.put(String.format(java.util.Locale.US,"#%06x",color&0xffffff));}music.put("colors",palette).put("dominance",WavePalette.dominance(cover));HomeRemoteServer remote=HomeRemoteService.server();
+        JSONObject music=homeMusic(receiverPlayback().state());Bitmap cover=music.optString("source").equals("android-session")?null:receiverPlayback().cover();if(cover!=paletteArtwork){paletteArtwork=cover;palette=new JSONArray();for(int color:WavePalette.from(cover))palette.put(String.format(java.util.Locale.US,"#%06x",color&0xffffff));}music.put("colors",palette).put("dominance",WavePalette.dominance(cover));HomeRemoteServer remote=HomeRemoteService.server();
         result.put("preferences",preferences).put("music",music).put("network",network()).put("volume",volume).put("remoteConnected",remote!=null&&remote.hasActiveRemote()).put("paired",pairedState()).put("receiver",ReceiverSettings.state(context)).put("updates",updateState())
           .put("introductionPending",introductionPending()).put("releasePending",ReleaseHistory.pending(context)).put("lastSeenRelease",ReleaseHistory.lastSeenRelease(context)).put("build",new JSONObject().put("version",BuildConfig.VERSION_NAME).put("code",BuildConfig.VERSION_CODE).put("commit",BuildConfig.SOURCE_COMMIT).put("channel",BuildConfig.BUILD_CHANNEL));
         return result;
@@ -221,7 +254,7 @@ public final class TVPlatform {
                 }
                 return watchHistory.settings();
             }
-        case "mediaSessions":case "mediaSessionCommand":case "mediaAccessSettings":
+        case "mediaSessions":case "mediaSessionCommand":case "mediaAccessSettings":case "mediaActivityApp":
             if(!foreground()||BuildConfig.MOBILE_REMOTE)
                 throw new IllegalStateException("launcher_not_active");
             if(operation.equals("mediaAccessSettings")){
@@ -231,7 +264,14 @@ public final class TVPlatform {
                 return safe("accepted",true);
             }
             if(operation.equals("mediaSessionCommand"))androidSessions.control(data.getString("id"),data.getString("action"));
-            return androidSessions.read();
+            if(operation.equals("mediaActivityApp")){
+                if(!households.activeId().equals("home"))throw new IllegalStateException("profile_changed");
+                String app=data.getString("id");
+                if(!app.isEmpty()&&(!catalog.isApp(app)||androidSessions.activity(app)==null))
+                    throw new IllegalArgumentException("media_session_unavailable");
+                if(!prefs.edit().putString(ANDROID_ACTIVITY_APP,app).commit())throw new IllegalStateException("storage_failed");
+            }
+            return androidSessions.read().put("activityApp",households.activeId().equals("home")?prefs.getString(ANDROID_ACTIVITY_APP,""):"");
         case "importWallpaperVideo":case "removeWallpaperVideo":
             if(!foreground())throw new IllegalStateException("launcher_not_active");
             String videoProfile=data.getString("profile");
@@ -396,7 +436,7 @@ public final class TVPlatform {
         case "settings":openSettings(data.getString("screen"));return safe("accepted",true);
         case "uninstall":catalog.appAction(data.getString("id"),true);return safe("accepted",true);
         case "appInfo":catalog.appAction(data.getString("id"),false);return safe("accepted",true);
-        case "media":return receiverPlayback().command(data);
+        case "media":return homeMediaCommand(data);
         case "volume":int value=data.getInt("value");if(value<0||value>100)throw new IllegalArgumentException("invalid_volume");AudioManager audio=context.getSystemService(AudioManager.class);audio.setStreamVolume(AudioManager.STREAM_MUSIC,Math.round(audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC)*value/100f),0);return safe("accepted",true);
         case "receiverSettings":
             ReceiverSettings.save(context,data);
