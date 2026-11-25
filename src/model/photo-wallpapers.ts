@@ -13,3 +13,9 @@ export function localWallpaperPhotos(value:unknown,profile:string) {
     uri.startsWith('file:///')&&!uri.includes('..')&&
     new RegExp('/wallpaper-photos/'+profile+'/[a-f0-9-]{36}\\.jpg$').test(uri)))].slice(0,12);
 }
+
+export function localWallpaperVideo(value:unknown,profile:string) {
+  if(typeof value!=='string'||value.length>512||!value.startsWith('file:///')||value.includes('..')||
+    !/^(?:home|[a-f0-9-]{36})$/.test(profile))return undefined;
+  return new RegExp('/wallpaper-videos/'+profile+'/clip\\.mp4\\?revision=[0-9]+$').test(value)?value:undefined;
+}

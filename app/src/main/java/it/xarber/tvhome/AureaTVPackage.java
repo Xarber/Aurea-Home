@@ -8,5 +8,5 @@ import java.util.List;
 import java.util.Collections;
 public final class AureaTVPackage implements ReactPackage {
     @Override public List<NativeModule> createNativeModules(ReactApplicationContext context){return Collections.singletonList(new AureaTVModule(context));}
-    @Override public List<ViewManager> createViewManagers(ReactApplicationContext context){return Collections.emptyList();}
+    @Override public List<ViewManager> createViewManagers(ReactApplicationContext context){return Collections.singletonList(new WallpaperVideoManager());}
 }

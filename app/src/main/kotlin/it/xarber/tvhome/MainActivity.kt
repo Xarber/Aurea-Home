@@ -112,6 +112,39 @@ class MainActivity : ReactActivity() {
             AureaTVModule.event("notice", TVPlatform.safe("message", "No document picker is available on this TV."))
         }
     }
+    private var videoProfile: String? = null
+    private val wallpaperVideo = registerForActivityResult(ActivityResultContracts.OpenDocument()) { source ->
+        val expected = videoProfile
+        if (source != null && expected != null) {
+            val application = applicationContext
+            Thread({
+                val imported = try {
+                    HouseholdAccounts.get(application).layoutFor(expected)
+                    VideoWallpaper(application).save(expected,source)
+                    true
+                } catch (_: Exception) { false }
+                main.post {
+                    videoProfile = null
+                    if (!isFinishing && !isDestroyed) {
+                        val message = if (imported) "Wallpaper video imported" else "Could not import the wallpaper video."
+                        AureaTVModule.event("notice", TVPlatform.safe("message", message))
+                        AureaTVModule.event("playback", org.json.JSONObject())
+                    }
+                }
+            }, "AureaWallpaperVideoImport").start()
+        } else {
+            videoProfile = null
+        }
+    }
+    fun importWallpaperVideo(profile: String) {
+        if (videoProfile != null) return
+        videoProfile = profile
+        try { wallpaperVideo.launch(arrayOf("video/mp4")) }
+        catch (_: Exception) {
+            videoProfile = null
+            AureaTVModule.event("notice", TVPlatform.safe("message", "No document picker is available on this TV."))
+        }
+    }
     private var previewApproval = ""
     private val previewConsent = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val approval=previewApproval;previewApproval=""

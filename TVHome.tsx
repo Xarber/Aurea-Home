@@ -35,6 +35,7 @@ import { translator } from './src/model/i18n';
 import {tv} from './src/platform/native/tv';
 import { defaultWallpaperSchedule,tracks } from './src/model/catalog';
 import {useIdleDisplay} from './src/hooks/useIdleDisplay';
+import {WallpaperVideo} from './src/components/WallpaperVideo';
 import {PhotoWallpaper} from './src/components/PhotoWallpaper';
 import { Wallpaper } from './src/components/Wallpaper';
 import { FocusButton } from './src/components/FocusButton';
@@ -400,6 +401,8 @@ function LauncherView({ demo,onTarget,onOpenRemote }: { demo: Launcher;onOpenRem
           {demo.native&&demo.prefs.photoWallpaperEnabled&&!!demo.prefs.photoWallpapers?.length&&
             <PhotoWallpaper key={demo.prefs.householdProfile??'home'} photos={demo.prefs.photoWallpapers}
               minutes={demo.prefs.photoWallpaperMinutes??5}/>}
+          {demo.native&&demo.page===0&&!demo.panel&&!idleDisplay.idle&&demo.prefs.wallpaperVideoEnabled&&demo.prefs.wallpaperVideo&&
+            <WallpaperVideo clip={demo.prefs.wallpaperVideo}/>}
           <MusicTint dominance={demo.snapshot?.music.dominance} enabled={demo.prefs.musicTint===true} playing={demo.playing&&demo.music} colors={demo.native?(demo.snapshot?.music.colors??['#e6eaf0','#929aa8']):tracks[demo.track]!.colors}/>
 
           {demo.native&&demo.page===0&&demo.prefs.wallpaperClock&&demo.prefs.wallpaperClock!=='off'&&

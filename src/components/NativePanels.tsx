@@ -17,6 +17,7 @@ import {PlexSettings} from './PlexSettings';
 import {WatchNextSettings} from './WatchNextSettings';
 import {SmartHomeSettings} from './SmartHomeSettings';
 import {idleDelays} from '../model/idle-display';
+import {WallpaperVideoSettings} from './WallpaperVideoSettings';
 import {PhotoWallpaperSettings} from './PhotoWallpaperSettings';
 import {WallpaperScheduleSettings} from './WallpaperScheduleSettings';
 import {WallpaperWeatherSettings} from './WallpaperWeatherSettings';
@@ -444,6 +445,7 @@ export function NativePanels({
               demo.change({wallpaperClock:next[demo.prefs.wallpaperClock??'off']});
             },{off:'Off',minimal:'Minimal',stacked:'Stacked'}[demo.prefs.wallpaperClock??'off'])}
             <PhotoWallpaperSettings key={demo.prefs.householdProfile??'home'} demo={demo} t={t}/>
+            <WallpaperVideoSettings key={'video-'+(demo.prefs.householdProfile??'home')} demo={demo} t={t}/>
             <WallpaperScheduleSettings prefs={demo.prefs} change={demo.change} t={t}/>
             {(demo.prefs.wallpaper==='daylight'||demo.prefs.wallpaperScheduleEnabled)&&<WallpaperWeatherSettings city={demo.prefs.weatherCity}
               language={demo.prefs.language} t={t} change={weatherCity=>demo.change({weatherCity})}/>}

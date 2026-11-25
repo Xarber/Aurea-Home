@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import {validateWallpaperSchedule} from '../model/catalog.ts';
 import {idleDelay,idleMode} from '../model/idle-display.ts';
-import {localWallpaperPhotos,photoIntervals} from '../model/photo-wallpapers.ts';
+import {localWallpaperPhotos,localWallpaperVideo,photoIntervals} from '../model/photo-wallpapers.ts';
 import {weatherCity} from '../model/weather.ts';
 import type { NativeSnapshot } from './types';
 export function nativeSnapshot(value: Record<string, unknown>): NativeSnapshot {
@@ -62,6 +62,8 @@ export function nativeSnapshot(value: Record<string, unknown>): NativeSnapshot {
   prefs.wallpaperSchedule=validateWallpaperSchedule(prefs.wallpaperSchedule);
   prefs.wallpaperScheduleEnabled=prefs.wallpaperScheduleEnabled===true;
   prefs.photoWallpapers=localWallpaperPhotos(prefs.photoWallpapers,prefs.householdProfile??'home');
+  prefs.wallpaperVideo=localWallpaperVideo(prefs.wallpaperVideo,prefs.householdProfile??'home');
+  prefs.wallpaperVideoEnabled=prefs.wallpaperVideoEnabled===true;
   prefs.photoWallpaperEnabled=prefs.photoWallpaperEnabled===true;
   prefs.photoWallpaperMinutes=photoIntervals.find(value=>value===prefs.photoWallpaperMinutes)??5;
   prefs.idleDisplay=idleMode(prefs.idleDisplay);
