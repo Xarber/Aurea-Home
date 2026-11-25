@@ -52,7 +52,7 @@ export function ViewingExportsSettings({demo,t}:{demo:Launcher;t:(value:string)=
   const sourceId=sources.find(item=>item.id===service)?.id;
   const visible=filterViewingEntries(entries,source,sourceId);
   return <View style={{gap:7,paddingVertical:8}}>
-    <Text style={{color:'#d6e3ff',fontSize:16}}>{t('Import a Netflix profile CSV or YouTube Takeout watch-history JSON. Imported titles stay in this profile.')}</Text>
+    <Text style={{color:'#d6e3ff',fontSize:16}}>{t('Import a Netflix CSV or YouTube Takeout watch history. Imported titles stay in this profile.')}</Text>
     {row('detailed',t('Detailed Netflix export'),()=>{setDetailed(!detailed);setNetflixProfile('');},t(detailed?'On':'Off'))}
     {detailed&&<>
       <Text style={{color:'#d6e3ff',fontSize:15}}>{t('Only rows with this exact Netflix profile name will be imported.')}</Text>

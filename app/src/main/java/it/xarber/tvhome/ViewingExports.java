@@ -32,7 +32,10 @@ final class ViewingExports {
             data.write(buffer,0,count);
         }
         String document=data.toString("UTF-8").replaceFirst("^\ufeff","").trim();
-        List<JSONObject> rows=document.startsWith("[")?youtube(document):netflix(document,netflixProfile);
+        List<JSONObject> rows;
+        if(document.startsWith("["))rows=youtube(document);
+        else if(document.startsWith("<"))rows=youtubeHtml(document);
+        else rows=netflix(document,netflixProfile);
         if(rows.isEmpty())throw new IOException("history_no_entries");
         return rows;
     }
@@ -57,6 +60,37 @@ final class ViewingExports {
                 String product=url.startsWith("https://music.")?"YouTube Music":"YouTube";
                 append(output,product,item.optString("title").replaceFirst("(?i)^watched ",""),video.group(1),time,false);
             }catch(java.time.DateTimeException|org.json.JSONException ignored){}
+        }
+        return output;
+    }
+
+    private static List<JSONObject> youtubeHtml(String document)throws Exception{
+        // Convert HTML to text and link spans without loading or rendering any resource.
+        android.text.Spanned text=android.text.Html.fromHtml(document,android.text.Html.FROM_HTML_MODE_LEGACY);
+        List<JSONObject> output=new ArrayList<>();
+        android.text.style.URLSpan[] links=text.getSpans(0,text.length(),android.text.style.URLSpan.class);
+        java.util.Arrays.sort(links,Comparator.comparingInt(text::getSpanStart));
+        for(int i=0;i<links.length;i++){
+            android.text.style.URLSpan link=links[i];
+            String url=link.getURL();
+            java.util.regex.Matcher video=YOUTUBE_VIDEO.matcher(url);
+            int start=text.getSpanStart(link),end=text.getSpanEnd(link);
+            if(!video.matches()||start<0||end<=start||end-start>4096)continue;
+            int left=Math.max(0,start-24);
+            String prefix=text.subSequence(left,start).toString();
+            if(!prefix.matches("(?s).*(?:^|\\s)(?i:watched)\\s+"))continue;
+            int limit=Math.min(text.length(),end+512);
+            // A channel link can follow the title. Stop before the next watched record.
+            String trailing=text.subSequence(end,limit).toString();
+            String[] lines=trailing.split("\\R",8);
+            for(String line:lines){
+                if(line.trim().matches("(?i)^watched\\b.*"))break;
+                Long time=YouTubeTakeoutTime.parse(line);
+                if(time==null)continue;
+                String service=url.startsWith("https://music.")?"YouTube Music":"YouTube";
+                append(output,service,text.subSequence(start,end).toString(),video.group(1),time,false);
+                break;
+            }
         }
         return output;
     }

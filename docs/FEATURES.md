@@ -47,6 +47,8 @@ On Android TV, **Wallpapers → Personal photos** imports up to 12 images for th
 
 **Imported viewing history** accepts both the per-profile Netflix CSV and the detailed account download’s ViewingActivity CSV. For a detailed file, enter the exact Netflix profile name. The import excludes other profiles and supplemental clips. Aurea interprets times without an offset as UTC. The original file and profile name stay local. [Netflix viewing history](https://help.netflix.com/en/node/101917), [Netflix personal data download](https://help.netflix.com/en/node/100624/).
 
+YouTube Takeout imports accept watch-history JSON and English HTML exports with ISO or explicit UTC/GMT/numeric-offset times. Aurea extracts the titles and YouTube video IDs locally. It skips search activity, unsupported time zones and entries without exact links.
+
 Keep Watching, Local watch history and Imported viewing history offer an app filter when more than one source is present. Filtering only changes the current view. Selecting All apps restores the full shelf. If a source disappears after hiding its last entry, the shelf shows the remaining sources.
 
 In Aurea Remote, **Suggest a title** can send to a different saved TV without switching the handset’s current remote target. The destination TV must be paired and its active profile must have opted into requests. Aurea verifies the saved TV identity before sending the suggestion and does not replay an unconfirmed send.

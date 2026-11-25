@@ -179,7 +179,7 @@ class MainActivity : ReactActivity() {
     fun importViewingExport(profile: String, netflixProfile: String) {
         if (viewingImport != null) return
         viewingImport = ViewingImport(profile, netflixProfile)
-        try { viewingExport.launch(arrayOf("text/csv", "text/plain", "application/json", "application/octet-stream")) }
+        try { viewingExport.launch(arrayOf("text/csv", "text/plain", "text/html", "application/json", "application/octet-stream")) }
         catch (_: Exception) {
             viewingImport = null
             AureaTVModule.event("notice", TVPlatform.safe("message", "No document picker is available on this TV."))

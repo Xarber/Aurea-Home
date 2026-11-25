@@ -35,6 +35,10 @@ public final class ViewingExportCsvChecks {
             check(dateOnly&&title.equals("Arrival"));
             check(java.time.Instant.ofEpochMilli(stamp).toString().equals("2026-11-23T00:00:00Z"));
         });
+        String expected="2026-11-20T01:12:40Z";
+        check(YouTubeTakeoutTime.parse("Nov 20, 2026, 1:12:40\u202fAM UTC")==java.time.Instant.parse(expected).toEpochMilli());
+        check(YouTubeTakeoutTime.parse("Nov 20, 2026, 2:12:40 AM +01:00")==java.time.Instant.parse(expected).toEpochMilli());
+        check(YouTubeTakeoutTime.parse("Nov 20, 2026, 2:12:40 AM")==null);
         System.out.println("Viewing export CSV checks passed");
     }
     private static void check(boolean value){if(!value)throw new AssertionError();}
