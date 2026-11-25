@@ -135,3 +135,57 @@ test('phone handoff binds the browser and native proof and isolates the phone se
   assert.equal((await post('cancel',{id:canceled.id,proof})).status,200);
   assert.equal((await post('pickup',{id:canceled.id,proof})).status,403);
 });
+
+test('TV restore storage accepts only portable appearance and binds it to the redeemed owner', async context => {
+  const {createHash,randomBytes} = await import('node:crypto');
+  const origin='https://aurea.xcenter.it';
+  const records=new Map();
+  let owner='first';
+  const identity={
+    async validateSession(){return true;},
+    async beginDevice(){
+      const sub=owner;
+      return {expiresIn:60,code:'DEMO-01',verification:'https://id.xcenter.it/device',
+        async complete(){return {sub,name:sub,expiresIn:60,accessToken:'test-only'};}};
+    },
+    async preferences(session,method,revision,data,profile){
+      assert.equal(profile,'tv-appearance');
+      const stored=records.get(session.sub);
+      if(method==='GET')return stored??{status:404};
+      if(revision!==String(stored?.revision??0))return {status:412};
+      records.set(session.sub,{status:200,revision:(stored?.revision??0)+1,data});
+      return {status:204};
+    },
+  };
+  const server=createServer(accountHandler({identity,origin}));
+  server.listen(0,'127.0.0.1');
+  await once(server,'listening');
+  context.after(()=>server.close());
+  const base='http://127.0.0.1:'+server.address().port+'/account/device/';
+  async function signIn(){
+    const proof=randomBytes(32).toString('base64url');
+    const challenge=createHash('sha256').update(proof).digest('base64url');
+    const post=(path,body)=>fetch(base+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const begin=await post('start',{challenge});
+    assert.equal(begin.status,200);
+    const {id}=await begin.json();
+    const verified=await post('pickup',{id,proof});
+    assert.equal(verified.status,200);
+    return verified.json();
+  }
+  const first=await signIn();
+  owner='second';
+  const second=await signIn();
+  assert.notEqual(first.owner,second.owner);
+  const headers={Authorization:'Bearer '+first.session,'If-Match':'"0"','Content-Type':'application/json'};
+  const appearance={schema:1,language:'it',wallpaper:'silk',blur:false,glass:true,motion:false,musicTint:true};
+  const save=(body)=>fetch(base+'preferences',{method:'PUT',headers,body:JSON.stringify(body)});
+  for(const change of [{dock:['app']},{remoteLayoutEnabled:true},{language:'unknown'},{blur:'true'}]){
+    assert.equal((await save({...appearance,...change})).status,400);
+  }
+  assert.equal((await save(appearance)).status,200);
+  assert.equal((await save(appearance)).status,409);
+  const load=(session)=>fetch(base+'preferences',{headers:{Authorization:'Bearer '+session}}).then(value=>value.json());
+  assert.deepEqual(await load(first.session),{revision:'1',preferences:appearance});
+  assert.deepEqual(await load(second.session),{revision:'0',preferences:null});
+});

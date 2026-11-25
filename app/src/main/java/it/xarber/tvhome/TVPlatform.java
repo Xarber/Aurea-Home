@@ -413,13 +413,23 @@ public final class TVPlatform {
             if(!foreground())throw new IllegalStateException("launcher_not_active");
             return households.view();
         case "householdAppearance":
-            if(!foreground()||!households.activeId().equals(data.getString("id")))throw new IllegalStateException("profile_changed");
-            if(data.has("appearance")){
-                JSONObject incoming=data.getJSONObject("appearance");
-                if(incoming.has("dock")||incoming.has("weatherCity")||incoming.has("startFocus")||incoming.has("dockSize")||incoming.has("wallpaperClock")||incoming.has("navigationSound")||incoming.has("wallpaperSchedule")||incoming.has("wallpaperScheduleEnabled")||incoming.has("photoWallpaperEnabled")||incoming.has("photoWallpaperMinutes")||incoming.has("idleDisplay")||incoming.has("idleDisplayMinutes")||incoming.has("wallpaperVideoEnabled")||incoming.has("remoteLayoutEnabled")||incoming.has("focusSway")||incoming.has("quietHours"))throw new IllegalArgumentException("invalid_appearance");
-                savePreferences(incoming);
+            if(!foreground())throw new IllegalStateException("launcher_not_active");
+            synchronized(households){
+                SharedPreferences selected=households.layoutFor(data.getString("id"));
+                if(data.has("appearance")){
+                    JSONObject incoming=data.getJSONObject("appearance");
+                    java.util.Iterator<String> keys=incoming.keys();
+                    while(keys.hasNext()){
+                        switch(keys.next()){
+                            case "language":case "wallpaper":case "motion":case "musicTint":case "glass":case "blur":break;
+                            default:throw new IllegalArgumentException("invalid_appearance");
+                        }
+                    }
+                    savePreferences(incoming);
+                    return snapshot(false);
+                }
+                return accountAppearance(selected);
             }
-            return data.has("appearance")?snapshot(false):appearance();
         case "householdCreate":
             if(!foreground())throw new IllegalStateException("launcher_not_active");
             return households.create(data.getString("label"));
@@ -581,17 +591,21 @@ public final class TVPlatform {
 
     private JSONObject appearance() throws Exception {
         SharedPreferences settings=households.appearance();
+        return accountAppearance(settings)
+            .put("dockSize",settings.getString("dock-size","standard"))
+            .put("wallpaperClock",settings.getString("wallpaper-clock","off"))
+            .put("focusSway",settings.getBoolean("focus-sway",false))
+            .put("navigationSound",settings.getBoolean("navigation-sound",false));
+    }
+
+    private JSONObject accountAppearance(SharedPreferences settings) throws Exception {
         return new JSONObject()
             .put("wallpaper",settings.getString("wallpaper","classic"))
             .put("motion",settings.getBoolean("wallpaper-motion",false))
             .put("glass",settings.getBoolean("activity-background",true))
             .put("blur",settings.getBoolean("blur-enabled",true))
             .put("musicTint",settings.getBoolean("music-wallpaper-tint",false))
-            .put("language",households.language())
-            .put("dockSize",settings.getString("dock-size","standard"))
-            .put("wallpaperClock",settings.getString("wallpaper-clock","off"))
-            .put("focusSway",settings.getBoolean("focus-sway",false))
-            .put("navigationSound",settings.getBoolean("navigation-sound",false));
+            .put("language",households.language());
     }
 
     private void savePreferences(JSONObject data)throws Exception {

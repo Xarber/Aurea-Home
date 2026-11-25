@@ -2,6 +2,7 @@
 Description=Aurea Home account service
 Wants=network-online.target
 After=network-online.target xcenter-appliance-storage.target
+RequiresMountsFor=/srv/xcenter/apps /srv/xcenter/data /srv/xcenter/secrets
 
 [Service]
 Type=simple
@@ -15,8 +16,8 @@ NoNewPrivileges=yes
 PrivateTmp=yes
 ProtectSystem=strict
 ProtectHome=yes
-StateDirectory=aurea-account
-StateDirectoryMode=0700
+Environment=AUREA_ACCOUNT_STATE_DIRECTORY=/srv/xcenter/data/aurea/account
+ReadWritePaths=/srv/xcenter/data/aurea/account
 UMask=0077
 
 [Install]
