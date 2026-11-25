@@ -21,26 +21,34 @@ final class WatchRequests {
         if(!preferences.edit().putBoolean(ENABLED,enabled).commit())throw new IllegalStateException("storage_failed");
     }
 
-    static JSONObject submit(SharedPreferences preferences,String input)throws Exception {
+    static JSONObject submit(SharedPreferences preferences,String input,long startsAt)throws Exception {
         if(!enabled(preferences))return SystemRemoteController.error("watch_requests_disabled");
         String title=input.trim();
         if(title.length()<2||title.length()>120||title.matches("(?s).*[\\p{Cc}\\p{Cf}].*"))
             return SystemRemoteController.error("invalid_watch_request");
         JSONArray records=rows(preferences);
-        for(int i=0;i<records.length();i++)if(title.equalsIgnoreCase(records.getJSONObject(i).getString("title")))
-            return new JSONObject().put("accepted",true);
+        for(int i=0;i<records.length();i++)if(startsAt==records.getJSONObject(i).optLong("startsAt")&&
+            title.equalsIgnoreCase(records.getJSONObject(i).getString("title")))
+            return receipt(startsAt);
         if(records.length()>=40)return SystemRemoteController.error("watch_requests_full");
-        records.put(new JSONObject().put("id",UUID.randomUUID().toString()).put("title",title)
-            .put("requested",System.currentTimeMillis()));
+        JSONObject request=new JSONObject().put("id",UUID.randomUUID().toString()).put("title",title)
+            .put("requested",System.currentTimeMillis());
+        if(startsAt>0)request.put("startsAt",startsAt);
+        records.put(request);
         save(preferences,records);
-        return new JSONObject().put("accepted",true);
+        return receipt(startsAt);
     }
 
-    static String title(SharedPreferences preferences,String id)throws Exception {
+    private static JSONObject receipt(long startsAt)throws Exception{
+        JSONObject result=new JSONObject().put("accepted",true);
+        return startsAt>0?result.put("startsAt",startsAt):result;
+    }
+
+    static JSONObject record(SharedPreferences preferences,String id)throws Exception {
         JSONArray records=rows(preferences);
         for(int i=0;i<records.length();i++){
             JSONObject record=records.getJSONObject(i);
-            if(id.equals(record.getString("id")))return record.getString("title");
+            if(id.equals(record.getString("id")))return record;
         }
         throw new IllegalArgumentException("unknown_watch_request");
     }

@@ -3,7 +3,7 @@ import type {Session,Transport} from './types';
 import {RemoteError} from './validation.ts';
 
 /** Verify the saved identity before presenting its TV-local credential to a second device. */
-export async function sendSavedWatchRequest(transport:Transport,session:Session,title:string,signal:AbortSignal) {
+export async function sendSavedWatchRequest(transport:Transport,session:Session,title:string,signal:AbortSignal,startsAt?:number) {
   try{
     if(signal.aborted)throw new RemoteError('disconnected');
     const content=title.trim();
@@ -13,9 +13,9 @@ export async function sendSavedWatchRequest(transport:Transport,session:Session,
     const hello=await transport.rpc('hello',{},undefined,signal);
     if(signal.aborted)throw new RemoteError('disconnected');
     if(hello.id!==session.id)throw new RemoteError('device_changed');
-    const result=await transport.rpc('watch_request',{title:content},session.token,signal);
+    const result=await transport.rpc('watch_request',{title:content,...(startsAt!==undefined?{startsAt}:{})},session.token,signal);
     if(signal.aborted)throw new RemoteError('disconnected');
-    if(result.accepted!==true)throw new RemoteError('invalid_response');
+    if(result.accepted!==true||startsAt!==undefined&&result.startsAt!==startsAt)throw new RemoteError('invalid_response');
   }finally{
     transport.close?.();
   }

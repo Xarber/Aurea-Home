@@ -33,7 +33,7 @@ final class WatchNextShelf {
         prefs=context.getSharedPreferences("watch-next-shelf",Context.MODE_PRIVATE);
     }
 
-    JSONObject read()throws Exception{
+    synchronized JSONObject read()throws Exception{
         programs.clear();
         ArrayList<Program> rows=new ArrayList<>();
         boolean available=false;
@@ -124,21 +124,27 @@ final class WatchNextShelf {
         }catch(java.net.URISyntaxException|IllegalArgumentException invalid){return null;}
     }
 
-    JSONObject matching(String title,String selectedId)throws Exception{
+    synchronized JSONObject matching(String title,String selectedId)throws Exception{
+        return matching(title,selectedId,()->true);
+    }
+    synchronized JSONObject matching(String title,String selectedId,java.util.function.BooleanSupplier allowed)throws Exception{
         read();
         JSONArray matches=new JSONArray();
         for(Program program:programs.values()){
             String name=program.entry.getString("title"),episode=program.entry.getString("episode");
             if(!WatchTitle.matches(title,name)&&
                 (episode.isEmpty()||!WatchTitle.matches(title,name+" · "+episode)))continue;
-            if(program.id.equals(selectedId))return action(selectedId,false);
+            if(program.id.equals(selectedId)){
+                if(!allowed.getAsBoolean())throw new IllegalStateException("watch_start_canceled");
+                return action(selectedId,false);
+            }
             matches.put(program.entry);
         }
         if(!selectedId.isEmpty())throw new IllegalArgumentException("unknown_program");
         return new JSONObject().put("entries",matches);
     }
 
-    JSONObject action(String id,boolean dismiss)throws Exception{
+    synchronized JSONObject action(String id,boolean dismiss)throws Exception{
         if(SystemClock.elapsedRealtime()>validUntil)read();
         Program program=programs.get(id);
         if(program==null)throw new IllegalArgumentException("unknown_program");

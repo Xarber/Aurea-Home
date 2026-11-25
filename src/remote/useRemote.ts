@@ -50,10 +50,10 @@ export function useRemote(initialPreview:boolean, developerEndpoint?:string){
   await client.beginPair(transport(target),target,{device,grant});
  };
  const select=(tv:PairedTV)=>{chosen.current=true;setAddress(tv.address);setPreview(false);client.connect(transport(tv.address),tv);};
- const requestOnTV=(target:string,title:string,signal:AbortSignal)=>{
+ const requestOnTV=(target:string,title:string,signal:AbortSignal,startsAt?:number)=>{
   const saved=tvs.find(tv=>tv.address===target);
   if(preview||!saved)throw new RemoteError('not_connected');
-  return sendSavedWatchRequest(transport(target),saved,title,signal);
+  return sendSavedWatchRequest(transport(target),saved,title,signal,startsAt);
  };
  return {client,state,canAutoPair:loaded&&!isolated&&!preview,autoPairIdle:()=>!chosen.current&&!client.snapshot.selected,tvs,address,setAddress,preview,setPreview:changePreview,storageError,formError,connect,select,pairApproved,requestOnTV};
 }

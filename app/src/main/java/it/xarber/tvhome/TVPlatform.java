@@ -53,12 +53,13 @@ public final class TVPlatform {
     private final TitleDiscovery titleDiscovery;
     private final WatchNextShelf watchNext;
     private final PlexShelf plex;
+    private volatile Runnable watchStart;
     private Bitmap paletteArtwork;
     private JSONArray palette=new JSONArray().put("#e6eaf0").put("#929aa8");
     private final Handler main=new Handler(Looper.getMainLooper());
     private TVPlatform(Context context){this.context=context;households=HouseholdAccounts.get(context);photos=PhotoWallpapers.get(context);androidSessions=new AndroidMediaSessions(context);watchHistory=new LocalWatchHistory(context,androidSessions);homeAssistant=new HomeAssistantControls(context);videoWallpaper=new VideoWallpaper(context);titleDiscovery=new TitleDiscovery(context);watchNext=new WatchNextShelf(context);plex=new PlexShelf(context);prefs=context.getSharedPreferences("it.xarber.tvhome.MainActivity",0);catalog=new TVHomeCatalog(context,prefs);paired=PairedPlayback.get(context);playback=new RemotePlayback(context,false);if(!BuildConfig.APPLICATION_ID.endsWith(".preview"))playback.start();updates=UpdateController.get(context);}
     public void resume(Activity host){activity=new WeakReference<>(host);foreground=true;paired.resume();if(!BuildConfig.MOBILE_REMOTE){updates.observe(this::notifyUpdate);updates.resume();}if(!BuildConfig.MOBILE_REMOTE&&!BuildConfig.APPLICATION_ID.endsWith(".preview")){HomeRemoteService.ensure(context);ensureReceiver();}main.post(()->AureaTVModule.event("home-resumed",safe("pairing",paired.pairingPending())));}
-    public void pause(Activity host){if(activity.get()!=host)return;foreground=false;paired.pause();updates.pause();}
+    public void pause(Activity host){if(activity.get()!=host)return;foreground=false;cancelWatchStart();paired.pause();updates.pause();}
     private void ensureReceiver(){if(!ReceiverSettings.enabled(context))return;context.getSharedPreferences("settings",0).edit().putBoolean("auto_start",true).putBoolean("boot_auto_start",true).putBoolean("run_in_background",true).putBoolean("launch_on_connect",true).putBoolean("auto_fullscreen",true).apply();try{context.startForegroundService(new Intent(context,io.github.jqssun.airplay.service.AirPlayService.class).setAction(io.github.jqssun.airplay.service.AirPlayService.ACTION_START_SERVER));}catch(Exception failure){AureaTVModule.event("notice",safe("message","AirPlay service could not start"));}}
     private RemotePlayback receiverPlayback(){RemotePlayback shared=HomeRemoteService.sharedPlayback();return shared!=null?shared:playback;}
     private synchronized JSONObject homeMusic(JSONObject receiver)throws Exception{
@@ -193,18 +194,33 @@ public final class TVPlatform {
                 households.kids.configure(child,verified,data.optString("oldPin"),data.getString("pin"));
             }
             return households.kids.status();
-        case "watchRequests":case "watchRequestsEnable":case "watchRequestsDismiss":case "watchRequestsMatch":case "watchRequestsOpen":
+        case "watchRequests":case "watchRequestsEnable":case "watchRequestsDismiss":case "watchRequestsMatch":case "watchRequestsOpen":case "watchRequestsSchedule":case "watchRequestsCancel":
             if(!foreground())throw new IllegalStateException("launcher_not_active");
             synchronized(households){
                 SharedPreferences requests=households.layoutFor(data.getString("profile"));
-                if(operation.equals("watchRequestsMatch")||operation.equals("watchRequestsOpen")){
-                    if(!households.activeId().equals("home"))throw new IllegalArgumentException("watch_next_unavailable");
-                    String requestTitle=WatchRequests.title(requests,data.getString("id"));
-                    return watchNext.matching(requestTitle,operation.equals("watchRequestsOpen")?data.getString("program"):"");
+                if(operation.equals("watchRequestsCancel")){
+                    cancelWatchStart();
+                    return WatchRequests.state(requests).put("scheduled",false);
                 }
-                if(operation.equals("watchRequestsEnable"))WatchRequests.enable(requests,data.getBoolean("enabled"));
+                if(operation.equals("watchRequestsMatch")||operation.equals("watchRequestsOpen")||operation.equals("watchRequestsSchedule")){
+                    if(!households.activeId().equals("home"))throw new IllegalArgumentException("watch_next_unavailable");
+                    JSONObject request=WatchRequests.record(requests,data.getString("id"));
+                    String title=request.getString("title");
+                    if(operation.equals("watchRequestsSchedule")){
+                        long delay=request.optLong("startsAt")-System.currentTimeMillis();
+                        if(delay<2000||delay>5*60*1000)throw new IllegalArgumentException("invalid_watch_schedule");
+                        scheduleWatchStart(title,data.getString("program"),delay);
+                        return WatchRequests.state(requests).put("scheduled",true);
+                    }
+                    return watchNext.matching(title,operation.equals("watchRequestsOpen")?data.getString("program"):"");
+                }
+                if(operation.equals("watchRequestsEnable")){
+                    boolean enabled=data.getBoolean("enabled");
+                    if(!enabled)cancelWatchStart();
+                    WatchRequests.enable(requests,enabled);
+                }
                 if(operation.equals("watchRequestsDismiss"))WatchRequests.dismiss(requests,data.getString("id"));
-                return WatchRequests.state(requests);
+                return WatchRequests.state(requests).put("scheduled",watchStart!=null);
             }
         case "titleDiscoveryStatus":case "titleDiscoveryConfigure":case "titleDiscoveryDisconnect":case "titleDiscoverySearch":case "titleDiscoveryProviders":case "titleDiscoveryRelated":case "titleDiscoveryStremio":
             if(!foreground())throw new IllegalStateException("launcher_not_active");
@@ -443,6 +459,7 @@ public final class TVPlatform {
         case "householdSignOut":
         case "householdAutomatic":
             if(!foreground())throw new IllegalStateException("launcher_not_active");
+            if(operation.equals("householdSelect"))cancelWatchStart();
             HomeRemoteServer profileRemote=HomeRemoteService.server();
             if(profileRemote!=null)profileRemote.closeAccountInvitation();
             if(operation.equals("householdAutomatic"))return households.automatic(data.getString("id"),data.getBoolean("enabled"));
@@ -534,7 +551,16 @@ public final class TVPlatform {
     JSONObject remoteWatchRequest(JSONObject data)throws Exception {
         synchronized(households){
             if(households.kids.active(households.activeId()))return SystemRemoteController.error("watch_requests_disabled");
-            return WatchRequests.submit(households.appearance(),data.optString("title"));
+            Object scheduled=data.opt("startsAt");
+            long startsAt=0;
+            if(scheduled!=null){
+                if(!(scheduled instanceof Long)||!households.activeId().equals("home"))
+                    return SystemRemoteController.error("invalid_watch_schedule");
+                startsAt=(Long)scheduled;
+                long now=System.currentTimeMillis();
+                if(startsAt<now+15000||startsAt>now+5*60*1000)return SystemRemoteController.error("invalid_watch_schedule");
+            }
+            return WatchRequests.submit(households.appearance(),data.optString("title"),startsAt);
         }
     }
 
@@ -705,6 +731,34 @@ public final class TVPlatform {
         if(language!=null&&!primary)edit.putString("language",language);
         if(!edit.commit())throw new IllegalStateException("storage_failed");
         if(language!=null&&primary)AppLanguage.set(context,language);
+    }
+    private synchronized void cancelWatchStart(){
+        if(watchStart!=null)main.removeCallbacks(watchStart);
+        watchStart=null;
+    }
+    private synchronized void scheduleWatchStart(String title,String program,long delay){
+        cancelWatchStart();
+        long stamp=android.os.SystemClock.elapsedRealtime()+delay;
+        watchStart=new Runnable(){
+            @Override public void run(){
+                Thread worker=new Thread(()->{
+                    synchronized(households){
+                        if(watchStart!=this)return;
+                        try{
+                            if(!foreground()||!households.activeId().equals("home")||
+                                android.os.SystemClock.elapsedRealtime()>stamp+5000)return;
+                            watchNext.matching(title,program,()->watchStart==this&&foreground());
+                        }
+                        catch(Exception unavailable){
+                            if(watchStart==this&&foreground())
+                                AureaTVModule.event("notice",safe("message","Scheduled program is unavailable."));
+                        }finally{if(watchStart==this)watchStart=null;}
+                    }
+                },"AureaWatchStart");
+                worker.start();
+            }
+        };
+        main.postDelayed(watchStart,delay);
     }
     private static boolean quietNow(SharedPreferences preferences){
         int start=preferences.getInt("quiet-start",-1),end=preferences.getInt("quiet-end",-1);

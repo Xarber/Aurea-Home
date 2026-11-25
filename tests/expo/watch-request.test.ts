@@ -56,3 +56,17 @@ test('unconfirmed sends fail without retrying and unverified legacy trust stays 
   await assert.rejects(sendSavedWatchRequest(legacy.transport,{...session,id:undefined},'Arrival',new AbortController().signal),/auth_required/);
   assert.deepEqual(legacy.events,[]);
 });
+
+test('a coordinated request only counts as delivered if the TV acknowledges the exact time',async()=>{
+  const start=Date.now()+120000;
+  const fixture=transportFixture(session.id!);
+  await assert.rejects(sendSavedWatchRequest(fixture.transport,session,'Arrival',new AbortController().signal,start),/invalid_response/);
+  assert.deepEqual(fixture.events.at(-1),['watch_request',{title:'Arrival',startsAt:start},session.token]);
+  const accepted=transportFixture(session.id!);
+  const rpc=accepted.transport.rpc;
+  accepted.transport.rpc=async(...args)=>{
+    const reply=await rpc(...args);
+    return args[0]==='watch_request'?{...reply,startsAt:start}:reply;
+  };
+  await sendSavedWatchRequest(accepted.transport,session,'Arrival',new AbortController().signal,start);
+});

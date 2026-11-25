@@ -53,6 +53,8 @@ Keep Watching, Local watch history and Imported viewing history offer an app fil
 
 In Aurea Remote, **Suggest a title** can send to a different saved TV without switching the handset’s current remote target. The destination TV must be paired and its active profile must have opted into requests. Aurea verifies the saved TV identity before sending the suggestion and does not replay an unconfirmed send.
 
+**Coordinate a start** sends a future time to two or more paired TVs. Every TV must explicitly acknowledge the time, and someone at each TV must approve an exact, locally available Keep Watching entry. Keep Home visible until the start. A scheduled start uses local device clocks and opens the provider’s own resume link, so startup and playback offsets may differ between rooms. Use **Cancel scheduled start** before the deadline to stop an approved launch.
+
 On the Home profile, open a **Watch request** to look for exact title or title-and-episode matches in **Keep Watching**. The results name the source app. Choose a result to open its provider-supplied link. Aurea rechecks the match before opening. An unmatched request stays in the list until dismissed, and a remote submission cannot open an app by itself.
 
 In **Find a title → Start from viewing history**, the launcher offers up to eight recent unique titles from local video history and imported Netflix records in the active profile. Selecting a title fills the search field so the user can edit it before searching. Only a submitted query goes to TMDB. Pick the matching result and open **Related titles** for suggestions. [TMDB title search workflow](https://developer.themoviedb.org/docs/search-and-query-for-details).
