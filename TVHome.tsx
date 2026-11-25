@@ -34,6 +34,7 @@ import { useKeyboard, focusId } from './src/hooks/useKeyboard';
 import { translator } from './src/model/i18n';
 import {tv} from './src/platform/native/tv';
 import { defaultWallpaperSchedule,tracks } from './src/model/catalog';
+import {useIdleDisplay} from './src/hooks/useIdleDisplay';
 import {PhotoWallpaper} from './src/components/PhotoWallpaper';
 import { Wallpaper } from './src/components/Wallpaper';
 import { FocusButton } from './src/components/FocusButton';
@@ -212,6 +213,8 @@ function LauncherView({ demo,onTarget,onOpenRemote }: { demo: Launcher;onOpenRem
     },
     [catalog],
   );
+  const idleMode=demo.prefs.idleDisplay??'off';
+  const idleDisplay=useIdleDisplay(demo.native&&demo.ready&&!demo.panel,idleMode,demo.prefs.idleDisplayMinutes??5);
   useKeyboard({
     panel: demo.panel,
     close: demo.back,
@@ -220,6 +223,7 @@ function LauncherView({ demo,onTarget,onOpenRemote }: { demo: Launcher;onOpenRem
     changePage,
     menu,
     play: demo.toggle,
+    wake: idleDisplay.wake,
   });
   const latest = useRef(demo);
   latest.current = demo;
@@ -389,9 +393,9 @@ function LauncherView({ demo,onTarget,onOpenRemote }: { demo: Launcher;onOpenRem
 
   return (
     <BlurEnabled.Provider value={demo.prefs.blur!==false}><GlassTarget.Provider value={target}>
-      <View style={[s.root, { height: canvasHeight, maxHeight: canvasHeight }]}>
+      <View onTouchStart={demo.native&&!idleDisplay.idle?idleDisplay.wake:undefined} style={[s.root, { height: canvasHeight, maxHeight: canvasHeight }]}>
         <BlurTargetView ref={target} style={StyleSheet.absoluteFill}>
-          <Wallpaper id={demo.prefs.wallpaper} motion={demo.prefs.motion} city={demo.prefs.weatherCity}
+          <Wallpaper id={demo.prefs.wallpaper} motion={demo.prefs.motion&&!idleDisplay.idle} city={demo.prefs.weatherCity}
             schedule={demo.prefs.wallpaperScheduleEnabled?(demo.prefs.wallpaperSchedule??defaultWallpaperSchedule):undefined} />
           {demo.native&&demo.prefs.photoWallpaperEnabled&&!!demo.prefs.photoWallpapers?.length&&
             <PhotoWallpaper key={demo.prefs.householdProfile??'home'} photos={demo.prefs.photoWallpapers}
@@ -948,6 +952,12 @@ function LauncherView({ demo,onTarget,onOpenRemote }: { demo: Launcher;onOpenRem
             settingsAnchor={settingsAnchor}
           />
         )}
+        {idleDisplay.idle&&<Pressable onPress={idleDisplay.wake} accessibilityRole="button" accessibilityLabel={t('Wake display')}
+          style={[StyleSheet.absoluteFill,{zIndex:90,backgroundColor:idleMode==='dim'?'#000b':'#000'}]}>
+          {idleMode==='clock'&&<Text style={{position:'absolute',left:now.getMinutes()%2?'22%':'58%',
+            top:now.getMinutes()%3===0?'34%':'58%',color:'#b2b7c3',fontSize:Math.max(36,width*.05),
+            fontWeight:'300',fontVariant:['tabular-nums']}}>{time}</Text>}
+        </Pressable>}
       </View>
     </GlassTarget.Provider></BlurEnabled.Provider>
   );

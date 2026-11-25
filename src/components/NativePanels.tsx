@@ -16,6 +16,7 @@ import {ProfileFolderSettings} from './ProfileFolderSettings';
 import {PlexSettings} from './PlexSettings';
 import {WatchNextSettings} from './WatchNextSettings';
 import {SmartHomeSettings} from './SmartHomeSettings';
+import {idleDelays} from '../model/idle-display';
 import {PhotoWallpaperSettings} from './PhotoWallpaperSettings';
 import {WallpaperScheduleSettings} from './WallpaperScheduleSettings';
 import {WallpaperWeatherSettings} from './WallpaperWeatherSettings';
@@ -430,6 +431,14 @@ export function NativePanels({
                 </View>
               ))}
             </View>
+            {row('Idle display','sun',()=>{
+              const next={off:'dim',dim:'clock',clock:'black',black:'off'} as const;
+              demo.change({idleDisplay:next[demo.prefs.idleDisplay??'off']});
+            },{off:'Off',dim:'Dim',clock:'Idle clock',black:'Black screen'}[demo.prefs.idleDisplay??'off'])}
+            {demo.prefs.idleDisplay&&demo.prefs.idleDisplay!=='off'&&row('Idle after','sun',()=>{
+              const index=idleDelays.findIndex(value=>value===(demo.prefs.idleDisplayMinutes??5));
+              demo.change({idleDisplayMinutes:idleDelays[(index+1)%idleDelays.length]});
+            },(demo.prefs.idleDisplayMinutes??5)+' '+t('min'))}
             {row('Wallpaper clock','sun',()=>{
               const next={off:'minimal',minimal:'stacked',stacked:'off'} as const;
               demo.change({wallpaperClock:next[demo.prefs.wallpaperClock??'off']});

@@ -16,10 +16,10 @@ export function focusId(id:string){
 }
 interface Options {
  panel:string|null;close:()=>void;control:()=>void;page:number;
- changePage:(page:number)=>void;menu:(id:string)=>void;play:()=>void;
+ changePage:(page:number)=>void;menu:(id:string)=>void;play:()=>void;wake?:()=>boolean;
 }
-export function useKeyboard({panel,close,control,page,changePage,menu,play}:Options){
- useNativeKeyboard({panel,close,control,page,changePage,menu,play});
+export function useKeyboard({panel,close,control,page,changePage,menu,play,wake}:Options){
+ useNativeKeyboard({panel,close,control,page,changePage,menu,play,wake});
  // Survives a popup opening between keydown and keyup. The release must never
  // activate the popup's newly focused Close button after a held Enter.
  const press=useRef<{target?:HTMLElement;timer?:ReturnType<typeof setTimeout>;held:boolean}>({held:false});

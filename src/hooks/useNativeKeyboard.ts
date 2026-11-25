@@ -5,6 +5,7 @@ import { nativeFocus } from '../platform/native/focus';
 import { tv } from '../platform/native/tv';
 import {NativeInputGate} from '../model/nativeInput';
 import { HeldPress } from '../model/heldPress';
+import {IdleWakeKey} from '../model/idle-display';
 interface Options {
   panel: string | null;
   close: () => void;
@@ -13,6 +14,7 @@ interface Options {
   changePage: (page: number) => void;
   menu: (id: string) => void;
   play: () => void;
+  wake?:()=>boolean;
 }
 /** Key-down ownership survives snapshot rerenders and a menu opening before key-up. */
 export function useNativeKeyboard(options: Options) {
@@ -58,20 +60,24 @@ export function useNativeKeyboard(options: Options) {
           clearTimeout(handle as ReturnType<typeof setTimeout>),
       },
     );
-    const directionsDown=new Map<string,number>(),gate=new NativeInputGate();
-    const recover=()=>{press.cancel();gate.reset();directionsDown.clear();nativeFocus.recover();};
-    const lifecycle=AppState.addEventListener('change',state=>{if(state==='active')recover();else{press.cancel();gate.reset();directionsDown.clear();nativeFocus.suspend();}});
+    const directionsDown=new Map<string,number>(),gate=new NativeInputGate(),wakeKey=new IdleWakeKey();
+    const recover=()=>{press.cancel();gate.reset();wakeKey.reset();directionsDown.clear();nativeFocus.recover();};
+    const lifecycle=AppState.addEventListener('change',state=>{if(state==='active')recover();else{press.cancel();gate.reset();wakeKey.reset();directionsDown.clear();nativeFocus.suspend();}});
     const unsubscribe = tv.subscribeInput((event) => {
       const current = latest.current;
       if(event.type==='home-resumed'){recover();return;}
       if (event.type === 'back') {
-        back();
+        if(!current.wake?.())back();
         return;
       }
       if (event.type !== 'key'||!gate.accept(event.payload.eventId)) return;
       const key = event.payload.key,
         phase = event.payload.phase,
         repeat = event.payload.repeat;
+      if(typeof key==='string'&&wakeKey.handle(phase==='down'&&current.wake?.()===true,key,phase)){
+        press.cancel();
+        return;
+      }
       if (key === 'select' || key === 'back') {
         if (phase === 'down' && repeat === 0)
           press.down(key, nativeFocus.current);

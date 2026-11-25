@@ -78,6 +78,8 @@ public final class TVPlatform {
         String schedule=layout.getString("wallpaper-schedule",null);
         if(schedule!=null)try{preferences.put("wallpaperSchedule",new JSONObject(schedule));}
         catch(org.json.JSONException invalid){/* Use built-in default schedule. */}
+        preferences.put("idleDisplay",layout.getString("idle-display","off"))
+            .put("idleDisplayMinutes",layout.getInt("idle-display-minutes",5));
         preferences.put("photoWallpapers",photos.list(households.activeId()))
             .put("photoWallpaperEnabled",layout.getBoolean("photo-wallpaper-enabled",false))
             .put("photoWallpaperMinutes",layout.getInt("photo-wallpaper-minutes",5));
@@ -188,7 +190,7 @@ public final class TVPlatform {
             if(!foreground()||!households.activeId().equals(data.getString("id")))throw new IllegalStateException("profile_changed");
             if(data.has("appearance")){
                 JSONObject incoming=data.getJSONObject("appearance");
-                if(incoming.has("dock")||incoming.has("weatherCity")||incoming.has("startFocus")||incoming.has("dockSize")||incoming.has("wallpaperClock")||incoming.has("navigationSound")||incoming.has("wallpaperSchedule")||incoming.has("wallpaperScheduleEnabled")||incoming.has("photoWallpaperEnabled")||incoming.has("photoWallpaperMinutes"))throw new IllegalArgumentException("invalid_appearance");
+                if(incoming.has("dock")||incoming.has("weatherCity")||incoming.has("startFocus")||incoming.has("dockSize")||incoming.has("wallpaperClock")||incoming.has("navigationSound")||incoming.has("wallpaperSchedule")||incoming.has("wallpaperScheduleEnabled")||incoming.has("photoWallpaperEnabled")||incoming.has("photoWallpaperMinutes")||incoming.has("idleDisplay")||incoming.has("idleDisplayMinutes"))throw new IllegalArgumentException("invalid_appearance");
                 savePreferences(incoming);
             }
             return data.has("appearance")?snapshot(false):appearance();
@@ -324,6 +326,16 @@ public final class TVPlatform {
             String size=data.getString("dockSize");
             if(!java.util.Arrays.asList("compact","standard","large").contains(size))throw new IllegalArgumentException("invalid_dock_size");
             edit.putString("dock-size",size);
+        }
+        if(data.has("idleDisplay")){
+            String display=data.getString("idleDisplay");
+            if(!java.util.Arrays.asList("off","dim","clock","black").contains(display))throw new IllegalArgumentException("invalid_idle_display");
+            edit.putString("idle-display",display);
+        }
+        if(data.has("idleDisplayMinutes")){
+            int minutes=data.getInt("idleDisplayMinutes");
+            if(!java.util.Arrays.asList(2,5,15,30).contains(minutes))throw new IllegalArgumentException("invalid_idle_delay");
+            edit.putInt("idle-display-minutes",minutes);
         }
         if(data.has("photoWallpaperEnabled"))edit.putBoolean("photo-wallpaper-enabled",data.getBoolean("photoWallpaperEnabled"));
         if(data.has("photoWallpaperMinutes")){
