@@ -17,6 +17,8 @@ import java.util.concurrent.Executors;
 /** Trusted in-process adapter only; unrelated apps and web pages cannot invoke it. */
 public final class AureaTVModule extends ReactContextBaseJavaModule {
     private static WeakReference<AureaTVModule> instance=new WeakReference<>(null);
+    private final ExecutorService smartHomeWorker=new java.util.concurrent.ThreadPoolExecutor(1,1,0,
+        java.util.concurrent.TimeUnit.SECONDS,new java.util.concurrent.ArrayBlockingQueue<>(12));
     private final ExecutorService worker=Executors.newSingleThreadExecutor();
     private final Handler main=new Handler(Looper.getMainLooper());
     private volatile int listeners;
@@ -33,11 +35,13 @@ public final class AureaTVModule extends ReactContextBaseJavaModule {
     @ReactMethod public void ready(){it.xarber.tvhome.MainActivity.interfaceReady=true;}
     @ReactMethod public void execute(String operation,String encoded,Promise promise){
         if(!valid||encoded.length()>32768){promise.reject("invalid_request","Request unavailable");return;}
-        worker.execute(()->{try{JSONObject value=TVPlatform.get(getReactApplicationContext()).execute(operation,new JSONObject(encoded));promise.resolve(value.toString());}catch(Exception failure){String code=failure instanceof IllegalArgumentException?failure.getMessage():"native_operation_failed";if(code==null||!code.matches("[a-z_]{1,64}"))code="native_operation_failed";promise.reject(code,"This action is unavailable");}});
+        ExecutorService executor=operation.startsWith("ha")?smartHomeWorker:worker;
+        try{executor.execute(()->{try{JSONObject value=TVPlatform.get(getReactApplicationContext()).execute(operation,new JSONObject(encoded));promise.resolve(value.toString());}catch(Exception failure){String code=failure instanceof IllegalArgumentException?failure.getMessage():"native_operation_failed";if(code==null||!code.matches("[a-z_]{1,64}"))code="native_operation_failed";promise.reject(code,"This action is unavailable");}});}
+        catch(java.util.concurrent.RejectedExecutionException busy){promise.reject("busy","This action is unavailable");}
     }
     @ReactMethod public void pairedRequest(String operation,String encoded,Promise promise){
         if(encoded.length()>4096){promise.reject("invalid_request","Request unavailable");return;}
         try{TVPlatform.get(getReactApplicationContext()).pairedRequest(operation,new JSONObject(encoded),value->{if(value.has("error"))promise.reject(value.optString("error","pairing_failed"),"Pairing action failed");else promise.resolve(value.toString());});}catch(Exception failure){promise.reject("pairing_failed","Pairing action failed");}
     }
-    @Override public void invalidate(){valid=false;listeners=0;main.removeCallbacks(waveform);worker.shutdownNow();if(instance.get()==this)instance.clear();super.invalidate();}
+    @Override public void invalidate(){valid=false;listeners=0;main.removeCallbacks(waveform);worker.shutdownNow();smartHomeWorker.shutdownNow();if(instance.get()==this)instance.clear();super.invalidate();}
 }

@@ -7,7 +7,7 @@ Aurea Home can accept local commands from either hub. Open **Control Center → 
 - **Home Assistant** — Copy the included `integrations/home-assistant/custom_components/aurea_home` directory into the server configuration’s `custom_components` directory. Restart Home Assistant and add **Aurea Home** from Devices & services. Use the Home Assistant key displayed on the TV. The integration creates a TV media player with source selection, volume and mute.
 - **Homebridge** — Install the included `integrations/homebridge` package from its local directory using the same npm environment as Homebridge. Configure the **AureaHome** platform with a `televisions` list containing an `address` and a Homebridge `key` for each TV. Add the published external TV accessory in Apple Home through Homebridge’s supported accessory pairing. Restart Homebridge after connecting the TV if inputs were unavailable when it started.
 
-Both hosts can open Aurea Home, select inputs exposed by Android, and set Android media volume and mute. The endpoint reports whether the TV is interactive and whether Home is foregrounded. Android does not provide a universal current HDMI source to ordinary apps. The integrations leave that source unknown outside Home. Starting the TV from standby, controlling other smart-home devices from the launcher and commanding vendor-controlled audio systems require separate supported capabilities.
+Both hosts can open Aurea Home, select inputs exposed by Android, and set Android media volume and mute. The endpoint reports whether the TV is interactive and whether Home is foregrounded. Android does not provide a universal current HDMI source to ordinary apps. The integrations leave that source unknown outside Home. Starting the TV from standby and commanding vendor-controlled audio systems require separate supported capabilities.
 
 ## Trust boundary
 
@@ -16,3 +16,12 @@ The TV stores independent random credentials for both integrations in an Android
 Checks cover the Android signature verifier on a host JVM and Homebridge request signing and response verification with fixtures. The Home Assistant source can be syntax-checked locally. Target validation requires a physical TV plus reachable Home Assistant and Homebridge instances. No community store publication is configured.
 
 Integration references include the [Home Assistant media player entity](https://contributors.home-assistant.io/core/entities/media-player/) and [Homebridge television example](https://github.com/homebridge/homebridge-examples/tree/master/television-example).
+
+
+## Control devices from Aurea Home
+
+In the Home profile, open **Control Center → Smart home → Home Assistant controls**. Connect a server you trust using an HTTPS URL and an access token issued to a non-admin Home Assistant user. The TV verifies the certificate and keeps the token in Android Keystore-backed storage. The token is sent only to that origin and is not included in account sync, backups, remote responses or logs.
+
+Add up to eight specific entity IDs. Aurea reads the selected lights, switches, scenes, thermostats and sensors. It can turn lights and switches on or off, activate scenes and adjust a supported thermostat within the limits reported by Home Assistant. Sensors are read-only. Disconnecting removes the local token and selected devices. The Home profile is a UI scope shared by people who can select it and is not an authentication boundary.
+
+The Homebridge plugin exposes Aurea's TV to Apple Home. It does not browse HomeKit accessories from the Android launcher. Camera views, scene discovery and additional controllable device types are still tracked separately. See the [Home Assistant REST API](https://contributors.home-assistant.io/core/internals/rest-api/).

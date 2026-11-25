@@ -15,6 +15,7 @@ import {HouseholdWidgetSettings} from './HouseholdWidgetSettings';
 import {ProfileFolderSettings} from './ProfileFolderSettings';
 import {PlexSettings} from './PlexSettings';
 import {WatchNextSettings} from './WatchNextSettings';
+import {HomeAssistantSettings} from './HomeAssistantSettings';
 import {SmartHomeSettings} from './SmartHomeSettings';
 import {idleDelays} from '../model/idle-display';
 import {WallpaperVideoSettings} from './WallpaperVideoSettings';
@@ -133,6 +134,7 @@ export function NativePanels({
     about: 'About Aurea Home',
     account: 'Household profiles',
     automations: 'Smart home',
+    homeAssistant: 'Home Assistant controls',
     watchNext: 'Keep Watching',
     plex: 'Plex Continue Watching',
     layout: 'Home layout',
@@ -274,7 +276,7 @@ export function NativePanels({
             {row('Household profiles','home',()=>demo.setPanel('account'))}
             {row('Household widgets','sun',()=>demo.setPanel('widgets'))}
             {row('Home layout','apps',()=>demo.setPanel('layout'))}
-            {row('Smart home','home',()=>demo.setPanel('automations'))}
+            {(demo.prefs.householdProfile??'home')==='home'&&row('Smart home','home',()=>demo.setPanel('automations'))}
             {row('Wallpapers', 'wallpaper', () => demo.setPanel('wallpapers'))}
             {row('Disable blur','sun',()=>demo.change({blur:demo.prefs.blur===false}),demo.prefs.blur===false?'On':'Off')}
             {row(
@@ -490,7 +492,11 @@ export function NativePanels({
         </>}
         {demo.panel==='widgets'&&<HouseholdWidgetSettings key={demo.prefs.householdProfile??'home'} demo={demo} t={t}/>}
         {demo.panel==='plex'&&<PlexSettings key={demo.prefs.householdProfile??'home'} demo={demo} t={t}/>}
-        {demo.panel==='automations'&&<SmartHomeSettings demo={demo} t={t}/>}
+        {demo.panel==='automations'&&<>
+          {(demo.prefs.householdProfile??'home')==='home'&&row('Home Assistant controls','home',()=>demo.setPanel('homeAssistant'))}
+          <SmartHomeSettings demo={demo} t={t}/>
+        </>}
+        {demo.panel==='homeAssistant'&&<HomeAssistantSettings demo={demo} t={t}/>}
         {demo.panel==='account'&&(household?<TVAccountSettings key={household.active} demo={demo} household={household}
           setHousehold={setHousehold} t={t} accountsEnabled={process.env.EXPO_PUBLIC_AUREA_ACCOUNTS_ENABLED==='1'}/>:
           text('Household profiles are loading…'))}
