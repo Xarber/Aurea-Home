@@ -71,6 +71,7 @@ export function nativeSnapshot(value: Record<string, unknown>): NativeSnapshot {
   prefs.photoWallpaperMinutes=photoIntervals.find(value=>value===prefs.photoWallpaperMinutes)??5;
   prefs.idleDisplay=idleMode(prefs.idleDisplay);
   prefs.idleDisplayMinutes=idleDelay(prefs.idleDisplayMinutes);
+  prefs.remoteLayoutEnabled=prefs.remoteLayoutEnabled===true;
   prefs.weatherCity=weatherCity(prefs.weatherCity);
   return value as unknown as NativeSnapshot;
 }

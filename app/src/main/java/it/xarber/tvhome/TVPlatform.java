@@ -86,6 +86,7 @@ public final class TVPlatform {
         if(households.kids.active(households.activeId())){
             preferences.put("kidsProfile",true).put("kidsApps",households.kids.status().getJSONArray("apps"));
         }
+        preferences.put("remoteLayoutEnabled",layout.getBoolean("remote-layout-editing",false));
         preferences.put("idleDisplay",layout.getString("idle-display","off"))
             .put("idleDisplayMinutes",layout.getInt("idle-display-minutes",5));
         preferences.put("wallpaperVideo",videoWallpaper.current(households.activeId()))
@@ -310,7 +311,7 @@ public final class TVPlatform {
             if(!foreground()||!households.activeId().equals(data.getString("id")))throw new IllegalStateException("profile_changed");
             if(data.has("appearance")){
                 JSONObject incoming=data.getJSONObject("appearance");
-                if(incoming.has("dock")||incoming.has("weatherCity")||incoming.has("startFocus")||incoming.has("dockSize")||incoming.has("wallpaperClock")||incoming.has("navigationSound")||incoming.has("wallpaperSchedule")||incoming.has("wallpaperScheduleEnabled")||incoming.has("photoWallpaperEnabled")||incoming.has("photoWallpaperMinutes")||incoming.has("idleDisplay")||incoming.has("idleDisplayMinutes")||incoming.has("wallpaperVideoEnabled"))throw new IllegalArgumentException("invalid_appearance");
+                if(incoming.has("dock")||incoming.has("weatherCity")||incoming.has("startFocus")||incoming.has("dockSize")||incoming.has("wallpaperClock")||incoming.has("navigationSound")||incoming.has("wallpaperSchedule")||incoming.has("wallpaperScheduleEnabled")||incoming.has("photoWallpaperEnabled")||incoming.has("photoWallpaperMinutes")||incoming.has("idleDisplay")||incoming.has("idleDisplayMinutes")||incoming.has("wallpaperVideoEnabled")||incoming.has("remoteLayoutEnabled"))throw new IllegalArgumentException("invalid_appearance");
                 savePreferences(incoming);
             }
             return data.has("appearance")?snapshot(false):appearance();
@@ -365,7 +366,7 @@ public final class TVPlatform {
             String code=data.getString("code");
             if(!code.matches("[A-Z0-9-]{6,10}"))throw new IllegalArgumentException("invalid_code");
             return safe("qr",qrImage("https://id.xcenter.it/device?code="+code));
-        case "preferences":savePreferences(data);return snapshot(false);
+        case "preferences":synchronized(households){savePreferences(data);}return snapshot(false);
         case "wifiName":main.post(()->{Activity host=activity.get();if(host instanceof MainActivity)((MainActivity)host).requestWifiName();});return safe("accepted",true);
         case "navigationTrace":String direction=data.optString("direction"),from=data.optString("from"),to=data.optString("to");if(direction.matches("up|down|left|right")&&from.matches("none|header|modal|page-[0-2]")&&to.matches("none|header|modal|page-[0-2]"))android.util.Log.i("AureaHomeUI","direction="+direction+" from="+from+" to="+to+" moved="+data.optBoolean("moved"));return safe("accepted",true);
         case "settings":openSettings(data.getString("screen"));return safe("accepted",true);
@@ -409,6 +410,53 @@ public final class TVPlatform {
         }
     }
     private static byte[] read(java.io.InputStream input)throws Exception{java.io.ByteArrayOutputStream output=new java.io.ByteArrayOutputStream();byte[] buffer=new byte[4096];int count;while((count=input.read(buffer))!=-1)output.write(buffer,0,count);return output.toByteArray();}
+    JSONObject remoteLayout(JSONObject input)throws Exception{
+        synchronized(households){
+            String profile=households.activeId();
+            SharedPreferences settings=households.appearance();
+            if(households.kids.active(profile)||!settings.getBoolean("remote-layout-editing",false))
+                return SystemRemoteController.error("layout_access_disabled");
+            JSONArray dock=catalog.dock(settings);
+            String wallpaper=settings.getString("wallpaper","classic");
+            String revision=layoutRevision(profile,dock,wallpaper);
+            String action=input.optString("action","read");
+            if(!action.equals("read")){
+                if(!revision.equals(input.optString("revision")))return SystemRemoteController.error("layout_changed");
+                if(action.equals("swap")){
+                    int index=input.optInt("index",-1),target=input.optInt("target",-1);
+                    if(index<0||index>5||target<0||target>5||Math.abs(index-target)!=1)
+                        return SystemRemoteController.error("invalid_dock");
+                    String from=dock.getString(index),to=dock.getString(target);
+                    if(from.equals("all")||to.equals("all"))return SystemRemoteController.error("fixed_library_slot");
+                    dock.put(index,to).put(target,from);
+                    try{savePreferences(new JSONObject().put("dock",dock));}
+                    catch(IllegalArgumentException unavailable){return SystemRemoteController.error("invalid_dock");}
+                }else if(action.equals("wallpaper")){
+                    wallpaper=input.getString("wallpaper");
+                    if(!WallpaperArt.valid(wallpaper))return SystemRemoteController.error("invalid_wallpaper");
+                    savePreferences(new JSONObject().put("wallpaper",wallpaper));
+                }else return SystemRemoteController.error("unsupported");
+            }
+            JSONArray entries=catalog.read(false),rows=new JSONArray();
+            for(int i=0;i<dock.length();i++){
+                String id=dock.getString(i),name=id;
+                for(int j=0;j<entries.length();j++){
+                    JSONObject item=entries.getJSONObject(j);
+                    if(id.equals(item.optString("id"))){name=item.optString("name",id);break;}
+                }
+                rows.put(new JSONObject().put("id",id).put("name",name));
+            }
+            return new JSONObject().put("dock",rows).put("wallpaper",wallpaper)
+                .put("revision",layoutRevision(profile,dock,wallpaper));
+        }
+    }
+
+    private static String layoutRevision(String profile,JSONArray dock,String wallpaper)throws Exception{
+        byte[] digest=java.security.MessageDigest.getInstance("SHA-256").digest(
+            (profile+"\n"+dock+"\n"+wallpaper).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        return android.util.Base64.encodeToString(digest,android.util.Base64.NO_PADDING|android.util.Base64.NO_WRAP|android.util.Base64.URL_SAFE);
+    }
+
     private JSONObject automationAddress(JSONObject result)throws Exception {
         HomeRemoteServer server=HomeRemoteService.server();
         if(server==null)return result;
@@ -436,6 +484,7 @@ public final class TVPlatform {
     private void savePreferences(JSONObject data)throws Exception {
         SharedPreferences.Editor edit=households.appearance().edit();
         boolean primary=households.activeId().equals("home");
+        if(data.has("remoteLayoutEnabled"))edit.putBoolean("remote-layout-editing",data.getBoolean("remoteLayoutEnabled"));
         if(data.has("dock"))catalog.writeDock(data.getJSONArray("dock"),edit);
         if(data.has("startFocus")){
             String start=data.getString("startFocus");

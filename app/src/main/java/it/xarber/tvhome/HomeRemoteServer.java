@@ -356,6 +356,7 @@ final class HomeRemoteServer implements Runnable {
             if(path.equals("/api/key")&&!RemoteKeys.supported(payload.optString("command"))){respond(client,400,"application/json","{\"error\":\"unsupported\"}");return;}
             java.util.Map<String,String> routes=new java.util.HashMap<>();
             routes.put("/api/preview/start","preview_start");routes.put("/api/preview/frame","preview_frame");routes.put("/api/preview/end","preview_end");routes.put("/api/system/local-adb","local_adb");routes.put("/api/system/connect","system_connect");routes.put("/api/voice/start","voice_start");routes.put("/api/voice/chunk","voice_chunk");routes.put("/api/voice/end","voice_end");routes.put("/api/key","key");routes.put("/api/state","state");routes.put("/api/catalog","catalog");routes.put("/api/icon","icon");routes.put("/api/artwork","artwork");routes.put("/api/launch","launch");routes.put("/api/media","media");routes.put("/api/system/pair/start","system_pair_begin");routes.put("/api/system/pair/finish","system_pair_finish");
+            routes.put("/api/layout","home_layout");
             routes.put("/api/apple-tv/apps","apple_apps");
             routes.put("/api/apple-tv/launch","apple_launch");
             routes.put("/api/apple-tv/key","apple_key");

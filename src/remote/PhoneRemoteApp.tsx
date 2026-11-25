@@ -1,3 +1,4 @@
+import {PhoneHomeLayout} from './PhoneHomeLayout';
 import * as Clipboard from 'expo-clipboard';
 import developerNotes from '../../assets/developer-changelog.json';
 import {useReleaseAnnouncement} from '../releases/useReleaseAnnouncement';
@@ -192,8 +193,9 @@ function PhoneRemoteScreen({preview, developerEndpoint, setDeveloperEndpoint}:{
  <View style={[s.tabs,{paddingBottom:Math.max(14,insets.bottom)}]}>{(['remote','apps','inputs','tvs'] as const).map(item=><FocusButton key={item} id={'phone-tab-'+item} group="phone" label={item==='remote'?'Remote':item==='apps'?'Apps':item==='tvs'?'TVs':'Inputs'} selected={tab===item} onPress={()=>setTab(item)} style={{flex:1,gap:5,borderRadius:18,padding:10,backgroundColor:tab===item?'#ffffff12':'transparent'}}><Icon name={item==='remote'?'remote':item==='apps'?'apps':item==='tvs'?'tv':'inputs'} size={21}/><Text style={s.tabText}>{item==='remote'?'Remote':item==='apps'?'Apps':item==='tvs'?'TVs':'Inputs'}</Text></FocusButton>)}</View>
  </View></View></BlurTargetView>
  {displayed&&<AnchoredPanel key={displayed==='music'?'music':'settings'} kind={displayed==='music'?'music':'settings'} phone safeInsets={{...insets,bottom:Math.max(insets.bottom,keyboardHeight)}} anchor={anchor} bounds={bounds} visible={!!panel} close={()=>setPanel(null)}>
- {displayed!=='music'&&<View style={s.panelHeader}><Text style={[s.sectionTitle,{flex:1,marginVertical:0}]}>{displayed==='preview-feed'?'Private app preview':displayed==='keyboard'?'TV keyboard':displayed==='ideas'?'Ideas':displayed==='developer-notes'?'Developer changelog':displayed==='signaling'?'Signaling server':displayed==='screenshots'?'Render Screenshots':displayed==='whatsnew'?'What’s New':displayed==='changelog'?'Release history':displayed.startsWith('release:')?'Full changelog':displayed==='controls'?'TV controls':displayed==='system'?'System controls':displayed==='paired'?'Connected':'Your televisions'}</Text><FocusButton id="phone-panel-close" group="phone-modal" label={navigation.canGoBack?"Back":"Close"} onPress={navigation.canGoBack?navigation.back:navigation.close} style={s.roundButton}><Icon name={navigation.canGoBack?"back":"close"} size={20}/></FocusButton></View>}
+ {displayed!=='music'&&<View style={s.panelHeader}><Text style={[s.sectionTitle,{flex:1,marginVertical:0}]}>{displayed==='preview-feed'?'Private app preview':displayed==='keyboard'?'TV keyboard':displayed==='ideas'?'Ideas':displayed==='developer-notes'?'Developer changelog':displayed==='signaling'?'Signaling server':displayed==='screenshots'?'Render Screenshots':displayed==='whatsnew'?'What’s New':displayed==='changelog'?'Release history':displayed.startsWith('release:')?'Full changelog':displayed==='home-layout'?'TV Home layout':displayed==='controls'?'TV controls':displayed==='system'?'System controls':displayed==='paired'?'Connected':'Your televisions'}</Text><FocusButton id="phone-panel-close" group="phone-modal" label={navigation.canGoBack?"Back":"Close"} onPress={navigation.canGoBack?navigation.back:navigation.close} style={s.roundButton}><Icon name={navigation.canGoBack?"back":"close"} size={20}/></FocusButton></View>}
  <FadedScroll>
+ {displayed==='home-layout'&&<PhoneHomeLayout key={state.selected?.address} client={client}/>}
  {displayed==='controls'&&<RemoteHandset full group="phone-modal" client={client} connected={connected} paired={!!system?.paired} ready={!!(system?.voiceReady??system?.ready)} command={command} pair={()=>setPanel('system')}/>}
  {displayed==='music'&&music&&<PhonePlayer music={music} artwork={state.artwork} connected={connected} action={(action,value)=>{void client.media(action,value);}}/>}
  {displayed==='settings'&&<>
@@ -204,6 +206,7 @@ function PhoneRemoteScreen({preview, developerEndpoint, setDeveloperEndpoint}:{
  {row('phone-touchpad','Touchpad navigation','inputs',toggleTouchpad,touchpad?'On':'Off')}
  <Text style={s.groupTitle}>TOOLS</Text>
  {developerEndpoint&&row('phone-restore-signaling','Exit developer server','wifi',()=>setDeveloperEndpoint())}
+ {launcherConnected&&!remote.preview&&row('phone-home-layout','TV Home layout','apps',()=>setPanel('home-layout'))}
  {system?.keyboard?.available&&row('phone-keyboard','TV keyboard','code',()=>setPanel('keyboard'))}
 
 

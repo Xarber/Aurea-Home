@@ -475,6 +475,8 @@ export function NativePanels({
           <ProfileFolderSettings key={panel} demo={demo} t={t} launch={launch} folderId={panel.startsWith('folder:')?id:undefined}
             assignApp={panel.startsWith('folder-app:')?id:undefined}/>}
         {panel==='layout'&&<>
+          {row('Allow paired remotes to edit this layout','remote',()=>demo.change({remoteLayoutEnabled:!demo.prefs.remoteLayoutEnabled}),
+            demo.prefs.remoteLayoutEnabled?'On':'Off')}
           {row('App folders','apps',()=>demo.setPanel('folders'))}
           {row('Export library layout','apps',()=>action('exportProfileLayout',{profile:demo.prefs.householdProfile??'home'}))}
           {row('Import library layout','apps',()=>action('importProfileLayout',{profile:demo.prefs.householdProfile??'home'}))}

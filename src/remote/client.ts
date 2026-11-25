@@ -142,6 +142,13 @@ export class RemoteClient {
   if(generation!==this.generation)throw new RemoteError('disconnected');
   return result;
  }
+ async homeLayout(payload:Record<string,unknown>={}){
+  if(this.fixture||this.snapshot.status!=='connected')throw new RemoteError('not_connected');
+  const generation=this.generation;
+  const result=await this.rpc('home_layout',payload);
+  if(generation!==this.generation)throw new RemoteError('disconnected');
+  return result;
+ }
  async previewTicket(){if(this.fixture||this.snapshot.status!=='connected')throw new RemoteError('preview_unavailable');return this.rpc('preview_ticket',{},12000);}
  async editText(previous:string,next:string){
   const generation=this.generation,revision=this.direct?.state().keyboard?.revision,direct=this.direct;
