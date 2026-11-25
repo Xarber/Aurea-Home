@@ -27,3 +27,7 @@ Use the GitHub Actions **testing** artifacts for the source revision reported wi
 | Roku, if available | Save a Roku with mobile app control enabled. Verify navigation and supported playback, volume, and power actions from a native phone. Confirm switching to a second device does not send commands to the first. |
 
 If something fails, note the app version, platform, the menu or app, steps and visible result. Omit PINs, keys, account credentials and private network details. Attach only a cropped screenshot or sanitized diagnostics where useful.
+
+## Evidence before physical testing
+
+[Testing run 45704182129](https://github.com/Xarber/Aurea-Home/actions/runs/45704182129) exported web version 2.4.0 at exact source `383c8660d2abe60446f518abcb13d51db87d840b`. Local Chromium verified the exported artifact's release history, acknowledgment and Ideas tests. Three passed. A separate isolated browser test served that exact artifact locally under the production origin and sent account requests to the live service. The unsigned session and both sign-in form variants appeared at 390 and 1280 pixels. This did not submit account credentials or complete authorization. The public site still reports 2.1.0.
