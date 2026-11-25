@@ -377,7 +377,7 @@ public final class TVPlatform {
             }
             main.post(()->{Activity host=activity.get();if(host instanceof MainActivity)((MainActivity)host).importWallpaperPhotos(photoProfile);});
             return safe("accepted",true);
-        case "haStatus":case "haConnect":case "haDisconnect":case "haEntity":case "haState":case "haCommand":case "haCamera":case "haCameraLive":case "haDoorbellPoll":case "haDoorbellSet":
+        case "haStatus":case "haConnect":case "haDisconnect":case "haEntity":case "haState":case "haCommand":case "haCamera":case "haCameraLive":case "haCalendar":case "haDoorbellPoll":case "haDoorbellSet":
             if(!foreground()||!households.activeId().equals("home"))throw new IllegalStateException("launcher_not_active");
             switch(operation){
                 case "haConnect":
@@ -410,6 +410,7 @@ public final class TVPlatform {
                 case "haState":return homeAssistant.state(data.getString("id"));
                 case "haCommand":return homeAssistant.command(data);
                 case "haCamera":return homeAssistant.camera(data.getString("id"));
+                case "haCalendar":return homeAssistant.agenda(data.getString("id"));
                 case "haCameraLive":
                     String cameraId=data.getString("id");
                     if(!cameraId.matches("camera\\.[a-z0-9_]{1,120}"))throw new IllegalArgumentException("unknown_camera");

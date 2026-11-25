@@ -3,7 +3,7 @@ import React,{useCallback,useEffect,useRef,useState} from 'react';
 import {AppState,Image,Text,View} from 'react-native';
 import type {Launcher} from '../launcher/types';
 import {tv} from '../platform/native/tv';
-import {adjustedPercentage,adjustedTemperature,adjustedVolume,isHomeEntity} from '../model/home-assistant';
+import {adjustedPercentage,adjustedTemperature,adjustedVolume,calendarEventLabel,isHomeEntity} from '../model/home-assistant';
 import {FocusButton} from './FocusButton';
 import {Icon} from './Icon';
 import {TVTextInput} from './TVTextInput';
@@ -16,12 +16,13 @@ export function HomeAssistantSettings({demo,t}:{demo:Launcher;t:(value:string)=>
   const [server,setServer]=useState(''),[token,setToken]=useState(''),[entity,setEntity]=useState('');
   const [entities,setEntities]=useState<string[]>([]);
   const [doorbell,setDoorbell]=useState('');
+  const [agenda,setAgenda]=useState<{id:string;events:Record<string,unknown>[]} >();
   const [states,setStates]=useState<Record<string,Record<string,unknown>>>({});
   const [busy,setBusy]=useState(false),[failed,setFailed]=useState(false);
   const cameraGeneration=useRef(0);
   useEffect(()=>{
     const session=AppState.addEventListener('change',value=>{
-      if(value!=='active'){cameraGeneration.current++;setCamera(undefined);}
+      if(value!=='active'){cameraGeneration.current++;setCamera(undefined);setAgenda(undefined);}
     });
     return()=>{cameraGeneration.current++;session.remove();};
   },[]);
@@ -55,7 +56,9 @@ export function HomeAssistantSettings({demo,t}:{demo:Launcher;t:(value:string)=>
     setBusy(true);setFailed(false);
     try{
       const result=await demo.execute(operation,payload);
-      if(operation==='haCamera'){
+      if(operation==='haCalendar'&&typeof payload.id==='string'&&Array.isArray(result.events)){
+        if(generation===cameraGeneration.current)setAgenda({id:payload.id,events:result.events});
+      }else if(operation==='haCamera'){
         if(generation!==cameraGeneration.current)return;
         if(typeof result.image!=='string'||!result.image.startsWith('data:image/jpeg;base64,')||
           typeof result.receivedAt!=='number')throw new Error('invalid_camera_image');
@@ -136,6 +139,15 @@ export function HomeAssistantSettings({demo,t}:{demo:Launcher;t:(value:string)=>
             value===undefined?undefined:Math.round(value*100)+'%',value===undefined);
         })}
       </>}
+      {selected.startsWith('calendar.')&&<>
+        {row('calendar',t('Show this week’s agenda'),()=>void run('haCalendar',{id:selected}))}
+        {agenda?.id===selected&&(agenda.events.length===0?text('No upcoming events.'):agenda.events.map((event,index)=>{
+          const detail=calendarEventLabel(event,demo.prefs.language);
+          return detail&&typeof event.title==='string'?<View key={index} style={{paddingHorizontal:8,paddingVertical:5,gap:4}}>
+            <Text style={{color:'#f2f6ff',fontSize:17}}>{event.title}</Text><Text style={{color:'#d6e3ff',fontSize:15}}>{detail}</Text>
+          </View>:null;
+        }))}
+      </>}
       {selected.startsWith('event.')&&(state.doorbell===true||doorbell===selected)&&<>
         {text('Show a notice while Aurea Home is open.')}
         {row('doorbell',t(doorbell===selected?'Turn off doorbell alerts':'Turn on doorbell alerts'),
@@ -181,7 +193,7 @@ export function HomeAssistantSettings({demo,t}:{demo:Launcher;t:(value:string)=>
       {row('remove',t(confirm===selected?'Confirm remove device':'Remove device'),()=>{
         if(confirm===selected)void run('haEntity',{id:selected,add:false});else setConfirm(selected);
       })}
-      {row('back',t('Back to devices'),()=>{setSelected(undefined);setConfirm(undefined);setCamera(undefined);})}
+      {row('back',t('Back to devices'),()=>{setSelected(undefined);setConfirm(undefined);setCamera(undefined);setAgenda(undefined);})}
     </>}
   </View>;
 }

@@ -44,7 +44,7 @@ final class HomeAssistantControls {
     }
 
     JSONObject changeEntity(String id,boolean add)throws Exception {
-        if(!id.matches("(light|switch|scene|climate|sensor|binary_sensor|camera|media_player|event|fan|cover)\\.[a-z0-9_]{1,120}"))
+        if(!id.matches("(light|switch|scene|climate|sensor|binary_sensor|camera|media_player|event|fan|cover|calendar)\\.[a-z0-9_]{1,120}"))
             throw new IllegalArgumentException("invalid_home_entity");
         JSONObject entry=required();
         JSONArray items=new JSONArray(entry.optString("companion","[]"));
@@ -134,6 +134,31 @@ final class HomeAssistantControls {
             String body=android.util.Base64.encodeToString(jpeg.toByteArray(),android.util.Base64.NO_WRAP);
             return new JSONObject().put("image","data:image/jpeg;base64,"+body).put("receivedAt",System.currentTimeMillis());
         }finally{image.recycle();}
+    }
+
+    JSONObject agenda(String id)throws Exception{
+        if(!id.startsWith("calendar."))throw new IllegalArgumentException("unknown_calendar");
+        JSONObject connection=authorized(id);
+        java.time.LocalDate date=java.time.LocalDate.now();
+        java.time.ZoneId zone=java.time.ZoneId.systemDefault();
+        String from=java.net.URLEncoder.encode(date.atStartOfDay(zone).toOffsetDateTime().toString(),"UTF-8");
+        String to=java.net.URLEncoder.encode(date.plusDays(7).atStartOfDay(zone).toOffsetDateTime().toString(),"UTF-8");
+        JSONArray raw=new JSONArray(response(connection,"/api/calendars/"+id+"?start="+from+"&end="+to,null));
+        JSONArray result=new JSONArray();
+        for(int i=0;i<raw.length()&&result.length()<12;i++){
+            JSONObject event=raw.optJSONObject(i);
+            if(event==null)continue;
+            String title=bounded(event.optString("summary"),120);
+            JSONObject timing=event.optJSONObject("start");
+            if(title.isEmpty()||timing==null)continue;
+            try{
+                if(timing.has("date"))result.put(new JSONObject().put("title",title)
+                    .put("date",java.time.LocalDate.parse(timing.getString("date")).toString()));
+                else if(timing.has("dateTime"))result.put(new JSONObject().put("title",title)
+                    .put("time",java.time.OffsetDateTime.parse(timing.getString("dateTime")).toInstant().toEpochMilli()));
+            }catch(java.time.DateTimeException ignored){}
+        }
+        return new JSONObject().put("events",result);
     }
 
     void viewCamera(String id,java.util.function.BooleanSupplier open,java.util.function.Consumer<byte[]> frame)throws Exception{
