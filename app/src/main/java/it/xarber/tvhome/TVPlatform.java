@@ -283,6 +283,13 @@ public final class TVPlatform {
                 }
             });
             return safe("accepted",true);
+        case "newsFeedStatus":case "newsFeedSave":case "newsFeedRefresh":
+            if(!foreground()||!households.activeId().equals(data.getString("profile")))
+                throw new IllegalStateException("profile_changed");
+            SharedPreferences newsPreferences=households.layoutFor(data.getString("profile"));
+            if(operation.equals("newsFeedSave"))return NewsFeeds.save(newsPreferences,data.getString("feed"));
+            if(operation.equals("newsFeedRefresh"))return NewsFeeds.refresh(newsPreferences.getString("headlines-feed",""));
+            return NewsFeeds.state(newsPreferences);
         case "widgetList":case "widgetChange":
             if(!foreground())throw new IllegalStateException("launcher_not_active");
             SharedPreferences widgetPreferences=households.layoutFor(data.getString("profile"));

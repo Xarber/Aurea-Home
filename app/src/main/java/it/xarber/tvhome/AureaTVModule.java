@@ -35,7 +35,7 @@ public final class AureaTVModule extends ReactContextBaseJavaModule {
     @ReactMethod public void ready(){it.xarber.tvhome.MainActivity.interfaceReady=true;}
     @ReactMethod public void execute(String operation,String encoded,Promise promise){
         if(!valid||encoded.length()>32768){promise.reject("invalid_request","Request unavailable");return;}
-        ExecutorService executor=(operation.startsWith("ha")||operation.startsWith("titleDiscovery"))?integrationWorker:worker;
+        ExecutorService executor=(operation.startsWith("ha")||operation.startsWith("titleDiscovery")||operation.startsWith("newsFeed"))?integrationWorker:worker;
         try{executor.execute(()->{try{JSONObject value=TVPlatform.get(getReactApplicationContext()).execute(operation,new JSONObject(encoded));promise.resolve(value.toString());}catch(Exception failure){String code=failure instanceof IllegalArgumentException?failure.getMessage():"native_operation_failed";if(code==null||!code.matches("[a-z_]{1,64}"))code="native_operation_failed";promise.reject(code,"This action is unavailable");}});}
         catch(java.util.concurrent.RejectedExecutionException busy){promise.reject("busy","This action is unavailable");}
     }
