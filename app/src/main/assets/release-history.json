@@ -2,6 +2,104 @@
   "schema": 1,
   "releases": [
     {
+      "version": "2.4.0",
+      "code": 41,
+      "date": "2026-11-25",
+      "critical": false,
+      "highlights": {
+        "en": "Household profiles, a daylight wallpaper and viewing shelves.",
+        "it": "Profili di casa, sfondo diurno e raccolte di visione."
+      },
+      "fixes": {
+        "en": "The TV launcher adds quiet hours, local widgets, customizable quick actions and screen timers.",
+        "it": "La Home TV aggiunge orari silenziosi, widget locali, azioni rapide personalizzabili e timer per lo schermo."
+      },
+      "compatibility": {
+        "en": "Keep Watching needs a participating app. Cross-room starts use matching entries and require confirmation at each TV. Some functions require Android permissions or a configured provider.",
+        "it": "Continua a guardare richiede un’app compatibile. L’avvio tra stanze richiede voci corrispondenti e la conferma su ogni TV. Alcune funzioni richiedono permessi Android o un servizio configurato."
+      },
+      "features": [
+        {
+          "icon": "shield",
+          "label": {
+            "en": "Household profiles",
+            "it": "Profili di casa"
+          },
+          "detail": {
+            "en": "Keep separate TV layouts and optionally sign in with X-Center ID to sync preferences and pair an eligible remote.",
+            "it": "Mantieni separate le impostazioni della TV e accedi facoltativamente con X-Center ID per sincronizzarle e abbinare un telecomando compatibile."
+          }
+        },
+        {
+          "icon": "controls",
+          "label": {
+            "en": "Daylight wallpapers",
+            "it": "Sfondi diurni"
+          },
+          "detail": {
+            "en": "Use time of day and optional local weather, or choose a private photo or video wallpaper.",
+            "it": "Usa l’ora del giorno e il meteo locale facoltativo, oppure scegli una foto o un video privato come sfondo."
+          }
+        },
+        {
+          "icon": "apps",
+          "label": {
+            "en": "Keep Watching",
+            "it": "Continua a guardare"
+          },
+          "detail": {
+            "en": "Resume from supported TV sources, filter viewing history, and look up titles and regional availability.",
+            "it": "Riprendi la visione da fonti TV compatibili, filtra la cronologia e cerca titoli e disponibilità nella tua area."
+          }
+        },
+        {
+          "icon": "remote",
+          "label": {
+            "en": "Room-to-room suggestions",
+            "it": "Suggerimenti tra stanze"
+          },
+          "detail": {
+            "en": "Send a title to another paired TV or propose a coordinated start for matching entries.",
+            "it": "Invia un titolo a un’altra TV abbinata o proponi un avvio coordinato per le voci corrispondenti."
+          }
+        },
+        {
+          "icon": "controls",
+          "label": {
+            "en": "Smart home",
+            "it": "Casa intelligente"
+          },
+          "detail": {
+            "en": "Control selected Home Assistant devices and connect the TV to Home Assistant or Homebridge.",
+            "it": "Controlla dispositivi Home Assistant selezionati e collega la TV a Home Assistant o Homebridge."
+          }
+        },
+        {
+          "icon": "info",
+          "label": {
+            "en": "Household widgets",
+            "it": "Widget di casa"
+          },
+          "detail": {
+            "en": "Add local notes, lists, anniversaries and reminders, and show a guest Wi-Fi QR code.",
+            "it": "Aggiungi note, liste, anniversari e promemoria locali e mostra un codice QR per il Wi-Fi degli ospiti."
+          }
+        },
+        {
+          "icon": "sound",
+          "label": {
+            "en": "Android music activity",
+            "it": "Attività musicale Android"
+          },
+          "detail": {
+            "en": "Show supported controls and artwork for a selected local music app alongside the existing AirPlay features.",
+            "it": "Mostra i controlli e le copertine disponibili per un’app musicale selezionata, accanto alle funzioni AirPlay."
+          }
+        }
+      ],
+      "record": "development"
+    },
+    {
       "version": "2.3.0",
       "code": 40,
       "date": "2026-11-13",

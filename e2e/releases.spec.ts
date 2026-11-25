@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import {test,expect} from '@playwright/test';
+import {currentRelease} from '../src/releases/history';
 test.use({serviceWorkers:'block'});
 
 test('historical notes are directly addressable and keep publication provenance',async({page})=>{
@@ -7,7 +8,7 @@ test('historical notes are directly addressable and keep publication provenance'
   const panel=page.locator('#demo-panel-content');
   await expect(panel.getByRole('heading',{name:/1\.5\.0.*Beta/})).toBeVisible();
   await expect(panel.getByText('Fixes & Improvements',{exact:true})).toBeVisible();
-  await expect(panel.getByRole('heading',{name:/2\.3\.0/})).toHaveCount(0);
+  await expect(panel.getByRole('heading',{name:new RegExp(currentRelease.version.replaceAll('.','\\.'))})).toHaveCount(0);
   await page.getByRole('button',{name:'Close',exact:true}).click();
   await expect(page).not.toHaveURL(/changelog=/);
   await page.goto('/?changelog=1.7.4');
@@ -27,12 +28,12 @@ test('returning web user dismisses the bounded summary once per version',async({
     localStorage.setItem('aurea.release.acknowledged','2.1.0');
   });
   await page.goto('https://aurea.xcenter.it/');
-  await expect(page.getByRole('button',{name:'Full changelog 2.3.0',exact:true})).toBeVisible();
+  await expect(page.getByRole('button',{name:`Full changelog ${currentRelease.version}`,exact:true})).toBeVisible();
   expect(await page.evaluate(()=>localStorage.getItem('aurea.release.acknowledged'))).toBe('2.1.0');
-  await page.getByRole('button',{name:'Full changelog 2.3.0',exact:true}).click();
-  await expect(page).toHaveURL(/changelog=2.3.0/);
-  expect(await page.evaluate(()=>localStorage.getItem('aurea.release.acknowledged'))).toBe('2.3.0');
+  await page.getByRole('button',{name:`Full changelog ${currentRelease.version}`,exact:true}).click();
+  await expect(page).toHaveURL(`https://aurea.xcenter.it/?changelog=${currentRelease.version}`);
+  expect(await page.evaluate(()=>localStorage.getItem('aurea.release.acknowledged'))).toBe(currentRelease.version);
   await page.goto('https://aurea.xcenter.it/');
   await expect(page.getByRole('button',{name:'About Aurea'})).toBeVisible();
-  await expect(page.getByRole('button',{name:'Full changelog 2.3.0',exact:true})).toHaveCount(0);
+  await expect(page.getByRole('button',{name:`Full changelog ${currentRelease.version}`,exact:true})).toHaveCount(0);
 });

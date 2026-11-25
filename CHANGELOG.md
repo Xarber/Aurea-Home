@@ -1,5 +1,43 @@
 # Changelog
 
+## 2.4.0
+
+Development · 2026-11-25
+
+### Household profiles
+
+Keep separate TV layouts and optionally sign in with X-Center ID to sync preferences and pair an eligible remote.
+
+### Daylight wallpapers
+
+Use time of day and optional local weather, or choose a private photo or video wallpaper.
+
+### Keep Watching
+
+Resume from supported TV sources, filter viewing history, and look up titles and regional availability.
+
+### Room-to-room suggestions
+
+Send a title to another paired TV or propose a coordinated start for matching entries.
+
+### Smart home
+
+Control selected Home Assistant devices and connect the TV to Home Assistant or Homebridge.
+
+### Household widgets
+
+Add local notes, lists, anniversaries and reminders, and show a guest Wi-Fi QR code.
+
+### Android music activity
+
+Show supported controls and artwork for a selected local music app alongside the existing AirPlay features.
+
+### Fixes & Improvements
+
+The TV launcher adds quiet hours, local widgets, customizable quick actions and screen timers.
+
+Keep Watching needs a participating app. Cross-room starts use matching entries and require confirmation at each TV. Some functions require Android permissions or a configured provider.
+
 ## 2.3.0
 
 Development · 2026-11-13

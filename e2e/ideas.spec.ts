@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { test, expect } from "@playwright/test";
+import {currentRelease} from "../src/releases/history";
 const nav = (page: import("@playwright/test").Page, id: string) =>
   page.locator(`[data-nav="${id}"]`);
 test("developer ideas persist, preserve import conflicts and export portable records", async ({
@@ -9,7 +10,7 @@ test("developer ideas persist, preserve import conflicts and export portable rec
   await nav(page, "dock:inputs").waitFor();
   await page.keyboard.press("c");
   await nav(page, "panel-TV settings").click();
-  for (let i = 0; i < 3; i++) await nav(page, "panel-Version 2.3.0").click();
+  for (let i = 0; i < 3; i++) await nav(page, `panel-Version ${currentRelease.version}`).click();
   await nav(page, "panel-Developer options").click();
   await nav(page, "panel-Ideas").click();
   await nav(page, "ideas-new").click();
