@@ -15,6 +15,7 @@ export function HomeAssistantSettings({demo,t}:{demo:Launcher;t:(value:string)=>
   const [connected,setConnected]=useState<boolean>();
   const [server,setServer]=useState(''),[token,setToken]=useState(''),[entity,setEntity]=useState('');
   const [entities,setEntities]=useState<string[]>([]);
+  const [doorbell,setDoorbell]=useState('');
   const [states,setStates]=useState<Record<string,Record<string,unknown>>>({});
   const [busy,setBusy]=useState(false),[failed,setFailed]=useState(false);
   const cameraGeneration=useRef(0);
@@ -27,6 +28,7 @@ export function HomeAssistantSettings({demo,t}:{demo:Launcher;t:(value:string)=>
   const [camera,setCamera]=useState<{uri:string;received:number}>();
   const [selected,setSelected]=useState<string>(),[confirm,setConfirm]=useState<string>();
   const apply=useCallback((result:Record<string,unknown>)=>{
+    if(typeof result.doorbell==='string')setDoorbell(result.doorbell);
     if(typeof result.connected==='boolean')setConnected(result.connected);
     if(Array.isArray(result.entities))setEntities(result.entities.filter((id):id is string=>typeof id==='string'&&isHomeEntity(id)));
   },[]);
@@ -97,7 +99,7 @@ export function HomeAssistantSettings({demo,t}:{demo:Launcher;t:(value:string)=>
     {connected===true&&!selected&&<>
       {entities.map(id=>row(id,name(id,states[id]??empty),()=>setSelected(id),detail(states[id]??empty)))}
       {entities.length<8&&<>
-        {text('Add a light, switch, scene, thermostat, sensor, camera, or speaker by its entity ID.')}
+        {text('Add a device by its Home Assistant entity ID. Doorbells use an event entity.')}
         <TVTextInput id="ha-entity-edit" t={t} value={entity} onChangeText={setEntity} maxLength={135}
           autoCapitalize="none" autoCorrect={false} accessibilityLabel={t('Entity ID')} placeholder="light.living_room"
           placeholderTextColor="#aeb9c9" style={fieldStyle}/>
@@ -124,6 +126,11 @@ export function HomeAssistantSettings({demo,t}:{demo:Launcher;t:(value:string)=>
             ()=>void run('haCommand',{id:selected,action:'volume_set',value}),
             value===undefined?undefined:Math.round(value*100)+'%',value===undefined);
         })}
+      </>}
+      {selected.startsWith('event.')&&(state.doorbell===true||doorbell===selected)&&<>
+        {text('Show a notice while Aurea Home is open.')}
+        {row('doorbell',t(doorbell===selected?'Turn off doorbell alerts':'Turn on doorbell alerts'),
+          ()=>void run('haDoorbellSet',{id:doorbell===selected?'':selected}))}
       </>}
       {selected.startsWith('camera.')&&<>
         {row('camera-live',t('View live camera'),()=>void run('haCameraLive',{id:selected}))}

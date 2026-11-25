@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import { catalog, entry, defaultDock, type AppEntry } from '../model/catalog';
 import {usePanelNavigation} from '../hooks/usePanelNavigation';
+import {useDoorbellNotice} from '../hooks/useDoorbellNotice';
 import { useDemo } from '../hooks/useDemo';
 import { nativeFocus } from '../platform/native/focus';
 import { tv, nativeSnapshot, type TVEvent } from '../platform/native/tv';
@@ -31,6 +32,8 @@ export function useNativeLauncher(): Launcher {
     [notice, setNotice] = useState(''),
     [filter, setFilter] = useState('all'),
     [artwork, setArtwork] = useState<string>();
+  const doorbellNotice=useCallback(()=>setNotice('Doorbell rang'),[]);
+  useDoorbellNotice(snapshot?.doorbell,doorbellNotice);
   const busy = useRef(false),
     generation = useRef(0),
     artworkId = useRef<string | undefined>(undefined);

@@ -74,5 +74,6 @@ export function nativeSnapshot(value: Record<string, unknown>): NativeSnapshot {
   prefs.idleDisplayMinutes=idleDelay(prefs.idleDisplayMinutes);
   prefs.remoteLayoutEnabled=prefs.remoteLayoutEnabled===true;
   prefs.weatherCity=weatherCity(prefs.weatherCity);
+  if(typeof value.doorbell!=='string'||!/^event\.[a-z0-9_]{1,120}$/.test(value.doorbell))delete value.doorbell;
   return value as unknown as NativeSnapshot;
 }

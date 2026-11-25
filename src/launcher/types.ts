@@ -18,6 +18,7 @@ export interface NativeSnapshot {
   music: RemoteMusic;
   volume: number;
   remoteConnected: boolean;
+  doorbell?:string;
   network: {
     connected: boolean;
     transport: 'wifi' | 'ethernet' | 'none';

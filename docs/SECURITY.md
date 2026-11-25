@@ -62,6 +62,8 @@ The Android media live activity is opt-in for one app on the Home profile and up
 
 The live Home Assistant camera action is available to the Home profile for approved camera entity IDs only. The non-exported viewer reads a single HTTPS MJPEG stream from the configured hub without following redirects. The token and frames stay on the TV. The secure window blocks Android display capture while the camera is visible. Closing or backgrounding the viewer clears the image and stops consumption, with a bounded network-read timeout for a stalled feed.
 
+Doorbell alerts are opt-in and poll one approved Home Assistant entity from the foreground launcher. A ring produces a generic on-screen notice. Event timestamps stay in volatile UI state and are never sent to remotes or included in backups. Closing Home or switching profiles stops observation without opening cameras.
+
 ## Phone microphone
 
 Recording requires explicit phone OS consent and a visible Listening indicator.

@@ -47,6 +47,7 @@ public final class TVPlatform {
     private final it.xarber.tvhome.playback.MusicActivityClock androidMusicClock=new it.xarber.tvhome.playback.MusicActivityClock();
     private String androidMusicSource="";
     private static final String ANDROID_ACTIVITY_APP="android-activity-app";
+    private static final String DOORBELL="home-assistant-doorbell";
     private final HomeAssistantControls homeAssistant;
     private final VideoWallpaper videoWallpaper;
     private final TitleDiscovery titleDiscovery;
@@ -131,6 +132,7 @@ public final class TVPlatform {
         JSONObject music=homeMusic(receiverPlayback().state());Bitmap cover=music.optString("source").equals("android-session")?null:receiverPlayback().cover();if(cover!=paletteArtwork){paletteArtwork=cover;palette=new JSONArray();for(int color:WavePalette.from(cover))palette.put(String.format(java.util.Locale.US,"#%06x",color&0xffffff));}music.put("colors",palette).put("dominance",WavePalette.dominance(cover));HomeRemoteServer remote=HomeRemoteService.server();
         result.put("preferences",preferences).put("music",music).put("network",network()).put("volume",volume).put("remoteConnected",remote!=null&&remote.hasActiveRemote()).put("paired",pairedState()).put("receiver",ReceiverSettings.state(context)).put("updates",updateState())
           .put("introductionPending",introductionPending()).put("releasePending",ReleaseHistory.pending(context)).put("lastSeenRelease",ReleaseHistory.lastSeenRelease(context)).put("build",new JSONObject().put("version",BuildConfig.VERSION_NAME).put("code",BuildConfig.VERSION_CODE).put("commit",BuildConfig.SOURCE_COMMIT).put("channel",BuildConfig.BUILD_CHANNEL));
+        if(households.activeId().equals("home"))result.put("doorbell",prefs.getString(DOORBELL,""));
         return result;
     }
     private boolean introductionPending() {
@@ -292,12 +294,36 @@ public final class TVPlatform {
             }
             main.post(()->{Activity host=activity.get();if(host instanceof MainActivity)((MainActivity)host).importWallpaperPhotos(photoProfile);});
             return safe("accepted",true);
-        case "haStatus":case "haConnect":case "haDisconnect":case "haEntity":case "haState":case "haCommand":case "haCamera":case "haCameraLive":
+        case "haStatus":case "haConnect":case "haDisconnect":case "haEntity":case "haState":case "haCommand":case "haCamera":case "haCameraLive":case "haDoorbellPoll":case "haDoorbellSet":
             if(!foreground()||!households.activeId().equals("home"))throw new IllegalStateException("launcher_not_active");
             switch(operation){
-                case "haConnect":return homeAssistant.connect(data.getString("server"),data.getString("token"));
-                case "haDisconnect":return homeAssistant.disconnect();
-                case "haEntity":return homeAssistant.changeEntity(data.getString("id"),data.getBoolean("add"));
+                case "haConnect":
+                    JSONObject connected=homeAssistant.connect(data.getString("server"),data.getString("token"));
+                    setDoorbell("");
+                    return connected.put("doorbell","");
+                case "haDisconnect":
+                    JSONObject disconnected=homeAssistant.disconnect();
+                    setDoorbell("");
+                    return disconnected.put("doorbell","");
+                case "haEntity":
+                    String entity=data.getString("id");
+                    boolean add=data.getBoolean("add");
+                    JSONObject devices=homeAssistant.changeEntity(entity,add);
+                    if(!add&&entity.equals(prefs.getString(DOORBELL,"")))setDoorbell("");
+                    return devices.put("doorbell",prefs.getString(DOORBELL,""));
+                case "haDoorbellSet":
+                    String selectedDoorbell=data.getString("id");
+                    if(!selectedDoorbell.isEmpty()&&(!selectedDoorbell.startsWith("event.")||
+                        !homeAssistant.state(selectedDoorbell).optBoolean("doorbell")))
+                        throw new IllegalArgumentException("unsupported_doorbell");
+                    setDoorbell(selectedDoorbell);
+                    return homeAssistant.status().put("doorbell",selectedDoorbell);
+                case "haDoorbellPoll":
+                    String doorbell=prefs.getString(DOORBELL,"");
+                    if(doorbell.isEmpty()||!doorbell.equals(data.getString("id")))return new JSONObject();
+                    JSONObject event=homeAssistant.state(doorbell);
+                    return event.optBoolean("doorbell")?new JSONObject().put("state",event.getString("state"))
+                        .put("ring",event.optBoolean("ring")):new JSONObject();
                 case "haState":return homeAssistant.state(data.getString("id"));
                 case "haCommand":return homeAssistant.command(data);
                 case "haCamera":return homeAssistant.camera(data.getString("id"));
@@ -307,7 +333,7 @@ public final class TVPlatform {
                     context.startActivity(new Intent(context,SmartHomeCameraActivity.class).putExtra("entity",cameraId)
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
                     return safe("accepted",true);
-                default:return homeAssistant.status();
+                default:return homeAssistant.status().put("doorbell",prefs.getString(DOORBELL,""));
             }
         case "automationStatus":
             if(!foreground()||!households.activeId().equals("home"))throw new IllegalStateException("launcher_not_active");
@@ -629,6 +655,9 @@ public final class TVPlatform {
         if(language!=null&&!primary)edit.putString("language",language);
         if(!edit.commit())throw new IllegalStateException("storage_failed");
         if(language!=null&&primary)AppLanguage.set(context,language);
+    }
+    private void setDoorbell(String id){
+        if(!prefs.edit().putString(DOORBELL,id).commit())throw new IllegalStateException("storage_failed");
     }
     private void openSettings(String screen)throws Exception{String action;switch(screen){case "network":action=Settings.ACTION_WIFI_SETTINGS;break;case "display":action=Settings.ACTION_DISPLAY_SETTINGS;break;case "location":action=Settings.ACTION_LOCATION_SOURCE_SETTINGS;break;case "sound":action=Settings.ACTION_SOUND_SETTINGS;break;case "inputs":action=Settings.ACTION_SETTINGS;break;case "airplay":context.startActivity(new Intent(context,io.github.jqssun.airplay.MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));return;default:action=Settings.ACTION_SETTINGS;}
         Intent intent=new Intent(action);if(screen.equals("display")){Intent picture=new Intent("com.mitv.settings.PICTURE_SETTINGS");if(context.getPackageManager().resolveActivity(picture,0)!=null)intent=picture;}if(context.getPackageManager().resolveActivity(intent,0)==null)intent=new Intent(Settings.ACTION_SETTINGS);context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));}

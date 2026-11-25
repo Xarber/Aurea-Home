@@ -44,7 +44,7 @@ final class HomeAssistantControls {
     }
 
     JSONObject changeEntity(String id,boolean add)throws Exception {
-        if(!id.matches("(light|switch|scene|climate|sensor|binary_sensor|camera|media_player)\\.[a-z0-9_]{1,120}"))
+        if(!id.matches("(light|switch|scene|climate|sensor|binary_sensor|camera|media_player|event)\\.[a-z0-9_]{1,120}"))
             throw new IllegalArgumentException("invalid_home_entity");
         JSONObject entry=required();
         JSONArray items=new JSONArray(entry.optString("companion","[]"));
@@ -72,6 +72,14 @@ final class HomeAssistantControls {
             .put("name",bounded(attrs==null?id:attrs.optString("friendly_name",id),96));
         if(attrs!=null){
             visible.put("unit",bounded(attrs.optString("unit_of_measurement"),20));
+            if(id.startsWith("event.")){
+                JSONArray eventTypes=attrs.optJSONArray("event_types");
+                boolean ring=false;
+                if(eventTypes!=null&&"doorbell".equals(attrs.optString("device_class"))){
+                    for(int i=0;i<eventTypes.length();i++)if("ring".equals(eventTypes.optString(i))){ring=true;break;}
+                }
+                visible.put("doorbell",ring).put("ring",ring&&"ring".equals(attrs.optString("event_type")));
+            }
             if(id.startsWith("media_player.")){
                 visible.put("mediaTitle",bounded(attrs.optString("media_title"),140));
                 visible.put("mediaArtist",bounded(attrs.optString("media_artist"),100));
