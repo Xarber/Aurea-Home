@@ -54,7 +54,7 @@ final class WatchNextShelf {
                 Intent intent=target(publisher,cursor.getString(4));
                 if(intent==null)continue;
                 JSONObject entry=new JSONObject().put("id",key).put("title",display(title,160))
-                    .put("episode",display(cursor.getString(3),160)).put("source",label(publisher));
+                    .put("episode",display(cursor.getString(3),160)).put("source",label(publisher)).put("publisher",publisher);
                 long position=cursor.getLong(6),duration=cursor.getLong(7);
                 if(!cursor.isNull(6)&&!cursor.isNull(7)&&duration>0&&position>=0&&position<=duration)
                     entry.put("positionMs",position).put("durationMs",duration);
@@ -89,7 +89,7 @@ final class WatchNextShelf {
                 String key="preview:"+STREMIO+":"+id;
                 if(prefs.contains(key)&&prefs.getLong(key,0)>=position)continue;
                 JSONObject entry=new JSONObject().put("id",key).put("title",title)
-                    .put("episode",display(cursor.getString(3),160)).put("source","Stremio")
+                    .put("episode",display(cursor.getString(3),160)).put("source","Stremio").put("publisher",STREMIO)
                     .put("positionMs",position).put("durationMs",duration);
                 rows.add(new Program(key,position,open,entry));
             }

@@ -5,13 +5,15 @@ import type {Launcher} from '../launcher/types';
 import {tv} from '../platform/native/tv';
 import {FocusButton} from './FocusButton';
 import {Icon} from './Icon';
+import {ViewingSourceFilter} from './ViewingSourceFilter';
+import {filterViewingEntries,viewingSources} from '../model/viewing-source';
 
 type Entry={service:string;title:string;watched:number;video:string;dateOnly:boolean};
 
 export function ViewingExportsSettings({demo,t}:{demo:Launcher;t:(value:string)=>string}){
   const profile=demo.prefs.householdProfile??'home';
   const [entries,setEntries]=useState<Entry[]>([]);
-  const [service,setService]=useState('all');
+  const [service,setService]=useState<string>();
   const [confirm,setConfirm]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(false);
   const apply=(result:Record<string,unknown>)=>{
     if(Array.isArray(result.entries))setEntries(result.entries.filter((item)=>
@@ -42,14 +44,16 @@ export function ViewingExportsSettings({demo,t}:{demo:Launcher;t:(value:string)=
       {value&&<Text style={{color:'#c4d1e8',fontSize:15}}>{value}</Text>}
     </View>
   </FocusButton>;
-  const sources=['all',...new Set(entries.map(entry=>entry.service))];
-  const visible=entries.filter(entry=>service==='all'||entry.service===service);
+  const source=(entry:Entry)=>({id:entry.service,label:entry.service});
+  const sources=viewingSources(entries,source,demo.prefs.language);
+  const sourceId=sources.find(item=>item.id===service)?.id;
+  const visible=filterViewingEntries(entries,source,sourceId);
   return <View style={{gap:7,paddingVertical:8}}>
     <Text style={{color:'#d6e3ff',fontSize:16}}>{t('Import a Netflix profile CSV or YouTube Takeout watch-history JSON. Imported titles stay in this profile.')}</Text>
     {row('choose',t('Choose viewing export'),()=>void run('importViewingExport'))}
     {error&&<Text accessibilityLiveRegion="polite" style={{color:'#f5d0dc'}}>{t('The import or viewing action could not be completed.')}</Text>}
     {entries.length>0&&<>
-      {row('filter',t('Filter sources')+' · '+(service==='all'?t('All'):service),()=>setService(sources[(sources.indexOf(service)+1)%sources.length]!))}
+      <ViewingSourceFilter id="viewing-exports-source" sources={sources} value={sourceId} onChange={setService} t={t}/>
       {row('clear',t(confirm?'Confirm clear imported history':'Clear imported history'),()=>{
         if(confirm)void run('clearViewingExports');else setConfirm(true);
       })}

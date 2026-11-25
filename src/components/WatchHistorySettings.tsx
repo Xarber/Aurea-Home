@@ -4,6 +4,8 @@ import {Text,View} from 'react-native';
 import type {Launcher} from '../launcher/types';
 import {FocusButton} from './FocusButton';
 import {Icon} from './Icon';
+import {ViewingSourceFilter} from './ViewingSourceFilter';
+import {filterViewingEntries,viewingSources} from '../model/viewing-source';
 
 type RecordEntry={app:string;title:string;position:number;duration:number;observedAt:number};
 
@@ -12,6 +14,7 @@ export function WatchHistorySettings({demo,t}:{demo:Launcher;t:(value:string)=>s
   const [records,setRecords]=useState<RecordEntry[]>([]);
   const [configure,setConfigure]=useState(false);
   const [confirm,setConfirm]=useState(false);
+  const [source,setSource]=useState<string>();
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState(false);
   function apply(value:Record<string,unknown>){
@@ -36,6 +39,13 @@ export function WatchHistorySettings({demo,t}:{demo:Launcher;t:(value:string)=>s
     <Icon name="film" size={22}/><View style={{flex:1,gap:4}}><Text style={{color:'#eef2ff',fontSize:17}}>{label}</Text>
     {!!detail&&<Text style={{color:'#c4d1e8',fontSize:15}}>{detail}</Text>}</View>
   </FocusButton>;
+  const recordSource=(item:RecordEntry)=>{
+    const app=demo.entry(item.app);
+    return {id:item.app,label:app.id===item.app?app.name:item.app};
+  };
+  const sources=viewingSources(records,recordSource,demo.prefs.language);
+  const sourceId=sources.find(item=>item.id===source)?.id;
+  const visible=filterViewingEntries(records,recordSource,sourceId);
   return <View style={{gap:7,paddingVertical:8}}>
     {text('Choose video apps to remember progress on this profile. Recording uses Android notification access and runs while Aurea’s phone remote service is active.')}
     {error&&text('Local viewing history is unavailable.')}
@@ -43,10 +53,11 @@ export function WatchHistorySettings({demo,t}:{demo:Launcher;t:(value:string)=>s
       {row('choose',t('Choose video apps'),()=>setConfigure(true),apps.length?t('Enabled')+' · '+apps.length:t('Off'))}
       {row('permission',t('Android notification access'),()=>void demo.execute('mediaAccessSettings').catch(()=>setError(true)))}
       {records.length===0&&text('No local viewing history yet.')}
-      {records.map(item=>row(item.app+':'+item.title,item.title,()=>{
+      <ViewingSourceFilter id="watch-history-source" sources={sources} value={sourceId} onChange={setSource} t={t}/>
+      {visible.map(item=>row(item.app+':'+item.title,item.title,()=>{
         demo.close();
         void demo.execute('launch',{id:item.app}).catch(()=>{});
-      },[demo.entry(item.app).id===item.app?demo.entry(item.app).name:item.app,
+      },[recordSource(item).label,
         Math.round(100*item.position/item.duration)+'%',new Date(item.observedAt).toLocaleDateString(demo.prefs.language)].join(' · ')))}
       {(apps.length>0||records.length>0)&&row('clear',t(confirm?'Confirm clear and stop recording':'Clear history and stop recording'),()=>{
         if(confirm)void run('localWatchHistoryClear');else setConfirm(true);
