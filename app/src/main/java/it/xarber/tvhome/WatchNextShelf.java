@@ -124,6 +124,20 @@ final class WatchNextShelf {
         }catch(java.net.URISyntaxException|IllegalArgumentException invalid){return null;}
     }
 
+    JSONObject matching(String title,String selectedId)throws Exception{
+        read();
+        JSONArray matches=new JSONArray();
+        for(Program program:programs.values()){
+            String name=program.entry.getString("title"),episode=program.entry.getString("episode");
+            if(!WatchTitle.matches(title,name)&&
+                (episode.isEmpty()||!WatchTitle.matches(title,name+" · "+episode)))continue;
+            if(program.id.equals(selectedId))return action(selectedId,false);
+            matches.put(program.entry);
+        }
+        if(!selectedId.isEmpty())throw new IllegalArgumentException("unknown_program");
+        return new JSONObject().put("entries",matches);
+    }
+
     JSONObject action(String id,boolean dismiss)throws Exception{
         if(SystemClock.elapsedRealtime()>validUntil)read();
         Program program=programs.get(id);

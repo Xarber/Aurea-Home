@@ -36,6 +36,15 @@ final class WatchRequests {
         return new JSONObject().put("accepted",true);
     }
 
+    static String title(SharedPreferences preferences,String id)throws Exception {
+        JSONArray records=rows(preferences);
+        for(int i=0;i<records.length();i++){
+            JSONObject record=records.getJSONObject(i);
+            if(id.equals(record.getString("id")))return record.getString("title");
+        }
+        throw new IllegalArgumentException("unknown_watch_request");
+    }
+
     static void dismiss(SharedPreferences preferences,String id)throws Exception {
         JSONArray records=rows(preferences);
         for(int i=0;i<records.length();i++)if(records.getJSONObject(i).getString("id").equals(id)){

@@ -191,10 +191,15 @@ public final class TVPlatform {
                 households.kids.configure(child,verified,data.optString("oldPin"),data.getString("pin"));
             }
             return households.kids.status();
-        case "watchRequests":case "watchRequestsEnable":case "watchRequestsDismiss":
+        case "watchRequests":case "watchRequestsEnable":case "watchRequestsDismiss":case "watchRequestsMatch":case "watchRequestsOpen":
             if(!foreground())throw new IllegalStateException("launcher_not_active");
             synchronized(households){
                 SharedPreferences requests=households.layoutFor(data.getString("profile"));
+                if(operation.equals("watchRequestsMatch")||operation.equals("watchRequestsOpen")){
+                    if(!households.activeId().equals("home"))throw new IllegalArgumentException("watch_next_unavailable");
+                    String requestTitle=WatchRequests.title(requests,data.getString("id"));
+                    return watchNext.matching(requestTitle,operation.equals("watchRequestsOpen")?data.getString("program"):"");
+                }
                 if(operation.equals("watchRequestsEnable"))WatchRequests.enable(requests,data.getBoolean("enabled"));
                 if(operation.equals("watchRequestsDismiss"))WatchRequests.dismiss(requests,data.getString("id"));
                 return WatchRequests.state(requests);
