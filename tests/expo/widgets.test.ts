@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {countdownDate,daysUntil,displayCard,listRows,remainingTime,timerMinutes,parseWidgets} from '../../src/model/widgets.ts';
+import {countdownDate,daysUntil,displayCard,listRows,remainingTime,timerMinutes,parseWidgets,nextCollectionDate,estimatedMoonPhase} from '../../src/model/widgets.ts';
 
 test('household timers handle partial seconds, expiry and long durations',()=>{
   assert.equal(remainingTime(1,0),'0:01');
@@ -36,4 +36,24 @@ test('custom display cards accept bounded text rows only',()=>{
   {label:'Weekend',rows:['Groceries at 10']});
  assert.equal(displayCard('{"schema":1,"label":"Weekend","rows":[{"script":"x"}]}'),undefined);
  assert.equal(displayCard('{"schema":2,"label":"Weekend","rows":["Groceries"]}'),undefined);
+});
+
+test('collection reminders advance on local calendar dates',()=>{
+  const today=new Date(2026,2,30,23).getTime();
+  assert.equal(nextCollectionDate('2026-03-23',7,today),'2026-03-30');
+  assert.equal(nextCollectionDate('2026-03-23',14,today),'2026-04-06');
+  assert.equal(nextCollectionDate('2026-04-06',7,today),'2026-04-06');
+  assert.equal(nextCollectionDate('2026-02-30',7,today),undefined);
+  assert.equal(nextCollectionDate('2026-03-23',7,Infinity),undefined);
+  const valid={id:'bin',label:'Paper',type:'collection',date:'2026-03-23',interval:7};
+  assert.deepEqual(parseWidgets([valid,{...valid,interval:0},{...valid,date:'2026-02-30'}]),[valid]);
+});
+
+test('moon phase approximation is periodic and handles dates before its reference',()=>{
+  const epoch=Date.parse('2026-01-18T19:52:00Z');
+  const meanCycle=29.53059*86400000;
+  assert.equal(estimatedMoonPhase(epoch),'New moon');
+  assert.equal(estimatedMoonPhase(epoch+meanCycle/2),'Full moon');
+  assert.equal(estimatedMoonPhase(epoch-meanCycle/4),'Last quarter');
+  assert.equal(estimatedMoonPhase(NaN),undefined);
 });

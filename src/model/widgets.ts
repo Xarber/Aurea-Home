@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 type Base={id:string;label:string};
 export type Widget=(Base&{type:'clock';zone:string})|(Base&{type:'timer'|'countdown';until:number})|(Base&{type:'note';body:string})|
- (Base&{type:'list'|'card';rows:{text:string;done:boolean}[]})|(Base&{type:'agenda';date:string});
+ (Base&{type:'list'|'card';rows:{text:string;done:boolean}[]})|(Base&{type:'agenda';date:string})|(Base&{type:'collection';date:string;interval:7|14});
 
 export function remainingTime(until:number,now:number) {
  const seconds=Math.max(0,Math.ceil((until-now)/1000));
@@ -33,6 +33,34 @@ export function daysUntil(until:number,now:number) {
  return Math.max(0,Math.round((localDate(end)-localDate(start))/86400000));
 }
 
+const dayMs=86400000;
+const calendarStamp=(date:Date)=>Date.UTC(date.getFullYear(),date.getMonth(),date.getDate());
+const dateStamp=(value:string)=>{
+ const parsed=Date.parse(value+'T00:00:00Z');
+ return Number.isFinite(parsed)&&new Date(parsed).toISOString().slice(0,10)===value?parsed:undefined;
+};
+
+export function nextCollectionDate(first:string,interval:7|14,now:number):string|undefined {
+ const start=dateStamp(first);
+ if(start===undefined||!Number.isFinite(now))return undefined;
+ const step=interval*dayMs;
+ const elapsed=calendarStamp(new Date(now))-start;
+ if(!Number.isFinite(elapsed))return undefined;
+ return new Date(start+Math.max(0,Math.ceil(elapsed/step))*step).toISOString().slice(0,10);
+}
+
+const phaseNames=['New moon','Waxing crescent','First quarter','Waxing gibbous','Full moon',
+ 'Waning gibbous','Last quarter','Waning crescent'] as const;
+const epoch=Date.parse('2026-01-18T19:52:00Z');
+const meanCycle=29.53059*dayMs;
+
+export function estimatedMoonPhase(now:number) {
+ if(!Number.isFinite(now))return undefined;
+ const cycles=(now-epoch)/meanCycle;
+ const phase=cycles-Math.floor(cycles);
+ return phaseNames[Math.round(phase*phaseNames.length)%phaseNames.length];
+}
+
 export function listRows(value:string) {
  const rows=value.split(/\r?\n/).map(row=>row.trim()).filter(Boolean);
  return rows.length>0&&rows.length<=16&&rows.every(row=>row.length<=100&&!/[\p{Cc}\p{Cf}]/u.test(row))?rows:undefined;
@@ -55,6 +83,8 @@ export function parseWidgets(raw:unknown):Widget[] {
   typeof widget.label==='string'&&(
   widget.type==='clock'&&typeof widget.zone==='string'||
   widget.type==='agenda'&&typeof widget.date==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(widget.date)||
+  widget.type==='collection'&&typeof widget.date==='string'&&dateStamp(widget.date)!==undefined&&
+    (widget.interval===7||widget.interval===14)||
   (widget.type==='list'||widget.type==='card')&&Array.isArray(widget.rows)&&widget.rows.length<=16&&
     widget.rows.every((row:unknown)=>!!row&&typeof row==='object'&&'text' in row&&typeof row.text==='string'&&
       row.text.length<=100&&'done' in row&&typeof row.done==='boolean')||

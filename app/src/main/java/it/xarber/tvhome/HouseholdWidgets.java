@@ -57,11 +57,16 @@ final class HouseholdWidgets {
                     rows.put(new JSONObject().put("text",text).put("done",false));
                 }
                 value.put("type",operation).put("rows",rows);
-            }else if(operation.equals("agenda")){
+            }else if(operation.equals("agenda")||operation.equals("collection")){
                 java.time.LocalDate date=java.time.LocalDate.parse(request.getString("date"));
                 if(date.isBefore(java.time.LocalDate.now())||date.isAfter(java.time.LocalDate.now().plusYears(20)))
                     throw new IllegalArgumentException("invalid_agenda_date");
-                value.put("type","agenda").put("date",date.toString());
+                value.put("type",operation).put("date",date.toString());
+                if(operation.equals("collection")){
+                    int interval=request.getInt("interval");
+                    if(interval!=7&&interval!=14)throw new IllegalArgumentException("invalid_collection_interval");
+                    value.put("interval",interval);
+                }
             }else if(operation.equals("note")){
                 String body=request.getString("body").trim();
                 if(body.isEmpty()||body.length()>600||body.replace("\n","").matches("(?s).*[\\p{Cc}\\p{Cf}].*"))

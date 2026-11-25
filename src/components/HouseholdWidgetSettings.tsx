@@ -3,7 +3,7 @@ import {TVTextInput} from './TVTextInput';
 import React,{useEffect,useState} from 'react';
 import {AppState,Text,View} from 'react-native';
 import type {Launcher} from '../launcher/types';
-import {countdownDate,daysUntil,displayCard,listRows,parseWidgets,remainingTime,timerMinutes,type Widget} from '../model/widgets';
+import {countdownDate,daysUntil,displayCard,estimatedMoonPhase,listRows,nextCollectionDate,parseWidgets,remainingTime,timerMinutes,type Widget} from '../model/widgets';
 import {FocusButton} from './FocusButton';
 import {Icon} from './Icon';
 
@@ -19,7 +19,8 @@ function clock(now:number,zone:string,language:string) {
 export function HouseholdWidgetSettings({demo,t}:{demo:Launcher;t:(text:string)=>string}) {
  const profile=demo.prefs.householdProfile??'home';
  const [widgets,setWidgets]=useState<Widget[]>([]);
- const [form,setForm]=useState<'timer'|'clock'|'countdown'|'note'|'list'|'card'|'agenda'>();
+ const [form,setForm]=useState<'timer'|'clock'|'countdown'|'note'|'list'|'card'|'agenda'|'collection'>();
+ const [repeat,setRepeat]=useState<7|14>(7);
  const [name,setName]=useState(''),[value,setValue]=useState('');
  const [loading,setLoading]=useState(true),[error,setError]=useState(false);
  const [now,setNow]=useState(Date.now);
@@ -51,6 +52,7 @@ export function HouseholdWidgetSettings({demo,t}:{demo:Launcher;t:(text:string)=
   {detail&&<Text style={{color:'#dee8fc',fontVariant:['tabular-nums'],fontSize:17}}>{detail}</Text>}
  </FocusButton>;
  const [remove,setRemove]=useState<string>();
+ const phase=estimatedMoonPhase(now);
  const minutes=timerMinutes(value);
  const date=countdownDate(value,now);
  const rows=listRows(value),card=displayCard(value);
@@ -58,6 +60,9 @@ export function HouseholdWidgetSettings({demo,t}:{demo:Launcher;t:(text:string)=
  return <View style={{gap:7,paddingVertical:8}}>
   {error&&<Text accessibilityLiveRegion="polite" style={{color:'#ffd4e0'}}>{t('Could not update household widgets.')}</Text>}
   {!form&&<>
+   {phase&&<Text accessibilityRole="text" style={{color:'#dee8fc',paddingHorizontal:12,paddingVertical:6,fontSize:16}}>
+    {t('Estimated moon phase')+' · '+t(phase)}
+   </Text>}
    {[...widgets.filter(widget=>widget.type!=='agenda'),
       ...widgets.filter(widget=>widget.type==='agenda').sort((first,second)=>first.date.localeCompare(second.date))].map(widget=><View key={widget.id}>
     {row(widget.id,remove===widget.id?t('Remove')+' · '+widget.label:widget.label,()=>{
@@ -66,7 +71,8 @@ export function HouseholdWidgetSettings({demo,t}:{demo:Launcher;t:(text:string)=
     void change({action:'remove',id:widget.id});
    },widget.type==='clock'?clock(now,widget.zone,demo.prefs.language):
       widget.type==='note'||widget.type==='card'||widget.type==='list'?undefined:
-      widget.type==='agenda'?new Date(widget.date+'T12:00:00').toLocaleDateString(demo.prefs.language):widget.type==='countdown'?(now>=widget.until?t('Reached date'):new Intl.NumberFormat(demo.prefs.language,
+      widget.type==='collection'?new Date((nextCollectionDate(widget.date,widget.interval,now)??widget.date)+'T12:00:00')
+        .toLocaleDateString(demo.prefs.language):widget.type==='agenda'?new Date(widget.date+'T12:00:00').toLocaleDateString(demo.prefs.language):widget.type==='countdown'?(now>=widget.until?t('Reached date'):new Intl.NumberFormat(demo.prefs.language,
         {style:'unit',unit:'day',unitDisplay:'long'}).format(daysUntil(widget.until,now))):
       widget.type==='timer'?(now>=widget.until?t('Finished'):remainingTime(widget.until,now)):undefined)}
     {(widget.type==='list'||widget.type==='card')&&widget.rows.map((item,index)=>widget.type==='list'?
@@ -81,6 +87,7 @@ export function HouseholdWidgetSettings({demo,t}:{demo:Launcher;t:(text:string)=
     {row('note',t('Add note'),()=>setForm('note'))}
     {row('list',t('Add household list'),()=>setForm('list'))}
     {row('agenda',t('Add calendar entry'),()=>setForm('agenda'))}
+    {row('collection',t('Add bin collection reminder'),()=>{setRepeat(7);setForm('collection');})}
     {row('card',t('Add a JSON display card'),()=>setForm('card'))}
    </>}
   </>}
@@ -127,6 +134,15 @@ export function HouseholdWidgetSettings({demo,t}:{demo:Launcher;t:(text:string)=
    <TVTextInput id="agenda-date" t={t} value={value} onChangeText={setValue} maxLength={10}
     placeholder="YYYY-MM-DD" accessibilityLabel={t('Event date')} placeholderTextColor="#aeb9c9" style={inputStyle}/>
    {row('save-agenda',t('Save event'),()=>void change({action:'agenda',label:name.trim(),date}),undefined,!date||!name.trim())}
+  </>}
+  {form==='collection'&&<>
+   <TVTextInput id="collection-name" t={t} value={name} onChangeText={setName} maxLength={48}
+    placeholder={t('Bin name')} accessibilityLabel={t('Bin name')} placeholderTextColor="#aeb9c9" style={inputStyle}/>
+   <TVTextInput id="collection-date" t={t} value={value} onChangeText={setValue} maxLength={10}
+    placeholder="YYYY-MM-DD" accessibilityLabel={t('First collection date')} placeholderTextColor="#aeb9c9" style={inputStyle}/>
+   {row('repeat',t('Repeat'),()=>setRepeat(current=>current===7?14:7),t(repeat===7?'Weekly':'Every two weeks'))}
+   {row('save-collection',t('Save reminder'),()=>void change({action:'collection',label:name.trim(),date,interval:repeat}),
+    undefined,!date||!name.trim())}
   </>}
   {form==='card'&&<>
    <Text style={{color:'#d6e3ff',fontSize:15}}>{t('Use a title and up to 16 plain text rows.')}</Text>
