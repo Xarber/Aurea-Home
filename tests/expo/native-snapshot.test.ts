@@ -23,3 +23,11 @@ test('library folders retain only unique locally installed app identifiers',()=>
   assert.deepEqual(nativeSnapshot({...base,preferences:{...base.preferences,folders}}).preferences.folders,
     [{id,name:'Video',apps:['org.example.player']}]);
 });
+
+
+test('Kids mode only displays distinct installed apps from the TV allowlist',()=>{
+  const base=state();
+  const kidsApps=['org.example.player','org.example.player','missing','all'];
+  assert.deepEqual(nativeSnapshot({...base,preferences:{...base.preferences,kidsProfile:true,kidsApps}}).preferences.kidsApps,['org.example.player']);
+  assert.deepEqual(nativeSnapshot({...base,preferences:{...base.preferences,kidsProfile:false,kidsApps}}).preferences.kidsApps,[]);
+});

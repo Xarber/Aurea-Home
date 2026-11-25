@@ -49,6 +49,9 @@ export function nativeSnapshot(value: Record<string, unknown>): NativeSnapshot {
   prefs.navigationSound=prefs.navigationSound===true;
   prefs.startFocus=prefs.startFocus==='apps'||prefs.startFocus==='inputs'?prefs.startFocus:'dock';
   const installed=new Set(value.catalog.filter(entry=>entry.kind==='app').map(entry=>entry.id));
+  prefs.kidsProfile=prefs.kidsProfile===true;
+  prefs.kidsApps=prefs.kidsProfile&&Array.isArray(prefs.kidsApps)
+    ?[...new Set(prefs.kidsApps.filter(id=>installed.has(id)))].slice(0,32):[];
   prefs.hiddenApps=Array.isArray(prefs.hiddenApps)
     ?[...new Set(prefs.hiddenApps.filter(id=>installed.has(id)))].slice(0,256)
     :[];

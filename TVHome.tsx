@@ -35,6 +35,7 @@ import { translator } from './src/model/i18n';
 import {tv} from './src/platform/native/tv';
 import { defaultWallpaperSchedule,tracks } from './src/model/catalog';
 import {useIdleDisplay} from './src/hooks/useIdleDisplay';
+import {KidsHome} from './src/components/KidsProfile';
 import {WallpaperVideo} from './src/components/WallpaperVideo';
 import {PhotoWallpaper} from './src/components/PhotoWallpaper';
 import { Wallpaper } from './src/components/Wallpaper';
@@ -59,7 +60,7 @@ export function NativeTVHome() {
   const launcher = useNativeLauncher();
   return (
     <TVCanvas>
-      <LauncherView demo={launcher} />
+      {launcher.prefs.kidsProfile?<KidsHome demo={launcher}/>:<LauncherView demo={launcher} />}
     </TVCanvas>
   );
 }

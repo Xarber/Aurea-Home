@@ -15,6 +15,7 @@ import {HouseholdWidgetSettings} from './HouseholdWidgetSettings';
 import {ProfileFolderSettings} from './ProfileFolderSettings';
 import {PlexSettings} from './PlexSettings';
 import {WatchNextSettings} from './WatchNextSettings';
+import {KidsProfileSettings} from './KidsProfile';
 import {AndroidMediaSettings} from './AndroidMediaSettings';
 import {HomeAssistantSettings} from './HomeAssistantSettings';
 import {SmartHomeSettings} from './SmartHomeSettings';
@@ -142,6 +143,7 @@ export function NativePanels({
     layout: 'Home layout',
     folders: 'App folders',
     widgets: 'Household widgets',
+    kids: 'Kids profile',
     changelog: 'Changelog',
     developer: 'Developer settings',ideas:'Ideas',
     profiles: 'Input appearance',
@@ -501,6 +503,8 @@ export function NativePanels({
         </>}
         {demo.panel==='androidMedia'&&<AndroidMediaSettings demo={demo} t={t}/>}
         {demo.panel==='homeAssistant'&&<HomeAssistantSettings demo={demo} t={t}/>}
+        {demo.panel==='kids'&&<KidsProfileSettings demo={demo} t={t} viewers={household?.profiles.filter(profile=>profile.id!=='home')??[]}/>}
+        {demo.panel==='account'&&household?.active==='home'&&row('Kids profile','home',()=>demo.setPanel('kids'))}
         {demo.panel==='account'&&(household?<TVAccountSettings key={household.active} demo={demo} household={household}
           setHousehold={setHousehold} t={t} accountsEnabled={process.env.EXPO_PUBLIC_AUREA_ACCOUNTS_ENABLED==='1'}/>:
           text('Household profiles are loading…'))}

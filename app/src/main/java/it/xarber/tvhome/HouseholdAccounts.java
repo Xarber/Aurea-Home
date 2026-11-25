@@ -12,6 +12,7 @@ final class HouseholdAccounts {
     private static HouseholdAccounts instance;
     private final PairingStore store;
     private final Context context;
+    final KidsProfiles kids;
     private volatile String activeId="home";
 
     static synchronized HouseholdAccounts get(Context context) {
@@ -21,6 +22,7 @@ final class HouseholdAccounts {
 
     private HouseholdAccounts(Context context) {
         this.context=context;
+        kids=new KidsProfiles(context);
         store = new PairingStore(context, "household-accounts");
         try {activeId=read().getString("active");}catch(Exception ignored){}
     }
@@ -96,7 +98,22 @@ final class HouseholdAccounts {
         return view();
     }
 
+    synchronized boolean exists(String id)throws Exception {
+        try{find(read(),id);return true;}catch(IllegalArgumentException unknown){return false;}
+    }
+
     synchronized JSONObject select(String id) throws Exception {
+        if(kids.active(activeId))throw new IllegalArgumentException("parent_code_required");
+        return setActive(id);
+    }
+
+    synchronized JSONObject exitKids(String pin)throws Exception {
+        if(!kids.active(activeId))throw new IllegalStateException("kids_not_active");
+        kids.verify(pin);
+        return setActive("home");
+    }
+
+    private JSONObject setActive(String id)throws Exception {
         JSONObject state=read();
         find(state,id);
         state.put("active",id);

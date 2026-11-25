@@ -95,6 +95,9 @@ final class TVHomeCatalog {
         if(bytes.size()>600000)throw new IllegalArgumentException("artwork_too_large");return new JSONObject().put("image","data:image/png;base64,"+Base64.encodeToString(bytes.toByteArray(),Base64.NO_WRAP));
     }
     synchronized void launch(String id)throws Exception{
+        HouseholdAccounts household=HouseholdAccounts.get(context);
+        if(household.kids.active(household.activeId())&&!household.kids.allowed(id))
+            throw new IllegalArgumentException("kids_app_not_allowed");
         read(false);Intent intent;
         if(inputs.containsKey(id)){intent=new Intent(Intent.ACTION_VIEW,TvContract.buildChannelUriForPassthroughInput(inputs.get(id))).setPackage("com.mediatek.wwtv.tvcenter");if(context.getPackageManager().resolveActivity(intent,0)==null)intent.setPackage(null);}
         else if(id.equals("live")){intent=liveIntent();}

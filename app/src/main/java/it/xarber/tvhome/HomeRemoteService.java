@@ -99,7 +99,11 @@ public final class HomeRemoteService extends Service {
         if(operation.equals("preview_end"))return AppPreviewService.end(this,payload.optString("owner"));
         if(operation.equals("media"))return onMain(()->playback.command(payload));
         if(operation.equals("launch")){
-            String id=payload.optString("id");if(id.length()>512||!catalog.contains(id))return SystemRemoteController.error("unknown_target");
+            String id=payload.optString("id");
+            HouseholdAccounts household=HouseholdAccounts.get(this);
+            if(household.kids.active(household.activeId())&&(!id.startsWith("app:")||!household.kids.allowed(id.substring(4))))
+                return SystemRemoteController.error("kids_app_not_allowed");
+            if(id.length()>512||!catalog.contains(id))return SystemRemoteController.error("unknown_target");
             if(TVPlatform.foreground())return onMain(()->catalog.launch(TVPlatform.get(this),id));
         if(home()!=null)return onMain(()->{LegacyHomeActivity activity=home();if(activity==null)return SystemRemoteController.error("home_changed");catalog.launch(activity,id);return accepted();});
             android.content.pm.ResolveInfo defaultHome=getPackageManager().resolveActivity(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME),android.content.pm.PackageManager.MATCH_DEFAULT_ONLY);

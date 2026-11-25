@@ -42,3 +42,5 @@ On Android TV, **Wallpapers → Personal photos** imports up to 12 images for th
 **Wallpapers → Idle display** can dim or cover the launcher or show a low-contrast clock on black. The first remote key wakes the display without also opening a focused app. Music keeps playing. The black cover does not send a hardware power command.
 
 **Wallpapers → Video wallpaper** copies an MP4 into the active profile’s private storage. It loops without audio on Home and releases the decoder when Home is hidden, an idle display is active, or Reduced Motion is enabled. Clips are limited to 30 seconds, 48 MB and 1080p. A rejected replacement preserves the existing clip. Photos or a built-in wallpaper remain visible below the video.
+
+In the Home profile, **Household profiles → Kids profile** configures a secondary profile with approved installed apps and a parent code. Selecting the profile opens a simplified launcher and exiting it requires the code. Aurea app launch requests respect the allowlist while Kids is active. The code protects Aurea’s profile switch and is not a substitute for Android parental controls or restrictions in individual apps.

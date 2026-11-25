@@ -81,6 +81,9 @@ public final class TVPlatform {
         String schedule=layout.getString("wallpaper-schedule",null);
         if(schedule!=null)try{preferences.put("wallpaperSchedule",new JSONObject(schedule));}
         catch(org.json.JSONException invalid){/* Use built-in default schedule. */}
+        if(households.kids.active(households.activeId())){
+            preferences.put("kidsProfile",true).put("kidsApps",households.kids.status().getJSONArray("apps"));
+        }
         preferences.put("idleDisplay",layout.getString("idle-display","off"))
             .put("idleDisplayMinutes",layout.getInt("idle-display-minutes",5));
         preferences.put("wallpaperVideo",videoWallpaper.current(households.activeId()))
@@ -115,11 +118,34 @@ public final class TVPlatform {
     private void notifyUpdate(){if(!foreground()||!AureaTVModule.listening())return;it.xarber.tvhome.updates.UpdateCandidate offer=updates.candidate;if(offer!=null&&!updates.checking&&!updates.stale&&!updates.preferences.getString("notified","").equals(offer.tag)){AureaTVModule.event("notice",safe("message",AppLanguage.text(context,"Update available — open About")));updates.preferences.edit().putString("notified",offer.tag).apply();}}
     private JSONObject updateState()throws Exception{JSONObject value=new JSONObject().put("status",updates.status).put("channel",updates.channel).put("checking",updates.checking).put("ready",updates.ready).put("installing",updates.installing).put("downloaded",updates.downloaded).put("total",updates.total).put("speed",updates.speed).put("autoCheck",updates.autoCheck()).put("autoDownload",updates.autoDownload()).put("unmeteredOnly",updates.unmeteredOnly()).put("lastCheck",updates.lastSuccess()).put("stale",updates.stale);if(updates.candidate!=null)value.put("candidate",updates.candidate.json);return value;}
     JSONObject execute(String operation,JSONObject data)throws Exception{
+        if(households.kids.active(households.activeId())&&!java.util.Arrays.asList(
+                "snapshot","launch","image","artwork","kidsExit").contains(operation))throw new IllegalArgumentException("kids_mode");
         switch(operation){
         case "snapshot":return snapshot(data.optBoolean("refresh"));
         case "image":return catalog.image(data.getString("id"),data.optString("kind","icon"));
         case "artwork":return receiverPlayback().artwork();
         case "launch":catalog.launch(data.getString("id"));return safe("accepted",true);
+        case "kidsExit":
+            if(!foreground())throw new IllegalStateException("launcher_not_active");
+            households.exitKids(data.getString("pin"));
+            return snapshot(false);
+        case "kidsStatus":case "kidsConfigure":case "kidsDisable":
+            if(!foreground()||!households.activeId().equals("home"))throw new IllegalStateException("launcher_not_active");
+            if(operation.equals("kidsDisable"))households.kids.clear(data.getString("oldPin"));
+            if(operation.equals("kidsConfigure")){
+                String child=data.getString("profile");
+                if(!households.exists(child)||child.equals("home"))throw new IllegalArgumentException("unknown_child_profile");
+                JSONArray desired=data.getJSONArray("apps"),verified=new JSONArray();
+                if(desired.length()==0||desired.length()>32)throw new IllegalArgumentException("invalid_kids_apps");
+                java.util.Set<String> unique=new java.util.HashSet<>();
+                for(int i=0;i<desired.length();i++){
+                    String app=desired.getString(i);
+                    if(!catalog.isApp(app)||!unique.add(app))throw new IllegalArgumentException("invalid_kids_app");
+                    verified.put(app);
+                }
+                households.kids.configure(child,verified,data.optString("oldPin"),data.getString("pin"));
+            }
+            return households.kids.status();
         case "mediaSessions":case "mediaSessionCommand":case "mediaAccessSettings":
             if(!foreground()||BuildConfig.MOBILE_REMOTE||!households.activeId().equals("home"))
                 throw new IllegalStateException("launcher_not_active");
