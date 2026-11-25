@@ -147,6 +147,38 @@ public final class TVPlatform {
                 households.kids.configure(child,verified,data.optString("oldPin"),data.getString("pin"));
             }
             return households.kids.status();
+        case "viewingExports":case "clearViewingExports":case "importViewingExport":case "viewingExportOpen":
+            if(!foreground())throw new IllegalStateException("launcher_not_active");
+            String importProfile=data.getString("profile");
+            SharedPreferences importPrefs=households.layoutFor(importProfile);
+            if(operation.equals("viewingExportOpen")){
+                String service=data.getString("service"),video=data.optString("video");
+                if(service.equals("Netflix"))catalog.launch("com.netflix.ninja");
+                else{
+                    if(!video.matches("[A-Za-z0-9_-]{11}")||
+                        !java.util.Arrays.asList("YouTube","YouTube Music").contains(service))
+                        throw new IllegalArgumentException("invalid_viewing_link");
+                    JSONArray history=ViewingExports.read(importPrefs);
+                    boolean present=false;
+                    for(int i=0;i<history.length();i++){
+                        JSONObject record=history.getJSONObject(i);
+                        present|=service.equals(record.optString("service"))&&video.equals(record.optString("video"));
+                    }
+                    if(!present)throw new IllegalArgumentException("unknown_viewing_link");
+                    String host=service.equals("YouTube Music")?"music.youtube.com":"www.youtube.com";
+                    Intent open=new Intent(Intent.ACTION_VIEW,android.net.Uri.parse("https://"+host+"/watch?v="+video))
+                        .setPackage("com.google.android.youtube.tv").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    if(open.resolveActivity(context.getPackageManager())==null)throw new IllegalStateException("viewing_app_unavailable");
+                    context.startActivity(open);
+                }
+                return safe("accepted",true);
+            }
+            if(operation.equals("clearViewingExports"))ViewingExports.clear(importPrefs);
+            if(operation.equals("importViewingExport")){
+                main.post(()->{Activity host=activity.get();if(host instanceof MainActivity)((MainActivity)host).importViewingExport(importProfile);});
+                return safe("accepted",true);
+            }
+            return new JSONObject().put("entries",ViewingExports.read(importPrefs));
         case "localWatchHistory":case "localWatchHistoryConfigure":case "localWatchHistoryClear":
             if(!foreground()||BuildConfig.MOBILE_REMOTE)throw new IllegalStateException("launcher_not_active");
             synchronized(households){

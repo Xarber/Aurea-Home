@@ -10,7 +10,7 @@ Open **Plex Continue Watching** from Keep Watching to connect a Plex server for 
 
 Aurea reads up to 20 movies or episodes from the documented Plex Continue Watching endpoint. **Open Plex app** launches the installed Plex app. Opening or resuming an individual Plex title still needs a verified client deep link. [Plex Media Server API](https://developer.plex.tv/pms/)
 
-History imports and Stremio-specific continuation sources, title availability, recommendations and imports remain tracked in the active queue. The observed visibility and playback behavior of any particular streaming app needs verification on that TV. [Android Watch Next reference](https://developer.android.com/reference/android/media/tv/TvContract.WatchNextPrograms)
+Stremio-specific continuation sources, title availability, recommendations and imports remain tracked in the active queue. The observed visibility and playback behavior of any particular streaming app needs verification on that TV. [Android Watch Next reference](https://developer.android.com/reference/android/media/tv/TvContract.WatchNextPrograms)
 
 
 ## Active Android media
@@ -21,3 +21,10 @@ History imports and Stremio-specific continuation sources, title availability, r
 ## Local watch history
 
 **Keep Watching → Local watch history** can remember positions from apps you enable individually for an adult profile. The TV reads sessions while the phone remote service is active and Android notification access remains granted. It records only an app-supplied title, playback position and duration that meet the playback thresholds. Some streaming apps may not report this data and never appear. The list stores up to 60 titles for 90 days per profile and opens the source app. It does not claim to resume at the saved position. Recording is off until you select an app, and is unavailable in Kids. **Clear history and stop recording** removes the profile’s records and selected apps. Records stay on this TV, outside account sync, remote responses and exported settings.
+
+
+## Imported viewing history
+
+From **Keep Watching → Imported viewing history**, choose a per-profile Netflix Viewing Activity CSV with the English Title and Date columns, or YouTube Takeout's watch-history JSON. Select the individual file after extracting any archive. Imports are bounded to 4 MB and retain the newest 120 distinct records on the current adult profile. You can filter by source and clear imported records separately. Older versions of the format, localized Netflix headers, full-account Netflix archives and YouTube HTML are not supported yet.
+
+Imported entries show the source viewing date and have no playback position. Netflix entries open the Netflix app. YouTube entries use their stored video ID and open the video only if the installed Android TV YouTube app resolves the link. Original files remain untouched. Parsed titles stay on the TV and are excluded from sync or upload. [Netflix Viewing Activity](https://help.netflix.com/en/node/101917), [Google Takeout](https://support.google.com/accounts/answer/3024190).

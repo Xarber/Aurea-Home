@@ -145,6 +145,42 @@ class MainActivity : ReactActivity() {
             AureaTVModule.event("notice", TVPlatform.safe("message", "No document picker is available on this TV."))
         }
     }
+    private var viewingExportProfile: String? = null
+    private val viewingExport = registerForActivityResult(ActivityResultContracts.OpenDocument()) { source ->
+        val expected = viewingExportProfile
+        if (expected != null && source != null) {
+            val application = applicationContext
+            Thread({
+                val success = try {
+                    val records = contentResolver.openInputStream(source).use { ViewingExports.parse(it) }
+                    val accounts = HouseholdAccounts.get(application)
+                    synchronized(accounts) {
+                        ViewingExports.merge(accounts.layoutFor(expected), records)
+                    }
+                    true
+                } catch (_: Exception) { false }
+                main.post {
+                    viewingExportProfile = null
+                    if (!isFinishing && !isDestroyed) {
+                        val message = if (success) "Viewing export imported" else "Could not read the viewing export."
+                        AureaTVModule.event("notice", TVPlatform.safe("message", message))
+                        AureaTVModule.event("viewing-import", org.json.JSONObject())
+                    }
+                }
+            }, "AureaViewingExport").start()
+        } else {
+            viewingExportProfile = null
+        }
+    }
+    fun importViewingExport(profile: String) {
+        if (viewingExportProfile != null) return
+        viewingExportProfile = profile
+        try { viewingExport.launch(arrayOf("text/csv", "text/plain", "application/json", "application/octet-stream")) }
+        catch (_: Exception) {
+            viewingExportProfile = null
+            AureaTVModule.event("notice", TVPlatform.safe("message", "No document picker is available on this TV."))
+        }
+    }
     private var previewApproval = ""
     private val previewConsent = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val approval=previewApproval;previewApproval=""
