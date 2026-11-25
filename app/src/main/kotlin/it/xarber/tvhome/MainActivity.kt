@@ -80,6 +80,38 @@ class MainActivity : ReactActivity() {
             AureaTVModule.event("notice", TVPlatform.safe("message", "No document picker is available on this TV."))
         }
     }
+    private var photoProfile: String? = null
+    private val wallpaperPhotos = registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { selections ->
+        val expected = photoProfile
+        if (expected != null && selections.isNotEmpty()) {
+            val application = applicationContext
+            Thread({
+                val result = try {
+                    HouseholdAccounts.get(application).layoutFor(expected)
+                    PhotoWallpapers.get(application).add(expected, selections.take(PhotoWallpapers.MAX_PHOTOS))
+                } catch (_: Exception) { 0 }
+                main.post {
+                    photoProfile = null
+                    if (!isFinishing && !isDestroyed) {
+                        val message = if (result > 0) "Wallpaper photos imported" else "No wallpaper photos could be imported."
+                        AureaTVModule.event("notice", TVPlatform.safe("message", message))
+                        AureaTVModule.event("playback", org.json.JSONObject())
+                    }
+                }
+            }, "AureaPhotoImport").start()
+        } else {
+            photoProfile = null
+        }
+    }
+    fun importWallpaperPhotos(profile: String) {
+        if (photoProfile != null) return
+        photoProfile = profile
+        try { wallpaperPhotos.launch(arrayOf("image/jpeg", "image/png", "image/webp")) }
+        catch (_: Exception) {
+            photoProfile = null
+            AureaTVModule.event("notice", TVPlatform.safe("message", "No document picker is available on this TV."))
+        }
+    }
     private var previewApproval = ""
     private val previewConsent = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val approval=previewApproval;previewApproval=""

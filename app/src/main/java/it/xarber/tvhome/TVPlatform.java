@@ -41,12 +41,13 @@ public final class TVPlatform {
     private final PairedPlayback paired;
     private final UpdateController updates;
     private final HouseholdAccounts households;
+    private final PhotoWallpapers photos;
     private final WatchNextShelf watchNext;
     private final PlexShelf plex;
     private Bitmap paletteArtwork;
     private JSONArray palette=new JSONArray().put("#e6eaf0").put("#929aa8");
     private final Handler main=new Handler(Looper.getMainLooper());
-    private TVPlatform(Context context){this.context=context;households=HouseholdAccounts.get(context);watchNext=new WatchNextShelf(context);plex=new PlexShelf(context);prefs=context.getSharedPreferences("it.xarber.tvhome.MainActivity",0);catalog=new TVHomeCatalog(context,prefs);paired=PairedPlayback.get(context);playback=new RemotePlayback(context,false);if(!BuildConfig.APPLICATION_ID.endsWith(".preview"))playback.start();updates=UpdateController.get(context);}
+    private TVPlatform(Context context){this.context=context;households=HouseholdAccounts.get(context);photos=PhotoWallpapers.get(context);watchNext=new WatchNextShelf(context);plex=new PlexShelf(context);prefs=context.getSharedPreferences("it.xarber.tvhome.MainActivity",0);catalog=new TVHomeCatalog(context,prefs);paired=PairedPlayback.get(context);playback=new RemotePlayback(context,false);if(!BuildConfig.APPLICATION_ID.endsWith(".preview"))playback.start();updates=UpdateController.get(context);}
     public void resume(Activity host){activity=new WeakReference<>(host);foreground=true;paired.resume();if(!BuildConfig.MOBILE_REMOTE){updates.observe(this::notifyUpdate);updates.resume();}if(!BuildConfig.MOBILE_REMOTE&&!BuildConfig.APPLICATION_ID.endsWith(".preview")){HomeRemoteService.ensure(context);ensureReceiver();}main.post(()->AureaTVModule.event("home-resumed",safe("pairing",paired.pairingPending())));}
     public void pause(Activity host){if(activity.get()!=host)return;foreground=false;paired.pause();updates.pause();}
     private void ensureReceiver(){if(!ReceiverSettings.enabled(context))return;context.getSharedPreferences("settings",0).edit().putBoolean("auto_start",true).putBoolean("boot_auto_start",true).putBoolean("run_in_background",true).putBoolean("launch_on_connect",true).putBoolean("auto_fullscreen",true).apply();try{context.startForegroundService(new Intent(context,io.github.jqssun.airplay.service.AirPlayService.class).setAction(io.github.jqssun.airplay.service.AirPlayService.ACTION_START_SERVER));}catch(Exception failure){AureaTVModule.event("notice",safe("message","AirPlay service could not start"));}}
@@ -77,6 +78,9 @@ public final class TVPlatform {
         String schedule=layout.getString("wallpaper-schedule",null);
         if(schedule!=null)try{preferences.put("wallpaperSchedule",new JSONObject(schedule));}
         catch(org.json.JSONException invalid){/* Use built-in default schedule. */}
+        preferences.put("photoWallpapers",photos.list(households.activeId()))
+            .put("photoWallpaperEnabled",layout.getBoolean("photo-wallpaper-enabled",false))
+            .put("photoWallpaperMinutes",layout.getInt("photo-wallpaper-minutes",5));
         AudioManager audio=context.getSystemService(AudioManager.class);int maximum=audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC);int volume=Math.round(100f*audio.getStreamVolume(AudioManager.STREAM_MUSIC)/Math.max(1,maximum));
         JSONObject music=receiverPlayback().state();Bitmap cover=receiverPlayback().cover();if(cover!=paletteArtwork){paletteArtwork=cover;palette=new JSONArray();for(int color:WavePalette.from(cover))palette.put(String.format(java.util.Locale.US,"#%06x",color&0xffffff));}music.put("colors",palette).put("dominance",WavePalette.dominance(cover));HomeRemoteServer remote=HomeRemoteService.server();
         result.put("preferences",preferences).put("music",music).put("network",network()).put("volume",volume).put("remoteConnected",remote!=null&&remote.hasActiveRemote()).put("paired",pairedState()).put("receiver",ReceiverSettings.state(context)).put("updates",updateState())
@@ -109,6 +113,16 @@ public final class TVPlatform {
         case "image":return catalog.image(data.getString("id"),data.optString("kind","icon"));
         case "artwork":return receiverPlayback().artwork();
         case "launch":catalog.launch(data.getString("id"));return safe("accepted",true);
+        case "importWallpaperPhotos":case "removeWallpaperPhoto":
+            if(!foreground())throw new IllegalStateException("launcher_not_active");
+            String photoProfile=data.getString("profile");
+            households.layoutFor(photoProfile);
+            if(operation.equals("removeWallpaperPhoto")){
+                photos.remove(photoProfile,data.getString("uri"));
+                return snapshot(false);
+            }
+            main.post(()->{Activity host=activity.get();if(host instanceof MainActivity)((MainActivity)host).importWallpaperPhotos(photoProfile);});
+            return safe("accepted",true);
         case "automationStatus":
             if(!foreground())throw new IllegalStateException("launcher_not_active");
             return automationAddress(AutomationAccess.get(context).status());
@@ -174,7 +188,7 @@ public final class TVPlatform {
             if(!foreground()||!households.activeId().equals(data.getString("id")))throw new IllegalStateException("profile_changed");
             if(data.has("appearance")){
                 JSONObject incoming=data.getJSONObject("appearance");
-                if(incoming.has("dock")||incoming.has("weatherCity")||incoming.has("startFocus")||incoming.has("dockSize")||incoming.has("wallpaperClock")||incoming.has("navigationSound")||incoming.has("wallpaperSchedule")||incoming.has("wallpaperScheduleEnabled"))throw new IllegalArgumentException("invalid_appearance");
+                if(incoming.has("dock")||incoming.has("weatherCity")||incoming.has("startFocus")||incoming.has("dockSize")||incoming.has("wallpaperClock")||incoming.has("navigationSound")||incoming.has("wallpaperSchedule")||incoming.has("wallpaperScheduleEnabled")||incoming.has("photoWallpaperEnabled")||incoming.has("photoWallpaperMinutes"))throw new IllegalArgumentException("invalid_appearance");
                 savePreferences(incoming);
             }
             return data.has("appearance")?snapshot(false):appearance();
@@ -310,6 +324,12 @@ public final class TVPlatform {
             String size=data.getString("dockSize");
             if(!java.util.Arrays.asList("compact","standard","large").contains(size))throw new IllegalArgumentException("invalid_dock_size");
             edit.putString("dock-size",size);
+        }
+        if(data.has("photoWallpaperEnabled"))edit.putBoolean("photo-wallpaper-enabled",data.getBoolean("photoWallpaperEnabled"));
+        if(data.has("photoWallpaperMinutes")){
+            int minutes=data.getInt("photoWallpaperMinutes");
+            if(!java.util.Arrays.asList(1,5,15,60).contains(minutes))throw new IllegalArgumentException("invalid_photo_interval");
+            edit.putInt("photo-wallpaper-minutes",minutes);
         }
         if(data.has("wallpaperScheduleEnabled"))edit.putBoolean("wallpaper-schedule-enabled",data.getBoolean("wallpaperScheduleEnabled"));
         if(data.has("wallpaperSchedule"))edit.putString("wallpaper-schedule",

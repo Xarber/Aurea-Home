@@ -4,7 +4,7 @@ import { catalog, defaultDock, wallpapers,validateWallpaperSchedule } from '../m
 import {weatherCity,type WeatherCity} from '../model/weather';
 import type {WallpaperSchedule} from '../model/daylight';
 export type LibraryFolder={id:string;name:string;apps:string[]};
-export interface Preferences {dock:string[];wallpaper:string;motion:boolean;language:'en'|'it';glass:boolean;blur?:boolean;musicTint?:boolean;weatherCity?:WeatherCity|null;hiddenApps?:string[];startFocus?:'dock'|'inputs'|'apps';householdProfile?:string;folders?:LibraryFolder[];canUndoLayoutImport?:boolean;dockSize?:'compact'|'standard'|'large';wallpaperClock?:'off'|'minimal'|'stacked';navigationSound?:boolean;wallpaperSchedule?:WallpaperSchedule;wallpaperScheduleEnabled?:boolean;}
+export interface Preferences {dock:string[];wallpaper:string;motion:boolean;language:'en'|'it';glass:boolean;blur?:boolean;musicTint?:boolean;weatherCity?:WeatherCity|null;hiddenApps?:string[];startFocus?:'dock'|'inputs'|'apps';householdProfile?:string;folders?:LibraryFolder[];canUndoLayoutImport?:boolean;dockSize?:'compact'|'standard'|'large';wallpaperClock?:'off'|'minimal'|'stacked';navigationSound?:boolean;wallpaperSchedule?:WallpaperSchedule;wallpaperScheduleEnabled?:boolean;photoWallpapers?:string[];photoWallpaperEnabled?:boolean;photoWallpaperMinutes?:number;}
 export const defaults:Preferences={dock:defaultDock,wallpaper:'silk',motion:false,language:'en',glass:true,blur:true,musicTint:false};
 const key='aurea.demo.preferences.v1';
 export function readPreferences():Preferences {

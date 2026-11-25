@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import {validateWallpaperSchedule} from '../model/catalog.ts';
+import {localWallpaperPhotos,photoIntervals} from '../model/photo-wallpapers.ts';
 import {weatherCity} from '../model/weather.ts';
 import type { NativeSnapshot } from './types';
 export function nativeSnapshot(value: Record<string, unknown>): NativeSnapshot {
@@ -59,6 +60,9 @@ export function nativeSnapshot(value: Record<string, unknown>): NativeSnapshot {
   }):[];
   prefs.wallpaperSchedule=validateWallpaperSchedule(prefs.wallpaperSchedule);
   prefs.wallpaperScheduleEnabled=prefs.wallpaperScheduleEnabled===true;
+  prefs.photoWallpapers=localWallpaperPhotos(prefs.photoWallpapers,prefs.householdProfile??'home');
+  prefs.photoWallpaperEnabled=prefs.photoWallpaperEnabled===true;
+  prefs.photoWallpaperMinutes=photoIntervals.find(value=>value===prefs.photoWallpaperMinutes)??5;
   prefs.weatherCity=weatherCity(prefs.weatherCity);
   return value as unknown as NativeSnapshot;
 }

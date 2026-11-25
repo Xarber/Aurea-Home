@@ -36,3 +36,5 @@ The shared TV launcher keeps each household profile’s dock, library visibility
 ### Household widgets
 
 In **Control Center → Household widgets**, a profile can save world clocks, minute timers, date countdowns and household notes. They stay on this TV and are separate across profiles. Timer deadlines persist while the panel is closed. The panel shows elapsed deadlines when reopened. The current timer interface has no background alarm.
+
+On Android TV, **Wallpapers → Personal photos** imports up to 12 images for the active profile from the system document picker. Aurea copies and resizes the selected images into private storage and strips file metadata during JPEG export. Rotation intervals are 1, 5, 15 or 60 minutes. Photos stay on the TV and the original files are left intact when a photo is removed from Aurea. The built-in wallpaper remains available as a fallback for missing photos. Document-picker availability depends on the TV firmware.
