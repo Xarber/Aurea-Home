@@ -36,7 +36,17 @@ public final class HomeRemoteService extends Service {
     private volatile RemotePlayback playback;
     private volatile String pendingLaunch;
     private volatile long launchDeadline;
-    private final Runnable monitor=new Runnable(){public void run(){if(transientPeerUntil>0&&SystemClock.elapsedRealtime()>transientPeerUntil){transientPeerUntil=0;if(hosted!=null&&!getSharedPreferences("hosted-remote",0).getBoolean("enabled",false)){hosted.close();hosted=new HostedRemote(HomeRemoteService.this,server);}}if(system!=null)system.recover();if(playback!=null){playback.clients(server!=null&&server.hasActiveRemote());playback.tickActivity();}main.postDelayed(this,5000);}};
+    private final java.util.concurrent.ExecutorService viewingHistory=java.util.concurrent.Executors.newSingleThreadExecutor();
+    private final java.util.concurrent.atomic.AtomicBoolean historyBusy=new java.util.concurrent.atomic.AtomicBoolean();
+    private long lastHistoryCheck;
+    private LocalWatchHistory watchHistory;
+    private final Runnable monitor=new Runnable(){public void run(){if(transientPeerUntil>0&&SystemClock.elapsedRealtime()>transientPeerUntil){transientPeerUntil=0;if(hosted!=null&&!getSharedPreferences("hosted-remote",0).getBoolean("enabled",false)){hosted.close();hosted=new HostedRemote(HomeRemoteService.this,server);}}if(system!=null)system.recover();
+        long now=SystemClock.elapsedRealtime();
+        if(now-lastHistoryCheck>=30000&&historyBusy.compareAndSet(false,true)){
+            lastHistoryCheck=now;
+            viewingHistory.execute(()->{try{watchHistory.observe();}finally{historyBusy.set(false);}});
+        }
+        if(playback!=null){playback.clients(server!=null&&server.hasActiveRemote());playback.tickActivity();}main.postDelayed(this,5000);}};
 
     static synchronized void attach(LegacyHomeActivity home){visibleHome=new WeakReference<>(home);HomeRemoteService service=instance;if(service!=null&&service.pendingLaunch!=null&&SystemClock.elapsedRealtime()<service.launchDeadline){String target=service.pendingLaunch;service.pendingLaunch=null;service.main.post(()->{if(home.resumed)service.catalog.launch(home,target);});}}
     static synchronized void attachExpo(MainActivity home){HomeRemoteService service=instance;if(service!=null&&service.pendingLaunch!=null&&SystemClock.elapsedRealtime()<service.launchDeadline){String target=service.pendingLaunch;service.pendingLaunch=null;service.main.post(()->service.catalog.launch(home,target));}}
@@ -58,6 +68,7 @@ public final class HomeRemoteService extends Service {
         PendingIntent stop=PendingIntent.getService(this,72,new Intent(this,HomeRemoteService.class).setAction(STOP),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
         Notification notification=new Notification.Builder(this,CHANNEL).setSmallIcon(io.github.jqssun.airplay.R.drawable.ic_launcher_monochrome).setContentTitle("Aurea Home").setContentText("Phone remote available").setContentIntent(content).setOngoing(true).addAction(new Notification.Action.Builder(null,"Stop remote",stop).build()).build();
         if(Build.VERSION.SDK_INT>=29)startForeground(1843,notification,ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE);else startForeground(1843,notification);
+        watchHistory=new LocalWatchHistory(this,new AndroidMediaSessions(this));
         catalog=new RemoteCatalog(this);system=new SystemRemoteController(this);localAdb=new LocalAdbController(this);playback=new RemotePlayback(this);playback.start();
         try{
             server=new HomeRemoteServer(this,new HomeRemoteServer.Commands(){
@@ -71,7 +82,7 @@ public final class HomeRemoteService extends Service {
         return START_STICKY;
     }
     @Override public IBinder onBind(Intent intent){return null;}
-    @Override public void onDestroy(){AppPreviewService.cancelAll(this);main.removeCallbacks(monitor);if(server!=null)server.stop();if(localAdb!=null)new Thread(localAdb::close,"AureaAdbClose").start();if(hosted!=null)hosted.close();if(playback!=null)playback.close();if(system!=null){SystemRemoteController closing=system;new Thread(closing::close,"AureaRemoteClose").start();}server=null;if(instance==this)instance=null;super.onDestroy();}
+    @Override public void onDestroy(){AppPreviewService.cancelAll(this);main.removeCallbacks(monitor);viewingHistory.shutdownNow();if(server!=null)server.stop();if(localAdb!=null)new Thread(localAdb::close,"AureaAdbClose").start();if(hosted!=null)hosted.close();if(playback!=null)playback.close();if(system!=null){SystemRemoteController closing=system;new Thread(closing::close,"AureaRemoteClose").start();}server=null;if(instance==this)instance=null;super.onDestroy();}
     private JSONObject handle(String operation,JSONObject payload)throws Exception{
         main.post(()->{if(playback!=null)playback.clients(server!=null&&server.hasActiveRemote());});
         it.xarber.tvhome.playback.PairedPlayback apple = it.xarber.tvhome.playback.PairedPlayback.get(this);

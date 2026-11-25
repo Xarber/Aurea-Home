@@ -43,6 +43,7 @@ public final class TVPlatform {
     private final HouseholdAccounts households;
     private final PhotoWallpapers photos;
     private final AndroidMediaSessions androidSessions;
+    private final LocalWatchHistory watchHistory;
     private final HomeAssistantControls homeAssistant;
     private final VideoWallpaper videoWallpaper;
     private final WatchNextShelf watchNext;
@@ -50,7 +51,7 @@ public final class TVPlatform {
     private Bitmap paletteArtwork;
     private JSONArray palette=new JSONArray().put("#e6eaf0").put("#929aa8");
     private final Handler main=new Handler(Looper.getMainLooper());
-    private TVPlatform(Context context){this.context=context;households=HouseholdAccounts.get(context);photos=PhotoWallpapers.get(context);androidSessions=new AndroidMediaSessions(context);homeAssistant=new HomeAssistantControls(context);videoWallpaper=new VideoWallpaper(context);watchNext=new WatchNextShelf(context);plex=new PlexShelf(context);prefs=context.getSharedPreferences("it.xarber.tvhome.MainActivity",0);catalog=new TVHomeCatalog(context,prefs);paired=PairedPlayback.get(context);playback=new RemotePlayback(context,false);if(!BuildConfig.APPLICATION_ID.endsWith(".preview"))playback.start();updates=UpdateController.get(context);}
+    private TVPlatform(Context context){this.context=context;households=HouseholdAccounts.get(context);photos=PhotoWallpapers.get(context);androidSessions=new AndroidMediaSessions(context);watchHistory=new LocalWatchHistory(context,androidSessions);homeAssistant=new HomeAssistantControls(context);videoWallpaper=new VideoWallpaper(context);watchNext=new WatchNextShelf(context);plex=new PlexShelf(context);prefs=context.getSharedPreferences("it.xarber.tvhome.MainActivity",0);catalog=new TVHomeCatalog(context,prefs);paired=PairedPlayback.get(context);playback=new RemotePlayback(context,false);if(!BuildConfig.APPLICATION_ID.endsWith(".preview"))playback.start();updates=UpdateController.get(context);}
     public void resume(Activity host){activity=new WeakReference<>(host);foreground=true;paired.resume();if(!BuildConfig.MOBILE_REMOTE){updates.observe(this::notifyUpdate);updates.resume();}if(!BuildConfig.MOBILE_REMOTE&&!BuildConfig.APPLICATION_ID.endsWith(".preview")){HomeRemoteService.ensure(context);ensureReceiver();}main.post(()->AureaTVModule.event("home-resumed",safe("pairing",paired.pairingPending())));}
     public void pause(Activity host){if(activity.get()!=host)return;foreground=false;paired.pause();updates.pause();}
     private void ensureReceiver(){if(!ReceiverSettings.enabled(context))return;context.getSharedPreferences("settings",0).edit().putBoolean("auto_start",true).putBoolean("boot_auto_start",true).putBoolean("run_in_background",true).putBoolean("launch_on_connect",true).putBoolean("auto_fullscreen",true).apply();try{context.startForegroundService(new Intent(context,io.github.jqssun.airplay.service.AirPlayService.class).setAction(io.github.jqssun.airplay.service.AirPlayService.ACTION_START_SERVER));}catch(Exception failure){AureaTVModule.event("notice",safe("message","AirPlay service could not start"));}}
@@ -146,8 +147,19 @@ public final class TVPlatform {
                 households.kids.configure(child,verified,data.optString("oldPin"),data.getString("pin"));
             }
             return households.kids.status();
+        case "localWatchHistory":case "localWatchHistoryConfigure":case "localWatchHistoryClear":
+            if(!foreground()||BuildConfig.MOBILE_REMOTE)throw new IllegalStateException("launcher_not_active");
+            synchronized(households){
+                if(operation.equals("localWatchHistoryClear"))return watchHistory.clear();
+                if(operation.equals("localWatchHistoryConfigure")){
+                    String tracked=data.getString("id");
+                    if(!catalog.isApp(tracked))throw new IllegalArgumentException("unknown_app");
+                    return watchHistory.configure(tracked,data.getBoolean("enabled"));
+                }
+                return watchHistory.settings();
+            }
         case "mediaSessions":case "mediaSessionCommand":case "mediaAccessSettings":
-            if(!foreground()||BuildConfig.MOBILE_REMOTE||!households.activeId().equals("home"))
+            if(!foreground()||BuildConfig.MOBILE_REMOTE)
                 throw new IllegalStateException("launcher_not_active");
             if(operation.equals("mediaAccessSettings")){
                 Intent settings=new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);

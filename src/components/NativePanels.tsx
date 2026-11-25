@@ -14,6 +14,7 @@ import { Icon } from './Icon';
 import {HouseholdWidgetSettings} from './HouseholdWidgetSettings';
 import {ProfileFolderSettings} from './ProfileFolderSettings';
 import {PlexSettings} from './PlexSettings';
+import {WatchHistorySettings} from './WatchHistorySettings';
 import {WatchNextSettings} from './WatchNextSettings';
 import {KidsProfileSettings} from './KidsProfile';
 import {AndroidMediaSettings} from './AndroidMediaSettings';
@@ -138,6 +139,7 @@ export function NativePanels({
     automations: 'Smart home',
     homeAssistant: 'Home Assistant controls',
     watchNext: 'Keep Watching',
+    watchHistory: 'Local watch history',
     androidMedia: 'Android media',
     plex: 'Plex Continue Watching',
     layout: 'Home layout',
@@ -493,9 +495,11 @@ export function NativePanels({
         </>}
         {panel==='watchNext'&&<>
           {(demo.prefs.householdProfile??'home')==='home'&&demo.panel==='watchNext'&&<WatchNextSettings demo={demo} t={t}/>}
+          {row('Local watch history','film',()=>demo.setPanel('watchHistory'))}
           {row('Plex Continue Watching','film',()=>demo.setPanel('plex'))}
         </>}
         {demo.panel==='widgets'&&<HouseholdWidgetSettings key={demo.prefs.householdProfile??'home'} demo={demo} t={t}/>}
+        {demo.panel==='watchHistory'&&<WatchHistorySettings key={demo.prefs.householdProfile??'home'} demo={demo} t={t}/>}
         {demo.panel==='plex'&&<PlexSettings key={demo.prefs.householdProfile??'home'} demo={demo} t={t}/>}
         {demo.panel==='automations'&&<>
           {(demo.prefs.householdProfile??'home')==='home'&&row('Home Assistant controls','home',()=>demo.setPanel('homeAssistant'))}
