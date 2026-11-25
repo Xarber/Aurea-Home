@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-export const isHomeEntity=(value:string)=>/^(light|switch|scene|climate|sensor|binary_sensor)\.[a-z0-9_]{1,120}$/.test(value);
+export const isHomeEntity=(value:string)=>/^(light|switch|scene|climate|sensor|binary_sensor|camera)\.[a-z0-9_]{1,120}$/.test(value);
 
 export function adjustedTemperature(state:Record<string,unknown>,direction:-1|1) {
   const {target,min,max}=state;

@@ -44,7 +44,7 @@ final class HomeAssistantControls {
     }
 
     JSONObject changeEntity(String id,boolean add)throws Exception {
-        if(!id.matches("(light|switch|scene|climate|sensor|binary_sensor)\\.[a-z0-9_]{1,120}"))
+        if(!id.matches("(light|switch|scene|climate|sensor|binary_sensor|camera)\\.[a-z0-9_]{1,120}"))
             throw new IllegalArgumentException("invalid_home_entity");
         JSONObject entry=required();
         JSONArray items=new JSONArray(entry.optString("companion","[]"));
@@ -81,6 +81,26 @@ final class HomeAssistantControls {
             }
         }
         return visible;
+    }
+
+    JSONObject camera(String id)throws Exception{
+        if(!id.startsWith("camera."))throw new IllegalArgumentException("unknown_camera");
+        byte[] bytes=exchange(authorized(id),"/api/camera_proxy/"+id+"?width=960&height=540",null,"image/*",1024*1024);
+        android.graphics.BitmapFactory.Options decode=new android.graphics.BitmapFactory.Options();
+        decode.inJustDecodeBounds=true;
+        android.graphics.BitmapFactory.decodeByteArray(bytes,0,bytes.length,decode);
+        int edge=Math.max(decode.outWidth,decode.outHeight);
+        if(decode.outWidth<1||decode.outHeight<1||edge>12000)throw new IOException("invalid_camera_frame");
+        decode.inJustDecodeBounds=false;
+        decode.inSampleSize=1;
+        while(edge/decode.inSampleSize>1200)decode.inSampleSize*=2;
+        android.graphics.Bitmap image=android.graphics.BitmapFactory.decodeByteArray(bytes,0,bytes.length,decode);
+        if(image==null)throw new IOException("invalid_camera_frame");
+        try(ByteArrayOutputStream jpeg=new ByteArrayOutputStream()){
+            if(!image.compress(android.graphics.Bitmap.CompressFormat.JPEG,80,jpeg))throw new IOException("camera_frame_encode");
+            String body=android.util.Base64.encodeToString(jpeg.toByteArray(),android.util.Base64.NO_WRAP);
+            return new JSONObject().put("image","data:image/jpeg;base64,"+body).put("receivedAt",System.currentTimeMillis());
+        }finally{image.recycle();}
     }
 
     JSONObject command(JSONObject input)throws Exception {
@@ -133,13 +153,17 @@ final class HomeAssistantControls {
     }
 
     private static String response(JSONObject entry,String path,JSONObject body)throws Exception {
+        return new String(exchange(entry,path,body,"application/json",131072),StandardCharsets.UTF_8);
+    }
+
+    private static byte[] exchange(JSONObject entry,String path,JSONObject body,String accept,int maximum)throws Exception {
         URI target=new URI(entry.getString("identifier")).resolve(path);
         HttpsURLConnection connection=(HttpsURLConnection)target.toURL().openConnection();
         connection.setInstanceFollowRedirects(false);
         connection.setConnectTimeout(3000);
         connection.setReadTimeout(3000);
         connection.setRequestProperty("Authorization","Bearer "+entry.getString("credentials"));
-        connection.setRequestProperty("Accept","application/json");
+        connection.setRequestProperty("Accept",accept);
         try{
             if(body!=null){
                 byte[] encoded=body.toString().getBytes(StandardCharsets.UTF_8);
@@ -156,10 +180,10 @@ final class HomeAssistantControls {
                 int count;
                 byte[] bytes=new byte[2048];
                 while((count=input.read(bytes))!=-1){
-                    if(output.size()+count>131072||android.os.SystemClock.elapsedRealtime()>deadline)throw new IOException("home_assistant_response_limit");
+                    if(output.size()+count>maximum||android.os.SystemClock.elapsedRealtime()>deadline)throw new IOException("home_assistant_response_limit");
                     output.write(bytes,0,count);
                 }
-                return output.toString("UTF-8");
+                return output.toByteArray();
             }
         }finally{connection.disconnect();}
     }

@@ -244,7 +244,7 @@ public final class TVPlatform {
             }
             main.post(()->{Activity host=activity.get();if(host instanceof MainActivity)((MainActivity)host).importWallpaperPhotos(photoProfile);});
             return safe("accepted",true);
-        case "haStatus":case "haConnect":case "haDisconnect":case "haEntity":case "haState":case "haCommand":
+        case "haStatus":case "haConnect":case "haDisconnect":case "haEntity":case "haState":case "haCommand":case "haCamera":
             if(!foreground()||!households.activeId().equals("home"))throw new IllegalStateException("launcher_not_active");
             switch(operation){
                 case "haConnect":return homeAssistant.connect(data.getString("server"),data.getString("token"));
@@ -252,6 +252,7 @@ public final class TVPlatform {
                 case "haEntity":return homeAssistant.changeEntity(data.getString("id"),data.getBoolean("add"));
                 case "haState":return homeAssistant.state(data.getString("id"));
                 case "haCommand":return homeAssistant.command(data);
+                case "haCamera":return homeAssistant.camera(data.getString("id"));
                 default:return homeAssistant.status();
             }
         case "automationStatus":

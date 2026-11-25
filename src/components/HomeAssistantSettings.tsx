@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import React,{useCallback,useEffect,useState} from 'react';
-import {Text,View} from 'react-native';
+import React,{useCallback,useEffect,useRef,useState} from 'react';
+import {AppState,Image,Text,View} from 'react-native';
 import type {Launcher} from '../launcher/types';
 import {tv} from '../platform/native/tv';
 import {adjustedTemperature,isHomeEntity} from '../model/home-assistant';
@@ -17,6 +17,14 @@ export function HomeAssistantSettings({demo,t}:{demo:Launcher;t:(value:string)=>
   const [entities,setEntities]=useState<string[]>([]);
   const [states,setStates]=useState<Record<string,Record<string,unknown>>>({});
   const [busy,setBusy]=useState(false),[failed,setFailed]=useState(false);
+  const cameraGeneration=useRef(0);
+  useEffect(()=>{
+    const session=AppState.addEventListener('change',value=>{
+      if(value!=='active'){cameraGeneration.current++;setCamera(undefined);}
+    });
+    return()=>{cameraGeneration.current++;session.remove();};
+  },[]);
+  const [camera,setCamera]=useState<{uri:string;received:number}>();
   const [selected,setSelected]=useState<string>(),[confirm,setConfirm]=useState<string>();
   const apply=useCallback((result:Record<string,unknown>)=>{
     if(typeof result.connected==='boolean')setConnected(result.connected);
@@ -41,15 +49,21 @@ export function HomeAssistantSettings({demo,t}:{demo:Launcher;t:(value:string)=>
   },[connected,entities,demo.execute]);
   async function run(operation:string,payload:Record<string,unknown>={}) {
     if(busy)return;
+    const generation=cameraGeneration.current;
     setBusy(true);setFailed(false);
     try{
       const result=await demo.execute(operation,payload);
-      if(typeof payload.id==='string'&&typeof result.state==='string'){
+      if(operation==='haCamera'){
+        if(generation!==cameraGeneration.current)return;
+        if(typeof result.image!=='string'||!result.image.startsWith('data:image/jpeg;base64,')||
+          typeof result.receivedAt!=='number')throw new Error('invalid_camera_image');
+        setCamera({uri:result.image,received:result.receivedAt});
+      }else if(typeof payload.id==='string'&&typeof result.state==='string'){
         const id=payload.id;
         setStates(previous=>({...previous,[id]:result}));
       }else apply(result);
       if(operation==='haConnect'){setServer('');setToken('');}
-      if(operation==='haEntity'){setEntity('');if(payload.add!==true)setSelected(undefined);}
+      if(operation==='haEntity'){setEntity('');if(payload.add!==true){setSelected(undefined);setCamera(undefined);}}
       setConfirm(undefined);
     }catch{setFailed(true);}finally{setBusy(false);}
   }
@@ -83,7 +97,7 @@ export function HomeAssistantSettings({demo,t}:{demo:Launcher;t:(value:string)=>
     {connected===true&&!selected&&<>
       {entities.map(id=>row(id,name(id,states[id]??empty),()=>setSelected(id),detail(states[id]??empty)))}
       {entities.length<8&&<>
-        {text('Add a light, switch, scene, thermostat, or sensor by its entity ID.')}
+        {text('Add a light, switch, scene, thermostat, sensor, or camera by its entity ID.')}
         <TVTextInput id="ha-entity-edit" t={t} value={entity} onChangeText={setEntity} maxLength={135}
           autoCapitalize="none" autoCorrect={false} accessibilityLabel={t('Entity ID')} placeholder="light.living_room"
           placeholderTextColor="#aeb9c9" style={fieldStyle}/>
@@ -96,6 +110,18 @@ export function HomeAssistantSettings({demo,t}:{demo:Launcher;t:(value:string)=>
     {connected===true&&selected&&<>
       {text(name(selected,state))}
       {!!detail(state)&&text(detail(state)!)}
+      {selected.startsWith('camera.')&&<>
+        {camera&&<>
+          <Image source={{uri:camera.uri}} accessibilityLabel={t('Camera snapshot')}
+            style={{width:'100%',aspectRatio:16/9,borderRadius:12}} resizeMode="contain"/>
+          {text(t('Snapshot received')+' · '+new Date(camera.received).toLocaleTimeString(demo.prefs.language))}
+        </>}
+        {row('camera',t(camera?'Refresh camera snapshot':'View camera snapshot'),()=>{
+          setCamera(undefined);
+          void run('haCamera',{id:selected});
+        })}
+        {camera&&row('hide-image',t('Hide snapshot'),()=>setCamera(undefined))}
+      </>}
       {selected.startsWith('scene.')&&row('activate',t('Activate scene'),()=>void run('haCommand',{id:selected,action:'turn_on'}))}
       {/^(light|switch)\./.test(selected)&&state.state!=='unavailable'&&
         row('toggle',t(state.state==='on'?'Turn off':'Turn on'),()=>void run('haCommand',{id:selected,action:state.state==='on'?'turn_off':'turn_on'}))}
@@ -111,7 +137,7 @@ export function HomeAssistantSettings({demo,t}:{demo:Launcher;t:(value:string)=>
       {row('remove',t(confirm===selected?'Confirm remove device':'Remove device'),()=>{
         if(confirm===selected)void run('haEntity',{id:selected,add:false});else setConfirm(selected);
       })}
-      {row('back',t('Back to devices'),()=>{setSelected(undefined);setConfirm(undefined);})}
+      {row('back',t('Back to devices'),()=>{setSelected(undefined);setConfirm(undefined);setCamera(undefined);})}
     </>}
   </View>;
 }
