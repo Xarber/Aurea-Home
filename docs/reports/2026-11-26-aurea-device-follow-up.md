@@ -20,3 +20,5 @@ The user confirmed the update preserved installed data and that Apple TV app nav
 ## Verification
 
 TypeScript and 119 source tests passed. The native protocol fixture opened a local mutually authenticated TLS connection, exercised field and show notifications, and checked the exact counters and cursor in the submitted edit. Home host checks passed with eight optional cryptography skips. Ten account backend tests passed. Three focused Chromium tests passed for the branded account overview, default renewal request, and automatic Apple TV handset with a test TV. No physical device was available through ADB.
+
+The full local Chromium suite passed all 44 tests against a fresh 2.4.0 export. The JDK syntax parser accepted all six changed Java sources. [Follow-up matrix 45753083719](https://github.com/Xarber/Aurea-Home/actions/runs/45753083719) was submitted for source `b7b5bd2` on testing. Installation, physical-device checks, and stable publication remain pending.
