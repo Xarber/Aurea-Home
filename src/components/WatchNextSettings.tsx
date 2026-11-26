@@ -7,10 +7,7 @@ import {Icon} from './Icon';
 import {ViewingSourceFilter} from './ViewingSourceFilter';
 import {filterViewingEntries,viewingSources} from '../model/viewing-source';
 
-type Program={id:string;title:string;episode:string;source:string;publisher?:string;positionMs?:number;durationMs?:number};
-const read=(value:Record<string,unknown>):Program[]|undefined=>value.available===true&&Array.isArray(value.entries)
-  ?value.entries.filter(item=>typeof item?.id==='string'&&typeof item.title==='string'&&typeof item.source==='string')
-  :undefined;
+import {watchNextPrograms,watchNextProgress,type WatchNextProgram as Program} from '../model/watch-next';
 
 const programSource=(item:Program)=>({id:typeof item.publisher==='string'?item.publisher:item.source,label:item.source});
 
@@ -22,7 +19,7 @@ export function WatchNextSettings({demo,t}:{demo:Launcher;t:(value:string)=>stri
   const [source,setSource]=useState<string>();
   useEffect(()=>{
     let live=true;
-    void demo.execute('watchNext').then(value=>{if(live)setItems(read(value));}).catch(()=>{})
+    void demo.execute('watchNext').then(value=>{if(live)setItems(watchNextPrograms(value));}).catch(()=>{})
       .finally(()=>{if(live)setLoaded(true);});
     return()=>{live=false;};
   },[demo.execute]);
@@ -41,7 +38,7 @@ export function WatchNextSettings({demo,t}:{demo:Launcher;t:(value:string)=>stri
     setFailed(false);
     try{
       const result=await demo.execute(operation,{id});
-      if(operation==='watchNextDismiss'){setItems(read(result));setEditing(undefined);}
+      if(operation==='watchNextDismiss'){setItems(watchNextPrograms(result));setEditing(undefined);}
       else if(result.accepted!==true)throw new Error('not_accepted');
     }catch{setFailed(true);}
   }
@@ -60,7 +57,7 @@ export function WatchNextSettings({demo,t}:{demo:Launcher;t:(value:string)=>stri
       <ViewingSourceFilter id="keep-watching-source" sources={sources} value={sourceId} onChange={setSource} t={t}/>
       {visible.map(item=>row(item.id,item.title,()=>setEditing(item),
       [item.episode,item.source].filter(Boolean).join(' · '),
-      item.durationMs&&typeof item.positionMs==='number'?Math.round(100*item.positionMs/item.durationMs):undefined))}
+      watchNextProgress(item)))}
     </>}
     {failed&&<Text accessibilityLiveRegion="polite" style={{color:'#f7cbd7',fontSize:16}}>{t('This program could not be opened or updated.')}</Text>}
   </View>;

@@ -35,6 +35,7 @@ import { translator } from './src/model/i18n';
 import {tv} from './src/platform/native/tv';
 import { defaultWallpaperSchedule,tracks } from './src/model/catalog';
 import {useIdleDisplay} from './src/hooks/useIdleDisplay';
+import {KeepWatchingShelf} from './src/components/KeepWatchingShelf';
 import {KidsHome} from './src/components/KidsProfile';
 import {WallpaperVideo} from './src/components/WallpaperVideo';
 import {PhotoWallpaper} from './src/components/PhotoWallpaper';
@@ -683,6 +684,8 @@ function LauncherView({ demo,onTarget,onOpenRemote }: { demo: Launcher;onOpenRem
                   )}
                 </Text>
               </View>
+              {demo.native&&demo.ready&&demo.page===0&&(demo.prefs.householdProfile??'home')==='home'&&
+                <KeepWatchingShelf demo={demo} t={t} compact={compact}/>}
               <View
                 style={[
                   s.dock,
