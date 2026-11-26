@@ -98,7 +98,7 @@ public final class HomeRemoteService extends Service {
         if(operation.equals("watch_request"))return TVPlatform.get(this).remoteWatchRequest(payload);
         if(operation.equals("home_layout"))return TVPlatform.get(this).remoteLayout(payload);
         if(operation.equals("automation"))return automation(payload);
-        if(operation.equals("state"))return new JSONObject().put("schema",1).put("name",DeviceName.read(this)).put("observedAt",System.currentTimeMillis()).put("homeActive",home()!=null||TVPlatform.foreground()).put("systemRemote",systemState()).put("localAdb",localAdb.state()).put("appleTV",new JSONObject().put("paired",apple.paired()).put("name",apple.name()).put("connected",apple.connected()).put("appsPaired",apple.companionPaired())).put("music",playback.state()).put("wallpaper",wallpaper());
+        if(operation.equals("state"))return new JSONObject().put("schema",1).put("name",DeviceName.read(this)).put("observedAt",System.currentTimeMillis()).put("homeActive",home()!=null||TVPlatform.foreground()).put("systemRemote",systemState()).put("localAdb",localAdb.state()).put("appleTV",new JSONObject().put("paired",apple.paired()).put("name",apple.name()).put("connected",apple.connected()).put("appsPaired",apple.companionPaired()).put("inputSelected",apple.paired()&&TVPlatform.get(this).appleTVInputSelected())).put("music",playback.state()).put("wallpaper",wallpaper());
         if(operation.equals("catalog"))return catalog.read();
         if(operation.equals("icon"))return catalog.icon(payload.optString("id"));
         if(operation.equals("artwork")){playback.state();JSONObject art=playback.artwork();return payload.optString("id").equals(art.optString("id"))?art:SystemRemoteController.error("source_changed");}

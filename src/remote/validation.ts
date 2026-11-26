@@ -18,6 +18,7 @@ export function parseState(raw:Record<string,unknown>):RemoteState{
  if(raw.schema!==1||!text(raw.name,256)||!finite(raw.observedAt)||typeof raw.homeActive!=='boolean')throw new RemoteError('invalid_response');
  const appleTV=raw.appleTV as Record<string,unknown>|undefined;
  if(!appleTV||!text(appleTV.name,256)||typeof appleTV.paired!=='boolean'||typeof appleTV.connected!=='boolean'||typeof appleTV.appsPaired!=='boolean')delete raw.appleTV;
+ else if(typeof appleTV.inputSelected!=='boolean')delete appleTV.inputSelected;
  const wallpaper=raw.wallpaper as Record<string,unknown>|undefined;if(wallpaper&&text(wallpaper.id,64))raw.wallpaper={id:wallpaper.id,motion:wallpaper.motion===true,musicTint:wallpaper.musicTint===true};else delete raw.wallpaper;
  const system=raw.systemRemote as Record<string,unknown>|undefined,music=raw.music as Record<string,unknown>|undefined;
  if(!system||typeof system.paired!=='boolean'||!text(system.status,64)||!music||typeof music.active!=='boolean')throw new RemoteError('invalid_response');

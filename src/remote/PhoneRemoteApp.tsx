@@ -79,7 +79,7 @@ function PhoneRemoteScreen({preview, developerEndpoint, setDeveloperEndpoint}:{
   if(releasePanel.current&&panel!=='whatsnew')showNotes.dismiss();
   releasePanel.current=panel==='whatsnew';
  },[panel,showNotes.dismiss]);
- const [showAppleTV,setShowAppleTV]=useState(false);
+ const [appleOverride,setAppleOverride]=useState<boolean>();
  const versionRoute=useRef(false);
  const openRelease=(version:string)=>{
   setPanel('release:'+version);
@@ -104,14 +104,48 @@ function PhoneRemoteScreen({preview, developerEndpoint, setDeveloperEndpoint}:{
    history.replaceState(history.state,'',url);
   }
  },[panel]);
- useEffect(()=>setShowAppleTV(false),[state.selected?.address]);
  const appleTV=state.device?.appleTV;
+ const appleInput=appleTV?.inputSelected===true;
+ const showAppleTV=appleOverride??appleInput;
+ const lastAppleSource=useRef<{address?:string;input:boolean}|undefined>(undefined);
+ useEffect(()=>{
+  const address=state.selected?.address;
+  const previous=lastAppleSource.current;
+  lastAppleSource.current={address,input:appleInput};
+  if(previous?.address!==address||previous?.input!==appleInput)setAppleOverride(undefined);
+  if(appleInput&&!previous?.input&&address&&previous?.address===address)
+   setTab(current=>current==='inputs'?'remote':current);
+ },[state.selected?.address,appleInput]);
  const [tvText,setTVText]=useState(''),[typingError,setTypingError]=useState('');
- useEffect(()=>{setTVText('');setTypingError('');if(panel==='keyboard')setPanel(null);},[state.selected?.address]);
+ const draft=useRef('');
  const seenKeyboard=useRef('');
- useEffect(()=>{const keyboard=system?.keyboard,revision=state.selected?.address+':'+keyboard?.revision;if(keyboard?.active&&keyboard.available&&seenKeyboard.current!==revision){seenKeyboard.current=revision;setTVText('');setTypingError('');setPanel('keyboard');}else if(keyboard&&!keyboard.active&&panel==='keyboard'){setPanel(null);}},[state.selected?.address,system?.keyboard?.active,system?.keyboard?.revision]);
- useEffect(()=>{if(panel!=='keyboard')setTVText('');},[panel]);
- const editTVText=(value:string)=>{const previous=tvText;setTVText(value);void client.editText(previous,value).catch(()=>setTypingError('Text could not be sent. Close the keyboard and try again.'));};
+ const automaticKeyboard=useRef(false);
+ const keyboard=state.system?.keyboard;
+ const address=state.selected?.address;
+ const clearKeyboard=()=>{draft.current='';setTVText('');setTypingError('');};
+ useEffect(()=>{
+  const revision=address+':'+keyboard?.revision;
+  if(Platform.OS==='web'||!keyboard?.available||!keyboard.active){
+   if(panel==='keyboard'&&(!keyboard?.available||automaticKeyboard.current))setPanel(null);
+   return;
+  }
+  if(seenKeyboard.current!==revision){
+   seenKeyboard.current=revision;
+   automaticKeyboard.current=true;
+   clearKeyboard();
+   setTab('remote');
+   setPanel('keyboard');
+  }
+ },[address,keyboard?.active,keyboard?.available,keyboard?.revision]);
+ useEffect(()=>{if(panel!=='keyboard')clearKeyboard();},[panel]);
+ const editTVText=(value:string)=>{
+  const previous=draft.current;
+  draft.current=value;
+  setTVText(value);
+  void client.editText(previous,value).catch(()=>{
+   setTypingError('Text could not be sent. Close the keyboard and try again.');
+  });
+ };
  const [keyboardHeight,setKeyboardHeight]=useState(0);
  useEffect(()=>{if(Platform.OS!=='ios')return;const changed=Keyboard.addListener('keyboardWillChangeFrame',event=>setKeyboardHeight(Math.max(0,screen.height-event.endCoordinates.screenY)));const hidden=Keyboard.addListener('keyboardWillHide',()=>setKeyboardHeight(0));return()=>{changed.remove();hidden.remove();};},[screen.height]);
  const [bounds,setBounds]=useState({width:Math.min(460,screen.width),height:screen.height});const [anchor,setAnchor]=useState<Anchor>({left:20,top:100,width:50,height:50});
@@ -174,14 +208,14 @@ function PhoneRemoteScreen({preview, developerEndpoint, setDeveloperEndpoint}:{
  </ScrollView></KeyboardAvoidingView>:<>
  {tab==='remote'&&launcherConnected&&appleTV?.paired&&<View style={{paddingHorizontal:20,paddingBottom:8}}>
    <FocusButton id="phone-apple-tv" group="phone" label={showAppleTV?'Show Aurea controls':'Show Apple TV controls'}
-     onPress={()=>setShowAppleTV(!showAppleTV)} style={[s.settingRow,{justifyContent:'center'}]}>
+     onPress={()=>setAppleOverride(!showAppleTV)} style={[s.settingRow,{justifyContent:'center'}]}>
      <Icon name={showAppleTV?'remote':'apple'} size={20}/><Text style={s.label}>{showAppleTV?'Aurea controls':appleTV.name||'Apple TV'}</Text>
    </FocusButton>
  </View>}
  {tab==='remote'&&showAppleTV&&launcherConnected&&appleTV?.paired?
-   <ScrollView contentContainerStyle={{paddingHorizontal:20,paddingBottom:20}}><AppleTVControls
+   <ScrollView testID="phone-apple-handset" style={{flex:1}} contentContainerStyle={{paddingHorizontal:20,paddingBottom:20}}><AppleTVControls
      key={state.selected?.address} request={(operation,payload)=>client.appleTV(operation,payload)}
-     group="phone" connected={appleTV.connected} appsPaired={appleTV.appsPaired}/>
+     group="phone" handset connected={appleTV.connected} appsPaired={appleTV.appsPaired}/>
      <FocusButton id="phone-aurea-home" group="phone" label="Aurea Home" onPress={()=>void client.key('home')}
        style={[s.settingRow,{marginTop:12}]}><Icon name="home" size={20}/><Text style={s.label}>Aurea Home</Text></FocusButton>
    </ScrollView>:tab==='remote'&&<ScrollView testID="phone-handset-scroll" scrollEnabled={!touchActive} onLayout={e=>setRemoteHeight(e.nativeEvent.layout.height)} showsVerticalScrollIndicator={false} contentContainerStyle={{paddingBottom:20}}>
@@ -212,7 +246,7 @@ function PhoneRemoteScreen({preview, developerEndpoint, setDeveloperEndpoint}:{
  {developerEndpoint&&row('phone-restore-signaling','Exit developer server','wifi',()=>setDeveloperEndpoint())}
  {remote.tvs.some(tv=>!!tv.id)&&!remote.preview&&row('phone-watch-request','Suggest a title','film',()=>setPanel('watch-request'))}
  {launcherConnected&&!remote.preview&&row('phone-home-layout','TV Home layout','apps',()=>setPanel('home-layout'))}
- {system?.keyboard?.available&&row('phone-keyboard','TV keyboard','code',()=>setPanel('keyboard'))}
+ {Platform.OS!=='web'&&state.system?.keyboard?.available&&row('phone-keyboard','TV keyboard','code',()=>{automaticKeyboard.current=false;clearKeyboard();setPanel('keyboard');})}
 
 
  {row('phone-try-preview','Explore preview','apps',()=>{remote.setPreview(true);setPanel(null);})}
@@ -234,7 +268,7 @@ function PhoneRemoteScreen({preview, developerEndpoint, setDeveloperEndpoint}:{
  </>}
  {displayed==='paired'&&<View style={{alignItems:'center',gap:18,paddingVertical:24}}><Icon name="check" size={48}/><Text accessibilityRole="alert" style={s.bigTitle}>{state.pairingSuccess==='system'?'System remote paired':'Television paired'}</Text><Text style={s.description}>{state.pairingSuccess==='system'?(system?.ready?'Home and navigation controls are ready.':'Your TV is paired. The control connection is reconnecting.'):'Your television is saved. You can now use the remote.'}</Text>{row('phone-paired-done','Done','check',()=>{client.dismissPairingSuccess();setPanel(null);})}</View>}
  {privatePreviewEnabled&&displayed==='preview-feed'&&<PreviewPanel key={state.device?.id} client={client}/>}
- {displayed==='keyboard'&&<><Text style={s.description}>Type on your TV. Changes are sent immediately and are never saved.</Text><TextInput testID="tv-keyboard" accessibilityLabel="Text for TV" value={tvText} onChangeText={editTVText} autoFocus={Platform.OS!=='web'} autoCorrect={false} autoCapitalize="none" autoComplete="off" maxLength={1024} onSubmitEditing={()=>{void client.key('ok');}} style={s.input}/>{typingError&&<Text accessibilityRole="alert" style={s.error}>{typingError}</Text>}</>}
+ {displayed==='keyboard'&&<><Text style={s.description}>Type on your TV. Changes are sent immediately and are never saved.</Text><TextInput testID="tv-keyboard" accessibilityLabel="Text for TV" value={tvText} onChangeText={editTVText} autoFocus={Platform.OS!=='web'} autoCorrect={false} autoCapitalize="none" autoComplete="off" maxLength={1024} onSubmitEditing={()=>{void client.submitText().catch(()=>setTypingError('Could not submit the TV field.'));}} style={s.input}/>{typingError&&<Text accessibilityRole="alert" style={s.error}>{typingError}</Text>}</>}
  {displayed==='screenshots'&&dev&&<>
    <Text style={s.description}>Choose a sample screen, then reopen Render Screenshots to share it. On the web, use your device’s screenshot controls.</Text>
    {canCaptureSample&&remote.preview&&state.device?.provenance==='simulated'&&row(

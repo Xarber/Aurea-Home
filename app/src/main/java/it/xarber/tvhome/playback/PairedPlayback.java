@@ -101,7 +101,14 @@ public final class PairedPlayback {
                     }
                 }
                 if(operation.equals("pair_finish")&&!pairing.pending()){call("cancel_pairing",new JSONObject());result=error("pairing_expired");}
-                else result=call(operation,data);
+                else if(operation.equals("apps")||operation.equals("launch_app")||operation.equals("navigation")){
+                    JSONObject connection=connected()?state:connectSaved();
+                    if("connected".equals(connection.optString("status"))){
+                        state=connection;
+                        retryAt=0;
+                        result=call(operation,data);
+                    }else result=error("apple_tv_unavailable");
+                }else result=call(operation,data);
                 if((operation.equals("pair_begin")||operation.equals("companion_begin"))&&result.optString("status").equals("pin_required")){
                     long token=pairing.begin(result.optString("name"));
                     worker.schedule(()->{if(pairing.expire(token)){call("cancel_pairing",new JSONObject());if(!foreground)releaseMulticast();notifyChange();}},PairingAttempt.TIMEOUT_MS,TimeUnit.MILLISECONDS);
@@ -145,11 +152,17 @@ public final class PairedPlayback {
         }catch(Exception ignored){}return addresses;
     }
     private void resetState(){state=new JSONObject();artwork=null;artEncoded=null;observed=0;}
+    private JSONObject connectSaved()throws Exception{
+        JSONObject credentials=store.read();
+        if(credentials==null)return error("not_paired");
+        credentials.put("excluded_addresses",localAddresses());
+        return call("connect",credentials);
+    }
     private void poll(){
         if(closed||!foreground||!paired||pairing.pending()||busy||SystemClock.elapsedRealtime()<retryAt)return;
         try{
             lockMulticast();JSONObject next;
-            if(!state.optString("status").equals("connected")){JSONObject credentials=store.read();if(credentials==null)return;credentials.put("excluded_addresses",localAddresses());next=call("connect",credentials);}else next=call("state",new JSONObject());
+            if(!connected())next=connectSaved();else next=call("state",new JSONObject());
             if(next.has("error")||!next.optString("status").equals("connected")){resetState();failures++;retryAt=SystemClock.elapsedRealtime()+Math.min(60000,2000L<<Math.min(5,failures));releaseMulticast();notifyChange();return;}
             failures=0;state=next;observed=SystemClock.elapsedRealtime();String encoded=next.optString("artwork","");
             if(!encoded.equals(artEncoded)){artEncoded=encoded;artwork=null;if(!encoded.isEmpty()&&encoded.length()<700000){byte[] bytes=Base64.decode(encoded,Base64.DEFAULT);BitmapFactory.Options options=new BitmapFactory.Options();options.inJustDecodeBounds=true;BitmapFactory.decodeByteArray(bytes,0,bytes.length,options);if(options.outWidth>0&&options.outHeight>0&&options.outWidth<=1024&&options.outHeight<=1024)artwork=BitmapFactory.decodeByteArray(bytes,0,bytes.length);}}

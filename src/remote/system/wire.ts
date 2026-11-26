@@ -7,6 +7,17 @@ export function integer(id:number,n:number){return join(varint(id*8),varint(n));
 export function bytes(id:number,value:Uint8Array){return join(varint(id*8+2),varint(value.length),value);}
 export const string=(id:number,value:string)=>bytes(id,new TextEncoder().encode(value));
 export function readVarint(data:Uint8Array,offset=0):[number,number]|undefined{let n=0;for(let i=0;i<5;i++){if(offset+i>=data.length)return;const b=data[offset+i]!;n+=(b&127)*2**(i*7);if(!(b&128)){if(n>0xffffffff)throw Error('invalid_wire');return[n,offset+i+1];}}throw Error('invalid_wire');}
-export function fields(data:Uint8Array):Fields{const out:Fields=new Map();let offset=0,count=0;while(offset<data.length){if(++count>128)throw Error('invalid_wire');const key=readVarint(data,offset);if(!key)throw Error('invalid_wire');offset=key[1];const id=Math.floor(key[0]/8),wire=key[0]%8;if(wire===0){const value=readVarint(data,offset);if(!value)throw Error('invalid_wire');out.set(id,value[0]);offset=value[1];}else if(wire===2){const length=readVarint(data,offset);if(!length||length[0]>65536||length[1]+length[0]>data.length)throw Error('invalid_wire');out.set(id,data.slice(length[1],length[1]+length[0]));offset=length[1]+length[0];}else if(wire===1||wire===5){offset+=wire===1?8:4;if(offset>data.length)throw Error('invalid_wire');}else throw Error('invalid_wire');}return out;}
+/** A signed protobuf int32 may occupy ten bytes. Skip wide values unused by this client. */
+function wireInteger(data:Uint8Array,offset:number):[number|undefined,number] {
+ let value=0;
+ for(let index=0;index<10;index++){
+  const byte=data[offset+index];
+  if(byte===undefined||index===9&&byte>1)throw Error('invalid_wire');
+  if(index<5)value+=(byte&127)*2**(index*7);
+  if(!(byte&128))return [index<5&&value<=0xffffffff?value:undefined,offset+index+1];
+ }
+ throw Error('invalid_wire');
+}
+export function fields(data:Uint8Array):Fields{const out:Fields=new Map();let offset=0,count=0;while(offset<data.length){if(++count>128)throw Error('invalid_wire');const key=readVarint(data,offset);if(!key)throw Error('invalid_wire');offset=key[1];const id=Math.floor(key[0]/8),wire=key[0]%8;if(wire===0){const value=wireInteger(data,offset);if(value[0]!==undefined)out.set(id,value[0]);offset=value[1];}else if(wire===2){const length=readVarint(data,offset);if(!length||length[0]>65536||length[1]+length[0]>data.length)throw Error('invalid_wire');out.set(id,data.slice(length[1],length[1]+length[0]));offset=length[1]+length[0];}else if(wire===1||wire===5){offset+=wire===1?8:4;if(offset>data.length)throw Error('invalid_wire');}else throw Error('invalid_wire');}return out;}
 export const nested=(map:Fields,key:number)=>{const value=map.get(key);return value instanceof Uint8Array?fields(value):new Map<number,number|Uint8Array>();};
 export const keyCodes:Record<string,number>={up:19,down:20,left:21,right:22,ok:23,back:4,home:3,menu:82,power:26,volumeup:24,volumedown:25,mute:164,playpause:85,next:87,previous:88,rewind:89,fastforward:90,stop:86,channelup:166,channeldown:167,red:183,green:184,yellow:185,blue:186,voice:84};

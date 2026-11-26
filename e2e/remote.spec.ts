@@ -71,3 +71,41 @@ test('developer signaling tests, remembers a preset and switches only on confirm
  await unlock();
  await expect(control('signaling-preset-0')).toBeVisible();
 });
+
+test('Apple TV input opens the handset and Aurea controls stay available',async({page})=>{
+ const id='11111111-1111-1111-1111-111111111111';
+ let inputSelected=false;
+ const keys:string[]=[];
+ await page.setViewportSize({width:390,height:844});
+ await page.route('**/hello',route=>route.fulfill({json:{id}}));
+ await page.route('**/pair/start',route=>route.fulfill({json:{pairing:'pending'}}));
+ await page.route('**/pair',route=>route.fulfill({json:{id,token:'d'.repeat(32)}}));
+ await page.route('**/api/**',route=>{
+  const path=new URL(route.request().url()).pathname;
+  if(path==='/api/state')return route.fulfill({json:{schema:1,id,name:'Sala',observedAt:Date.now(),homeActive:!inputSelected,
+    systemRemote:{paired:false,status:'not_paired'},music:{active:false},
+    appleTV:{paired:true,connected:true,appsPaired:false,name:'Apple TV Sala',inputSelected}}});
+  if(path==='/api/catalog')return route.fulfill({json:{apps:[],inputs:[{id:'input:hdmi2',kind:'input',name:'Apple TV'}]}});
+  if(path==='/api/launch')inputSelected=true;
+  if(path==='/api/apple-tv/key')keys.push(route.request().postDataJSON().key);
+  if(path==='/api/key'&&route.request().postDataJSON().command==='home')inputSelected=false;
+  return route.fulfill({json:{accepted:true}});
+ });
+ await page.goto('/?remote=1');
+ await page.getByTestId('phone-address').fill(new URL(page.url()).host);
+ await page.locator('[data-nav="phone-connect"]').click();
+ await page.getByTestId('phone-pin').fill('123456');
+ await page.locator('[data-nav="phone-pair"]').click();
+ await page.locator('[data-nav="phone-paired-done"]').click();
+ await page.getByRole('button',{name:'Inputs',exact:true}).click();
+ await page.locator('[data-nav="target:input:hdmi2"]').click();
+ const handset=page.getByTestId('phone-apple-handset');
+ await expect(handset).toBeVisible();
+ await handset.getByRole('button',{name:'Select',exact:true}).click();
+ await expect.poll(()=>keys).toEqual(['select']);
+ await page.getByRole('button',{name:'Show Aurea controls'}).click();
+ await expect(handset).toHaveCount(0);
+ await page.getByRole('button',{name:'Show Apple TV controls'}).click();
+ await handset.getByRole('button',{name:'Aurea Home',exact:true}).click();
+ await expect(handset).toHaveCount(0);
+});

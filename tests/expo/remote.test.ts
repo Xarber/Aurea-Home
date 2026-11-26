@@ -46,8 +46,8 @@ test('saved native controls and voice work without Home HTTP; queued edits never
   client.connect(mock,{address:'http://192.168.1.4',id:first,token,name:'Saved TV'});await sleep();
   assert.equal(client.snapshot.status,'reconnecting');assert.equal(client.snapshot.device,undefined);assert.equal(client.snapshot.system?.ready,true);assert.equal(client.snapshot.selected?.name,'Saved TV');
   await client.key('home');await client.key('down');await client.voiceTransport()('voice_start',{});
-  await client.editText('','a');await client.editText('a','ab');await client.editText('ab','a');
-  assert.deepEqual(calls,['home','down','voice_start','text:a','text:b','delete:1']);
+  await client.editText('','a');await client.editText('a','ab');await client.editText('ab','a');await client.submitText();
+  assert.deepEqual(calls,['home','down','voice_start','text:a','text:b','delete:1','ok']);
   const pending=client.editText('a','wrong TV');client.connect(mock,{address:'http://192.168.1.5',id:second,token});await assert.rejects(pending);assert.equal(calls.includes('text:wrong TV'),false);
  }finally{await client.disconnect();}
 });

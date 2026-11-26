@@ -154,10 +154,22 @@ export class RemoteClient {
   const generation=this.generation,revision=this.direct?.state().keyboard?.revision,direct=this.direct;
   const edit=keyboardEdits(previous,next);
   const task=this.edits.catch(()=>{}).then(async()=>{
-   if(this.fixture||generation!==this.generation||!this.active||!direct?.state().ready||revision!==direct.state().keyboard?.revision)throw new RemoteError('keyboard_unavailable');
-   if(edit.remove){if(!direct.deleteText)throw new RemoteError('keyboard_unavailable');await direct.deleteText(edit.remove);}
-   if(edit.insert){if(!direct.text)throw new RemoteError('keyboard_unavailable');await direct.text(edit.insert);}
+   const valid=()=>!this.fixture&&generation===this.generation&&this.active&&direct&&
+    direct.state().keyboard?.available&&revision===direct.state().keyboard?.revision;
+   if(!valid())throw new RemoteError('keyboard_unavailable');
+   if(edit.remove){if(!direct?.deleteText)throw new RemoteError('keyboard_unavailable');await direct.deleteText(edit.remove);}
+   if(edit.insert){
+    if(!valid()||!direct?.text)throw new RemoteError('keyboard_unavailable');
+    await direct.text(edit.insert);
+   }
   });this.edits=task;return task;
+ }
+ async submitText(){
+  const generation=this.generation,direct=this.direct,revision=direct?.state().keyboard?.revision;
+  await this.edits;
+  if(this.fixture||generation!==this.generation||!this.active||!direct?.state().keyboard?.available||
+     revision!==direct.state().keyboard?.revision)throw new RemoteError('keyboard_unavailable');
+  await direct.key('ok');
  }
  async sendText(value:string){if(!this.direct?.text||this.fixture||!this.direct.state().ready)throw new RemoteError('keyboard_unavailable');await this.direct.text(value);}
  launch(id:string){return this.action('launch',{id});}

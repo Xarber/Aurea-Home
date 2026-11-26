@@ -27,6 +27,9 @@ final class TVHomeCatalog {
     private final HashMap<String,String> inputs=new HashMap<>();
     private final HashMap<String,ResolveInfo> applications=new HashMap<>();
     private long refreshed;
+    private volatile String launchedInput="";
+    void homeResumed(){launchedInput="";}
+    String launchedInput(){return launchedInput;}
     TVHomeCatalog(Context context,SharedPreferences prefs){this.context=context;this.prefs=prefs;}
     private JSONObject entry(String id,String name,String kind,String icon,String category)throws Exception{return new JSONObject().put("id",id).put("name",name).put("kind",kind).put("icon",icon).put("category",category).put("color","#515c73");}
     synchronized JSONArray read(boolean force)throws Exception{
@@ -104,6 +107,7 @@ final class TVHomeCatalog {
         else if(applications.containsKey(id)){PackageManager pm=context.getPackageManager();intent=pm.getLeanbackLaunchIntentForPackage(id);if(intent==null)intent=pm.getLaunchIntentForPackage(id);}
         else throw new IllegalArgumentException("unknown_target");
         if(intent==null||context.getPackageManager().resolveActivity(intent,0)==null)throw new IllegalStateException("screen_unavailable");context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        launchedInput=inputs.containsKey(id)?id:"";
     }
     private Intent liveIntent(){
         TvInputManager manager=context.getSystemService(TvInputManager.class);

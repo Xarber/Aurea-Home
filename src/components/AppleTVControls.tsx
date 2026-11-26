@@ -15,9 +15,9 @@ const controls: {key: string; label: string; icon?: IconName; symbol?: string}[]
   {key:'volumedown',label:'Volume down',symbol:'−'}, {key:'volumeup',label:'Volume up',symbol:'+'},
 ];
 
-export function AppleTVControls({request, group, appsPaired, connected=true, t=(label)=>label}:{
+export function AppleTVControls({request, group, appsPaired, handset=false, connected=true, t=(label)=>label}:{
   request:(operation:Operation,payload:Record<string,unknown>)=>Promise<Record<string,unknown>>;
-  group:string; appsPaired:boolean; connected?:boolean; t?:(label:string)=>string;
+  group:string; handset?:boolean; appsPaired:boolean; connected?:boolean; t?:(label:string)=>string;
 }){
   const [apps,setApps]=useState<App[]>([]);
   const [status,setStatus]=useState('');
@@ -49,21 +49,27 @@ export function AppleTVControls({request, group, appsPaired, connected=true, t=(
   },[connected,appsPaired]);
 
   const music=apps.find(app=>app.id==='com.apple.TVMusic');
+  const control=(key:string)=>{
+    const item=controls.find(button=>button.key===key)!;
+    return <FocusButton key={key} id={'apple-key-'+key} label={t(item.label)} group={group}
+      onPress={()=>void run('navigation',{key})} style={key==='home'&&!handset?styles.row:styles.key}>
+      {item.icon?<Icon name={item.icon} size={22}/>:<Text style={styles.label}>{item.symbol}</Text>}
+      {key==='home'&&!handset&&<Text style={styles.label}>{t(item.label)}</Text>}
+    </FocusButton>;
+  };
   return <View style={styles.body}>
     {!connected&&<Text style={styles.secondary}>{t('Waiting for the paired Apple TV…')}</Text>}
-    <View style={styles.keys}>
-      {controls.map(({key,label,icon,symbol})=>
-        <FocusButton key={key} id={'apple-key-'+key} label={t(label)} group={group} disabled={!connected}
-          onPress={()=>void run('navigation',{key})} style={key==='home'?styles.row:styles.key}>
-          {icon?<Icon name={icon} size={22}/>:<Text style={styles.label}>{symbol}</Text>}
-          {key==='home'&&<Text style={styles.label}>{t(label)}</Text>}
-        </FocusButton>)}
-    </View>
+    {handset?<View style={styles.handset} accessibilityLabel={t('Apple TV controls')}>
+      <View style={styles.pad}>{[['up'],['left','select','right'],['down']].map(keys=>
+        <View key={keys[0]} style={styles.padRow}>{keys.map(control)}</View>)}</View>
+      <View style={styles.padRow}>{['back','home','playpause'].map(control)}</View>
+      <View style={styles.padRow}>{['volumedown','volumeup'].map(control)}</View>
+    </View>:<View style={styles.keys}>{controls.map(item=>control(item.key))}</View>}
     {appsPaired?<View style={styles.body}>
       {music&&<FocusButton id="apple-open-music" label={t('Open Music')} group={group} style={styles.row} disabled={!connected}
         onPress={()=>void run('launch_app',{id:music.id})}><Icon name="music" size={20}/><Text style={styles.label}>{t('Open Music')}</Text></FocusButton>}
       <FocusButton id="apple-refresh-apps" label={t('Refresh Apple TV apps')} group={group} style={styles.row}
-        disabled={!connected||loading} onPress={()=>void run('apps')}>
+        disabled={loading} onPress={()=>void run('apps')}>
         <Icon name="apps" size={20}/><Text style={styles.label}>{t(loading?'Loading apps…':'Refresh Apple TV apps')}</Text>
       </FocusButton>
       {apps.filter(app=>app!==music).map(app=><FocusButton key={app.id} id={'apple-app-'+app.id}
@@ -75,6 +81,9 @@ export function AppleTVControls({request, group, appsPaired, connected=true, t=(
   </View>;
 }
 const styles=StyleSheet.create({
+  handset:{gap:10,alignItems:'center',paddingVertical:10},
+  pad:{gap:4,padding:8,borderRadius:32,backgroundColor:'#ffffff0c'},
+  padRow:{flexDirection:'row',justifyContent:'center',gap:8},
   body:{gap:10}, keys:{flexDirection:'row',flexWrap:'wrap',gap:8},
   key:{minWidth:52,minHeight:50,borderRadius:14,backgroundColor:'#ffffff13'},
   row:{minHeight:48,padding:12,borderRadius:14,backgroundColor:'#ffffff13',flexDirection:'row',gap:12,justifyContent:'flex-start'},
