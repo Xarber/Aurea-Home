@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {AccountSettingsPanel, type Session, type Layout, type PairApproved} from './AccountSettingsPanel';
 
 async function request(path:string, init?:RequestInit) {
@@ -19,7 +19,7 @@ export async function remoteAccountRequest() {
 
 export function AccountSettings({layout, restore, pairApproved}:{layout:Layout; restore:(layout:Layout)=>void; pairApproved:PairApproved}) {
   const [session, setSession] = useState<Session>();
-  const [stay,setStay]=useState(false);
+  const form=useRef<HTMLFormElement>(null);
   useEffect(() => {
     if (location.origin !== 'https://aurea.xcenter.it') return;
     const controller = new AbortController();
@@ -31,11 +31,6 @@ export function AccountSettings({layout, restore, pairApproved}:{layout:Layout; 
   if (!session) return null;
   return <AccountSettingsPanel pairApproved={pairApproved} layout={layout} restore={restore} session={session} request={request}
     onSignOut={()=>setSession({available:true,signedIn:false})}
-    onManage={()=>window.open('https://id.xcenter.it','_blank','noopener,noreferrer')}
-    signIn={<form action={stay?'/account/start?stay=1':'/account/start'} method="post">
-      <label style={{display:'flex',alignItems:'center',gap:8,minHeight:44}}>
-        <input type="checkbox" checked={stay} onChange={event=>setStay(event.target.checked)}/>Stay signed in
-      </label>
-      <button type="submit" style={{padding:'12px 16px',borderRadius:10}}>Sign in with X-Center ID</button>
-    </form>}/>;
+    onSignIn={()=>form.current?.requestSubmit()}
+    signedOutDetails={<form ref={form} action="/account/start?stay=1" method="post" hidden/>}/>;
 }

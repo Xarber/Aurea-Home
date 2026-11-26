@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import {AccountOverview} from './AccountOverview';
 import {TVTextInput} from '../../components/TVTextInput';
 import React, {useEffect, useRef, useState} from 'react';
 import {Image, Text,  View} from 'react-native';
@@ -18,7 +19,6 @@ export function TVAccountSettings({demo, household, setHousehold, t, accountsEna
   const {account,active:profile}=household;
   const [name,setName]=useState('');
   const [unlink,setUnlink]=useState(false);
-  const [stay,setStay]=useState(false);
   async function update(operation:string,value:Record<string,unknown>) {
     const result=await demo.execute(operation,value);
     if(typeof result.active!=='string'||!Array.isArray(result.profiles))throw new Error('profile_failed');
@@ -100,7 +100,7 @@ export function TVAccountSettings({demo, household, setHousehold, t, accountsEna
   const start=()=>run(async()=>{
     const material=await demo.execute('accountChallenge');
     if(typeof material.proof!=='string'||typeof material.challenge!=='string')throw new Error('unavailable');
-    const result=await request('device/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({challenge:material.challenge,stay})});
+    const result=await request('device/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({challenge:material.challenge,stay:true})});
     const qr=await demo.execute('accountQr',{code:result.code}).catch(()=>({qr:undefined}));
     const awaiting={id:result.id,code:result.code,expiresIn:result.expiresIn,proof:material.proof,qr:typeof qr.qr==='string'?qr.qr:undefined};
     if(active.current)setApproval(awaiting);
@@ -178,7 +178,8 @@ export function TVAccountSettings({demo, household, setHousehold, t, accountsEna
         {approval.qr&&<Image source={{uri:approval.qr}} style={{height:180,width:180}} accessibilityLabel={t('X-Center ID sign-in code')}/>}
         {row('cancel','Cancel sign-in',()=>{setApproval(undefined);setStatus('');})}
       </> : account ? <>
-        {account.name&&text(account.name)}
+        <AccountOverview group="modal" t={t} profile={{name:account.name||'X-Center ID'}} busy={busy}
+          onSignOut={()=>void run(()=>revokeLogin(false))}/>
         {text('Sync TV appearance and language. HDMI mappings and remote credentials stay on this TV.')}
         {row('load','Load settings backup',()=>void run(async()=>{
           const saved=await load();setRemove(false);setStatus(saved.preferences?'Backup loaded. Review it before restoring or replacing it.':'No settings backup yet.');
@@ -214,11 +215,7 @@ export function TVAccountSettings({demo, household, setHousehold, t, accountsEna
         {!household.automatic&&(invitation ? row('cancel-invite','Close pairing invitation',()=>void run(async()=>{
           await cancelInvitation();setStatus('Pairing invitation closed.');
         })) : row('open-invite','Allow a remote to pair',()=>void shareInvitation()))}
-        {row('logout','Sign out of Aurea',()=>void run(()=>revokeLogin(false)))}
-      </> : <>
-        {row('stay',stay?'Stay signed in: On':'Stay signed in: Off',()=>setStay(!stay))}
-        {row('link','Sign in with X-Center ID',()=>void start())}
-      </>)}
+      </> : <AccountOverview group="modal" t={t} profile={null} busy={busy} onSignIn={()=>void start()}/>)}
     {accountsEnabled&&household.profiles.some(viewer=>viewer.id===profile&&viewer.linked)&&
       row('unlink',unlink?'Confirm unlink account':'Unlink account',()=>{
         if(!unlink){setUnlink(true);return;}

@@ -2,6 +2,7 @@
 import React, {useState} from 'react';
 import {Text, View} from 'react-native';
 import {FocusButton} from '../../components/FocusButton';
+import {AccountOverview} from './AccountOverview';
 import {Icon} from '../../components/Icon';
 import {acceptInvitation,getInvitations,singleAutomaticInvitation} from './invitations';
 import type {RemoteView} from '../remoteNavigation';
@@ -12,14 +13,15 @@ export type PairApproved = (peer:string, device:string, grant:string)=>Promise<v
 export type Session = {available:true; signedIn:boolean; name?:string};
 type Snapshot = {revision:string; preferences:(Layout & {schema:1}) | null};
 
-export function AccountSettingsPanel({layout, restore, session, request, onSignOut, onManage, signIn, pairApproved}: {
+export function AccountSettingsPanel({layout, restore, session, request, onSignOut, onSignIn, signingIn, signedOutDetails, pairApproved}: {
   layout:Layout;
   restore:(layout:Layout)=>void;
   session:Session;
   request:(path:string, init?:RequestInit)=>Promise<unknown>;
   onSignOut:()=>void;
-  onManage:()=>void;
-  signIn:React.ReactNode;
+  onSignIn:()=>void;
+  signingIn?:boolean;
+  signedOutDetails?:React.ReactNode;
   pairApproved:PairApproved;
 }) {
   const [snapshot, setSnapshot] = useState<Snapshot>();
@@ -76,9 +78,14 @@ export function AccountSettingsPanel({layout, restore, session, request, onSignO
   </FocusButton>;
 
   return <View style={{gap:6,marginVertical:12}}>
-    <Text accessibilityRole="header" style={{color:'#fff',fontWeight:'600',fontSize:19}}>X-Center ID</Text>
-    {session.signedIn ? <>
-      {session.name && <Text style={{color:'#d6e3ff'}}>{session.name}</Text>}
+    <AccountOverview key={String(session.signedIn)} group="phone-modal"
+      profile={session.signedIn?{name:session.name||'X-Center ID'}:null}
+      onSignIn={onSignIn} busy={busy||signingIn}
+      onSignOut={()=>void run(async()=>{
+        await request('logout',{method:'POST'});
+        onSignOut();setSnapshot(undefined);setTelevisions([]);setRemove(false);
+      })}
+      settings={<>
       <Text style={{color:'#d6e3ff'}}>Save or restore the remote layout and touchpad setting.</Text>
       {row('load','Load settings backup',()=>void run(async()=>{
         const saved=await load();
@@ -108,12 +115,8 @@ export function AccountSettingsPanel({layout, restore, session, request, onSignO
       })}
       {row('find-tvs','Find approved TVs',()=>void run(loadInvitations))}
       {televisions.map(tv=><React.Fragment key={tv.peer}>{row('approve-'+tv.peer,tv.label,()=>void run(()=>claimInvitation(tv.peer)))}</React.Fragment>)}
-      {row('dashboard','Manage X-Center ID',onManage)}
-      {row('logout','Sign out of Aurea',()=>void run(async()=>{
-        await request('logout',{method:'POST'});
-        onSignOut();setSnapshot(undefined);setTelevisions([]);setRemove(false);
-      }))}
-    </> : signIn}
+      </>}/>
+    {!session.signedIn&&signedOutDetails}
     <Text accessibilityLiveRegion="polite" style={{color:'#d6e3ff'}}>{status}</Text>
   </View>;
 }

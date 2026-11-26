@@ -17,6 +17,7 @@ test('hosted remote restores account settings and finds only approved TV fixture
  await page.goto(origin+'/?remote=1');
  await page.locator('[data-nav="phone-settings"]').click();
  await expect(page.getByText('X-Center ID',{exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Manage account & data'}).click();
  await page.getByRole('button',{name:'Load settings backup'}).click();
  await expect(page.getByText('Saved layout full · Touchpad on')).toBeVisible();
  await page.getByRole('button',{name:'Restore saved settings'}).click();
@@ -24,4 +25,23 @@ test('hosted remote restores account settings and finds only approved TV fixture
  await page.getByRole('button',{name:'Find approved TVs'}).click();
  await expect(page.getByRole('button',{name:'Approved TV',exact:true})).toBeVisible();
  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('aurea-remote-layout-v1')??'null'))).toMatchObject({view:'full',touchpad:true});
+});
+
+test('account overview requests issuer-managed renewal with no preference switch',async({page,baseURL})=>{
+ const origin='https://aurea.xcenter.it';
+ await page.route(origin+'/**',async route=>{
+  const {pathname,search}=new URL(route.request().url());
+  if(pathname==='/account/session')return route.fulfill({json:{available:true,signedIn:false}});
+  if(pathname==='/account/start')return route.fulfill({body:'Authorization handoff',contentType:'text/plain'});
+  if(pathname.startsWith('/account/'))return route.fulfill({status:401});
+  return route.fulfill({response:await route.fetch({url:new URL(pathname+search,baseURL).href})});
+ });
+ await page.goto(origin+'/?remote=1');
+ await page.locator('[data-nav="phone-settings"]').click();
+ await expect(page.getByRole('checkbox',{name:'Stay signed in'})).toHaveCount(0);
+ const started=page.waitForRequest(req=>new URL(req.url()).pathname==='/account/start');
+ await page.getByRole('button',{name:'Continue with X-Center ID'}).click();
+ const request=await started;
+ expect(request.method()).toBe('POST');
+ expect(new URL(request.url()).searchParams.get('stay')).toBe('1');
 });
