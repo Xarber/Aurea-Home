@@ -99,6 +99,6 @@ The optional native Roku remote sends only documented fixed commands to a user-e
 
 ### Android app usage
 
-The Android TV target declares system Usage Access for the TV screen-time panel. The primary Home profile must be active in the foreground. Opening the panel checks the current grant. Only an explicit action opens Android's settings, which owns granting and revoking access. The phone APK does not declare this permission.
+The Android TV target declares system Usage Access for the TV screen-time panel. The primary Home profile must be active in the foreground. Opening the panel checks the current grant. Only an explicit action opens Android's settings, which owns granting and revoking access. The phone APK does not declare this permission and compiles an unavailable-capability stub in place of the TV implementation.
 
 The operating system provides approximate foreground time for the shared TV. Aurea includes only apps listed in its local launcher catalog, returns app labels and rounded minutes to the in-process panel, and does not store or share the results with accounts, the remote, or smart-home adapters. An unavailable Settings activity or missing usage service leaves the feature unavailable. A usage-access grant gives the TV process broader operating-system read access than the panel displays. Verify grant, revocation, profile isolation and the absence of usage in remote responses on an actual target. [Android usage statistics](https://developer.android.com/reference/android/app/usage/UsageStatsManager).
