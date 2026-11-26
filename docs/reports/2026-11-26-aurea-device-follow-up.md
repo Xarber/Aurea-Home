@@ -16,3 +16,7 @@ The user confirmed the update preserved installed data and that Apple TV app nav
 2. With a paired Apple TV and its HDMI configured in Aurea, open the input from the TV dock, then repeat from the phone remote’s Inputs tab. Confirm the directional pad, Back, playback, tvOS Home and Aurea Home are distinct. Switch back to Aurea controls manually and confirm another input or Aurea Home clears the automatic mode.
 3. On Home, navigate up from the dock to **Keep Watching**. Open a title when one is published. Select the heading if the shelf is empty and verify the full list or clear unavailable state.
 4. In the native phone remote, with paired system controls on the same Wi-Fi, select a TV search box. Verify the phone keyboard opens, then type two letters quickly, paste, delete, and submit. Open a second field and confirm it starts with a clear local editor. Try at least the TV app list or launcher search and one streaming app. Browser-only sessions do not have the phone's direct keyboard transport.
+
+## Verification
+
+TypeScript and 119 source tests passed. The native protocol fixture opened a local mutually authenticated TLS connection, exercised field and show notifications, and checked the exact counters and cursor in the submitted edit. Home host checks passed with eight optional cryptography skips. Ten account backend tests passed. Three focused Chromium tests passed for the branded account overview, default renewal request, and automatic Apple TV handset with a test TV. No physical device was available through ADB.

@@ -23,10 +23,16 @@ export class RemoteIme {
     const field=this.fieldCounter;
     if(message.has(20)){
       const inject=nested(message,20);
-      this.imeCounter=counter(nested(inject,1),1)??0;
-      this.fieldCounter=counter(nested(inject,2),1)??0;
-      this.explicitIme=this.imeCounter!==0;
-      this.explicitField=this.fieldCounter!==0;
+      const nextIme=counter(nested(inject,1),1);
+      const nextField=counter(nested(inject,2),1);
+      if(nextIme!==undefined){
+        this.imeCounter=nextIme;
+        this.explicitIme=nextIme!==0;
+      }
+      if(nextField!==undefined){
+        this.fieldCounter=nextField;
+        this.explicitField=nextField!==0;
+      }
       this.active=inject.has(2);
     }else if(message.has(22)){
       const show=nested(message,22);
